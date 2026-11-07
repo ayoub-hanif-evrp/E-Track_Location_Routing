@@ -34,6 +34,9 @@ data/processed/pilot_network.geojson
 results/baseline_routes.geojson
 reports/pilot_corridor_report.html
 
+# Keep the small static PNG in git for review
+!reports/pilot_corridor_overview.png
+
 # Local caches
 *.tmp
 *.log

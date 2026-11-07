@@ -82,7 +82,20 @@ def download_file(url: str, dest: Path, timeout: int = 120) -> None:
     tmp.replace(dest)
 
 
-def ensure_geofabrik_pbf(config: dict[str, Any], root: Path) -> tuple[Path, str, dict[str, Any]]:
+def relpath_posix(path: Path, root: Path) -> str:
+    """Repository-relative POSIX path when possible."""
+    try:
+        return path.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def ensure_geofabrik_pbf(
+    config: dict[str, Any],
+    root: Path,
+    *,
+    skip_download: bool = False,
+) -> tuple[Path, str, dict[str, Any]]:
     """Download or reuse cached Geofabrik PBF; return path, sha256, meta."""
     osm_cfg = config["osm"]
     raw_dir = resolve_path(root, config["paths"]["raw_dir"])
@@ -96,6 +109,7 @@ def ensure_geofabrik_pbf(config: dict[str, Any], root: Path) -> tuple[Path, str,
         "md5_expected": None,
         "md5_actual": None,
         "md5_ok": None,
+        "path": relpath_posix(dest, root),
     }
 
     hash_sidecar = dest.with_suffix(dest.suffix + ".sha256")
@@ -106,7 +120,22 @@ def ensure_geofabrik_pbf(config: dict[str, Any], root: Path) -> tuple[Path, str,
             logger.info("Using cached PBF %s (sha256=%s)", dest.name, actual)
             meta["sha256"] = actual
             return dest, actual, meta
+        if skip_download:
+            raise FileNotFoundError(
+                f"Cached PBF hash mismatch for {dest} and --skip-download prevents re-download"
+            )
         logger.warning("Cached PBF hash mismatch; re-downloading")
+    elif dest.exists() and not hash_sidecar.exists():
+        actual = sha256_file(dest)
+        hash_sidecar.write_text(f"{actual}  {dest.name}\n", encoding="utf-8")
+        meta["sha256"] = actual
+        logger.info("Computed missing SHA-256 sidecar for cached %s", dest.name)
+        return dest, actual, meta
+
+    if skip_download:
+        raise FileNotFoundError(
+            f"--skip-download set but usable cached PBF not found at {dest}"
+        )
 
     download_file(osm_cfg["download_url"], dest)
     meta["downloaded"] = True
@@ -146,13 +175,15 @@ def extract_bbox_pbf(
     input_pbf: Path,
     output_pbf: Path,
     bbox: dict[str, float],
+    root: Path | None = None,
 ) -> dict[str, Any]:
     """Extract a geographic subset. Prefer osmium-tool; fall back to pyrosm filter."""
     west, south, east, north = bbox["west"], bbox["south"], bbox["east"], bbox["north"]
     output_pbf.parent.mkdir(parents=True, exist_ok=True)
+    root = root or output_pbf.parent.parent.parent
     info: dict[str, Any] = {
         "bbox": [west, south, east, north],
-        "output": str(output_pbf),
+        "output": relpath_posix(output_pbf, root),
         "tool": None,
     }
 
@@ -197,7 +228,7 @@ def extract_bbox_pbf(
     marker.write_text(
         json.dumps(
             {
-                "source_pbf": str(input_pbf),
+                "source_pbf": relpath_posix(input_pbf, root),
                 "bbox": [west, south, east, north],
                 "note": "No osmium-tool; road_network will filter in Python from source_pbf",
             },
@@ -205,10 +236,9 @@ def extract_bbox_pbf(
         ),
         encoding="utf-8",
     )
-    # Point "extract" at the national file when no clipped PBF exists
     info["tool"] = "pyrosm-python-bbox-filter"
-    info["marker"] = str(marker)
-    info["source_pbf_for_filter"] = str(input_pbf)
+    info["marker"] = relpath_posix(marker, root)
+    info["source_pbf_for_filter"] = relpath_posix(input_pbf, root)
     # Create empty placeholder note file path used by build script
     if output_pbf.exists():
         output_pbf.unlink()

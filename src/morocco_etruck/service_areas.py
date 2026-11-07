@@ -1,4 +1,4 @@
-"""ADM service-area candidates and direction-aware OSM matching."""
+"""ADM service-area candidates and scientifically cautious OSM access validation."""
 
 from __future__ import annotations
 
@@ -8,21 +8,26 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
 
 import networkx as nx
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from pyproj import Geod
 
 from morocco_etruck.road_network import bearing_deg, geodesic_length_m
 
 logger = logging.getLogger(__name__)
-GEOD = Geod(ellps="WGS84")
 
 DIR_CASA_AGADIR = "Casablanca→Agadir"
 DIR_AGADIR_CASA = "Agadir→Casablanca"
+
+# Field definitions (also documented in reports/task01b_scientific_audit.md):
+# location_match_status: matched_osm | unmatched
+# directed_access_status:
+#   entrance_and_exit | entrance_only | exit_only | opposite_carriageway_only |
+#   proximity_only | unresolved
+# hgv_access_status: permitted | restricted | unknown
+# proximity_only means near a motorway node but no directed motorway_link path found.
 
 
 class ServiceAreaError(Exception):
@@ -47,9 +52,7 @@ def normalize_token(text: str) -> str:
 
 def parse_direction(name: str) -> str | None:
     n = name.lower()
-    # ADM uses "Casablanca --> Agadir" style arrows
     if "casablanca" in n and "agadir" in n:
-        # Find order of appearance
         i_casa = n.find("casablanca")
         i_aga = n.find("agadir")
         if i_casa < i_aga:
@@ -94,7 +97,6 @@ def parse_adm_candidates(html: str, source_url: str, tokens: list[str]) -> list[
             continue
         direction = parse_direction(name)
         if direction is None:
-            # Amskroud row includes direction in name on ADM page
             logger.warning("Could not parse travel direction for %s", name)
             continue
         rows.append(
@@ -111,7 +113,6 @@ def parse_adm_candidates(html: str, source_url: str, tokens: list[str]) -> list[
 
 
 def probe_adm_trafic() -> dict[str, Any]:
-    """Optional secondary coordinate source; may be blocked (403)."""
     url = "https://m.admtrafic.ma/ajax/stationservice"
     try:
         resp = requests.get(
@@ -137,7 +138,6 @@ def probe_adm_trafic() -> dict[str, Any]:
 
 
 def _expected_bearing_for_direction(direction: str) -> float:
-    # A3 Casa→Agadir is broadly SW (~210°); reverse NE (~30°)
     if direction == DIR_CASA_AGADIR:
         return 210.0
     return 30.0
@@ -149,25 +149,19 @@ def _bearing_difference(a: float, b: float) -> float:
 
 
 def collect_osm_service_pois_pyrosm(pbf_path: Path, bbox: list[float]) -> pd.DataFrame:
-    """Extract highway=services / amenity=fuel POIs from OSM via pyrosm custom filter."""
     try:
         from pyrosm import OSM
     except ImportError as exc:
         raise ServiceAreaError("pyrosm required for OSM facility extraction") from exc
 
     osm = OSM(str(pbf_path), bounding_box=bbox)
-    # Custom filter for service areas and fuel
     custom = {
         "highway": ["services", "rest_area"],
         "amenity": ["fuel", "charging_station"],
     }
     try:
-        gdf = osm.get_data_by_custom_criteria(
-            custom_filter=custom,
-            # Keep nodes and ways/polygons where possible
-            filter_type="keep",
-        )
-    except Exception as exc:  # noqa: BLE001 — pyrosm raises varied errors
+        gdf = osm.get_data_by_custom_criteria(custom_filter=custom, filter_type="keep")
+    except Exception as exc:  # noqa: BLE001
         logger.warning("pyrosm custom POI extract failed: %s", exc)
         return pd.DataFrame()
 
@@ -203,8 +197,8 @@ def collect_osm_service_pois_pyrosm(pbf_path: Path, bbox: list[float]) -> pd.Dat
     return pd.DataFrame(rows)
 
 
-def nearest_nodes(G: nx.DiGraph, lon: float, lat: float, k: int = 15) -> list[tuple[int, float]]:
-    scored: list[tuple[int, float]] = []
+def nearest_nodes(G: nx.Graph, lon: float, lat: float, k: int = 25) -> list[tuple[Any, float]]:
+    scored: list[tuple[Any, float]] = []
     for nid, data in G.nodes(data=True):
         d = geodesic_length_m([(lon, lat), (float(data["lon"]), float(data["lat"]))])
         scored.append((nid, d))
@@ -212,34 +206,297 @@ def nearest_nodes(G: nx.DiGraph, lon: float, lat: float, k: int = 15) -> list[tu
     return scored[:k]
 
 
-def edge_compatible_with_direction(
-    G: nx.DiGraph,
-    u: int,
-    v: int,
-    travel_direction: str,
-    tolerance_deg: float,
-) -> bool:
-    data = G.edges[u, v]
+def edge_bearing(G: nx.Graph, u: Any, v: Any, data: dict[str, Any]) -> float:
     brg = data.get("bearing_deg")
-    if brg == "" or brg is None:
-        # Infer from node coordinates
-        brg = bearing_deg(G.nodes[u]["lon"], G.nodes[u]["lat"], G.nodes[v]["lon"], G.nodes[v]["lat"])
-    else:
-        brg = float(brg)
+    if brg not in ("", None) and not (isinstance(brg, float) and math.isnan(brg)):
+        try:
+            return float(brg)
+        except (TypeError, ValueError):
+            pass
+    return bearing_deg(
+        float(G.nodes[u]["lon"]),
+        float(G.nodes[u]["lat"]),
+        float(G.nodes[v]["lon"]),
+        float(G.nodes[v]["lat"]),
+    )
+
+
+def motorway_nodes_for_direction(
+    G: nx.Graph,
+    travel_direction: str,
+    bearing_tol: float,
+) -> set[Any]:
+    """Nodes incident to motorway edges whose bearing matches travel direction."""
     expected = _expected_bearing_for_direction(travel_direction)
-    return _bearing_difference(brg, expected) <= tolerance_deg
+    nodes: set[Any] = set()
+    edge_iter = G.edges(keys=True, data=True) if G.is_multigraph() else ((u, v, 0, d) for u, v, d in G.edges(data=True))
+    for u, v, _k, data in edge_iter:
+        if str(data.get("highway", "")) != "motorway":
+            continue
+        if _bearing_difference(edge_bearing(G, u, v, data), expected) <= bearing_tol:
+            nodes.add(u)
+            nodes.add(v)
+    return nodes
+
+
+def opposite_motorway_nodes(
+    G: nx.Graph,
+    travel_direction: str,
+    bearing_tol: float,
+) -> set[Any]:
+    opposite = DIR_AGADIR_CASA if travel_direction == DIR_CASA_AGADIR else DIR_CASA_AGADIR
+    return motorway_nodes_for_direction(G, opposite, bearing_tol)
+
+
+def _out_edges(G: nx.Graph, u: Any):
+    if G.is_multigraph():
+        for _, v, k, d in G.out_edges(u, keys=True, data=True):
+            yield v, k, d
+    else:
+        for _, v, d in G.out_edges(u, data=True):
+            yield v, 0, d
+
+
+def _in_edges(G: nx.Graph, v: Any):
+    if G.is_multigraph():
+        for u, _, k, d in G.in_edges(v, keys=True, data=True):
+            yield u, k, d
+    else:
+        for u, _, d in G.in_edges(v, data=True):
+            yield u, 0, d
+
+
+def local_access_subgraph(G: nx.Graph, seed_nodes: list[Any], max_hops: int = 8) -> nx.DiGraph:
+    """Undirected BFS neighbourhood, returned as DiGraph preserving original directions."""
+    allowed = {"motorway", "motorway_link"}
+    visited: set[Any] = set(seed_nodes)
+    frontier = list(seed_nodes)
+    for _ in range(max_hops):
+        nxt = []
+        for n in frontier:
+            for nbr in set(G.successors(n)) | set(G.predecessors(n)):
+                # Keep neighbour if any connecting edge is motorway/link
+                keep = False
+                for _, _, d in list(_out_edges(G, n)) + list(_out_edges(G, nbr)):
+                    pass
+                for vv, _, d in _out_edges(G, n):
+                    if vv == nbr and str(d.get("highway", "")) in allowed:
+                        keep = True
+                for uu, _, d in _in_edges(G, n):
+                    if uu == nbr and str(d.get("highway", "")) in allowed:
+                        keep = True
+                if keep and nbr not in visited:
+                    visited.add(nbr)
+                    nxt.append(nbr)
+        frontier = nxt
+        if not frontier:
+            break
+    H = nx.DiGraph()
+    for n in visited:
+        H.add_node(n, **G.nodes[n])
+    for u in visited:
+        for v, _, d in _out_edges(G, u):
+            if v in visited and str(d.get("highway", "")) in allowed:
+                # Collapse parallel edges to shortest for access probe
+                if H.has_edge(u, v):
+                    if float(d.get("length_m") or 0) < float(H.edges[u, v].get("length_m") or 0):
+                        H.edges[u, v].update(d)
+                else:
+                    H.add_edge(u, v, **d)
+    return H
+
+
+def path_hgv_status(G: nx.Graph, path: list[Any]) -> str:
+    """Aggregate HGV status along a node path. restricted > unknown > permitted."""
+    statuses = []
+    for u, v in zip(path[:-1], path[1:]):
+        if G.is_multigraph():
+            edges = G.get_edge_data(u, v) or {}
+            datas = list(edges.values())
+        else:
+            datas = [G.edges[u, v]]
+        for d in datas:
+            statuses.append(str(d.get("hgv_access", "unknown") or "unknown"))
+    if any(s == "no" for s in statuses):
+        return "restricted"
+    if statuses and all(s == "yes" for s in statuses):
+        return "permitted"
+    return "unknown"
+
+
+def find_directed_access(
+    G: nx.Graph,
+    facility_lon: float,
+    facility_lat: float,
+    travel_direction: str,
+    *,
+    max_facility_node_dist_m: float,
+    bearing_tol: float,
+    max_path_length_m: float = 2500.0,
+) -> dict[str, Any]:
+    """
+    Probe directed entrance/exit via motorway / motorway_link topology.
+
+    Proximity to a motorway node is never treated as confirmed access.
+    """
+    result = {
+        "directed_access_status": "unresolved",
+        "entrance_node_id": None,
+        "exit_node_id": None,
+        "carriageway_attach_node_id": None,
+        "entrance_path_m": None,
+        "exit_path_m": None,
+        "hgv_access_status": "unknown",
+        "access_evidence": "",
+    }
+    dir_nodes = motorway_nodes_for_direction(G, travel_direction, bearing_tol)
+    opp_nodes = opposite_motorway_nodes(G, travel_direction, bearing_tol)
+    near = nearest_nodes(G, facility_lon, facility_lat, k=30)
+    near = [(n, d) for n, d in near if d <= max_facility_node_dist_m]
+    if not near:
+        result["directed_access_status"] = "unresolved"
+        result["access_evidence"] = "No graph nodes within facility search radius"
+        return result
+
+    facility_nodes = [n for n, _ in near]
+    # Build local subgraph around facility + nearby carriageway nodes
+    seeds = facility_nodes + [n for n, d in nearest_nodes(G, facility_lon, facility_lat, k=80) if d <= max_facility_node_dist_m * 3]
+    H = local_access_subgraph(G, seeds, max_hops=10)
+
+    fac_set = set(facility_nodes)
+    dir_in_H = [n for n in dir_nodes if n in H]
+    opp_in_H = [n for n in opp_nodes if n in H]
+
+    best_in: tuple[float, Any, Any, list[Any]] | None = None
+    best_out: tuple[float, Any, Any, list[Any]] | None = None
+
+    for c in dir_in_H:
+        for f in fac_set:
+            if f not in H or c not in H:
+                continue
+            if nx.has_path(H, c, f):
+                path = nx.shortest_path(H, c, f, weight="length_m")
+                length = sum(float(H.edges[a, b]["length_m"]) for a, b in zip(path[:-1], path[1:]))
+                if length <= max_path_length_m and (best_in is None or length < best_in[0]):
+                    best_in = (length, c, f, path)
+            if nx.has_path(H, f, c):
+                path = nx.shortest_path(H, f, c, weight="length_m")
+                length = sum(float(H.edges[a, b]["length_m"]) for a, b in zip(path[:-1], path[1:]))
+                if length <= max_path_length_m and (best_out is None or length < best_out[0]):
+                    best_out = (length, f, c, path)
+
+    # Opposite carriageway probe (must not be accepted as valid for this direction)
+    opp_touch = False
+    for c in opp_in_H:
+        for f in fac_set:
+            if f in H and c in H and (nx.has_path(H, c, f) or nx.has_path(H, f, c)):
+                opp_touch = True
+                break
+        if opp_touch:
+            break
+
+    if best_in and best_out:
+        hgv_in = path_hgv_status(H, best_in[3])
+        hgv_out = path_hgv_status(H, best_out[3])
+        if "restricted" in (hgv_in, hgv_out):
+            hgv = "restricted"
+        elif hgv_in == "permitted" and hgv_out == "permitted":
+            hgv = "permitted"
+        else:
+            hgv = "unknown"
+        result.update(
+            {
+                "directed_access_status": "entrance_and_exit",
+                "entrance_node_id": best_in[2],
+                "exit_node_id": best_out[1],
+                "carriageway_attach_node_id": best_in[1],
+                "entrance_path_m": round(best_in[0], 2),
+                "exit_path_m": round(best_out[0], 2),
+                "hgv_access_status": hgv,
+                "access_evidence": (
+                    f"Directed motorway/link path from carriageway node {best_in[1]} "
+                    f"to facility node {best_in[2]} ({best_in[0]:.1f} m) and return "
+                    f"from {best_out[1]} to {best_out[2]} ({best_out[0]:.1f} m). "
+                    f"HGV tags along paths aggregate to '{hgv}'. "
+                    "OSM topology ≠ verified legal truck access."
+                ),
+            }
+        )
+        return result
+
+    if best_in and not best_out:
+        result.update(
+            {
+                "directed_access_status": "entrance_only",
+                "entrance_node_id": best_in[2],
+                "carriageway_attach_node_id": best_in[1],
+                "entrance_path_m": round(best_in[0], 2),
+                "hgv_access_status": path_hgv_status(H, best_in[3]),
+                "access_evidence": "Entrance path found; no directed return/exit within limits",
+            }
+        )
+        return result
+
+    if best_out and not best_in:
+        result.update(
+            {
+                "directed_access_status": "exit_only",
+                "exit_node_id": best_out[1],
+                "carriageway_attach_node_id": best_out[2],
+                "exit_path_m": round(best_out[0], 2),
+                "hgv_access_status": path_hgv_status(H, best_out[3]),
+                "access_evidence": "Exit/return path found; no directed entrance within limits",
+            }
+        )
+        return result
+
+    if opp_touch and not best_in and not best_out:
+        result["directed_access_status"] = "opposite_carriageway_only"
+        result["access_evidence"] = (
+            "Facility touches opposite carriageway topology only; "
+            "refusing opposite-direction snap for this ADM travel direction"
+        )
+        return result
+
+    # Near motorway but no link paths
+    near_mw = any(
+        any(str(d.get("highway", "")) == "motorway" for _, _, d in _out_edges(G, n))
+        or any(str(d.get("highway", "")) == "motorway" for _, _, d in _in_edges(G, n))
+        for n, _ in near
+    )
+    if near_mw:
+        result["directed_access_status"] = "proximity_only"
+        result["access_evidence"] = (
+            "Facility is geometrically near motorway nodes, but no directed "
+            "motorway_link entrance/exit path was established"
+        )
+        return result
+
+    result["access_evidence"] = "No directed access evidence found"
+    return result
+
+
+def _poi_mask(pois: pd.DataFrame, token: str) -> pd.Series:
+    mask = pois["name_norm"].str.contains(re.escape(token), na=False)
+    if token in {"berrchid", "berrechid"}:
+        mask = pois["name_norm"].str.contains(r"berr?echid|berrchid", na=False, regex=True)
+    if token in {"oum rbii", "oum rbia"}:
+        mask = pois["name_norm"].str.contains(r"oum\s*rb", na=False, regex=True)
+    if token == "benguerir":
+        mask = pois["name_norm"].str.contains(r"ben\s*guerir|benguerir", na=False, regex=True)
+    return mask
 
 
 def match_candidate_to_graph(
     candidate: AdmCandidate,
     pois: pd.DataFrame,
-    G: nx.DiGraph,
+    G: nx.Graph,
     max_match_distance_m: float,
     max_connection_distance_m: float,
     bearing_tol: float,
 ) -> dict[str, Any]:
-    """Match one ADM candidate. Never invents coordinates on failure."""
-    base = {
+    """Validate location and directed access. Never invents coordinates."""
+    base: dict[str, Any] = {
         "official_name": candidate.official_name,
         "partner": candidate.partner,
         "travel_direction": candidate.travel_direction,
@@ -248,112 +505,133 @@ def match_candidate_to_graph(
         "lat": None,
         "lon": None,
         "osm_id": None,
+        "location_match_status": "unmatched",
+        "directed_access_status": "unresolved",
+        "hgv_access_status": "unknown",
         "connected_node_id": None,
         "connection_distance_m": None,
-        "match_status": "unresolved",
+        "entrance_node_id": None,
+        "exit_node_id": None,
+        "entrance_path_m": None,
+        "exit_path_m": None,
         "requires_manual_review": True,
         "evidence": "",
+        # Deprecated Task 01 field retained for schema continuity (never 'verified' by proximity alone)
+        "match_status": "unresolved",
     }
 
     if pois.empty:
         base["evidence"] = "No OSM service/fuel POIs available in extract for matching"
         return base
 
-    token = candidate.name_token
-    # Prefer name contains token
-    mask = pois["name_norm"].str.contains(re.escape(token), na=False)
-    # Berrechid spelling variants
-    if token in {"berrchid", "berrechid"}:
-        mask = pois["name_norm"].str.contains(r"berr?echid|berrchid", na=False, regex=True)
-    if token in {"oum rbii", "oum rbia"}:
-        mask = pois["name_norm"].str.contains(r"oum\s*rb", na=False, regex=True)
-    if token == "benguerir":
-        mask = pois["name_norm"].str.contains(r"ben\s*guerir|benguerir", na=False, regex=True)
-
-    hits = pois[mask]
+    hits = pois[_poi_mask(pois, candidate.name_token)]
     if hits.empty:
-        base["evidence"] = f"No OSM POI name matched token '{token}'"
+        base["evidence"] = f"No OSM POI name matched token '{candidate.name_token}'"
         return base
 
-    # Evaluate each hit for direction-compatible motorway connection
-    best: dict[str, Any] | None = None
-    for _, poi in hits.iterrows():
-        lon, lat = float(poi["lon"]), float(poi["lat"])
-        candidates_nodes = nearest_nodes(G, lon, lat, k=20)
-        for nid, dist_m in candidates_nodes:
-            if dist_m > max_match_distance_m:
-                break
-            # Look at outgoing edges from this node (or incoming for reverse)
-            for _, v, edata in G.out_edges(nid, data=True):
-                if edata.get("highway") not in {"motorway", "motorway_link"}:
-                    continue
-                if not edge_compatible_with_direction(G, nid, v, candidate.travel_direction, bearing_tol):
-                    continue
-                if dist_m > max_connection_distance_m:
-                    # Within match radius but beyond preferred connection distance
-                    status = "probable"
-                else:
-                    status = "verified" if token in normalize_token(str(poi["name"])) else "probable"
-                proposal = {
-                    "lat": lat,
-                    "lon": lon,
-                    "osm_id": poi["osm_id"],
-                    "connected_node_id": nid,
-                    "connection_distance_m": round(dist_m, 2),
-                    "match_status": status,
-                    "requires_manual_review": status != "verified",
-                    "evidence": (
-                        f"OSM feature osm_id={poi['osm_id']} name='{poi['name']}' "
-                        f"matched token '{token}'; connected to directed motorway node {nid} "
-                        f"at {dist_m:.1f} m; bearing-compatible with {candidate.travel_direction}"
-                    ),
-                }
-                if best is None or proposal["connection_distance_m"] < best["connection_distance_m"]:
-                    best = proposal
-                break  # first compatible edge for this node
-            if best and best.get("match_status") == "verified" and best["connection_distance_m"] < 100:
-                break
-
-    if best is None:
-        # Name matched but no direction-compatible connection — do not snap to opposite carriageway
-        # Still record coordinates of the OSM feature as location evidence, but mark unresolved for routing link
-        poi = hits.iloc[0]
-        base["lat"] = float(poi["lat"])
-        base["lon"] = float(poi["lon"])
-        base["osm_id"] = poi["osm_id"]
-        base["match_status"] = "unresolved"
-        base["requires_manual_review"] = True
+    # Prefer genuine service-area / rest-area / fuel features; reject weak name collisions
+    # (e.g. "Chambre de commerce ... Settat" must not count as ADS Settat).
+    hits = hits.copy()
+    name_l = hits["name"].astype(str).str.lower()
+    hwy = hits["highway"].astype(str).str.lower()
+    amen = hits["amenity"].astype(str).str.lower()
+    hits["_is_aire"] = name_l.str.contains(r"aire\s+de\s+service|rest\s*area|aire\s+de\s+repos", regex=True)
+    hits["_is_services_tag"] = hwy.isin(["services", "rest_area"]) | amen.isin(["fuel", "charging_station"])
+    hits["_rank"] = hits["_is_aire"].astype(int) * 3 + hits["_is_services_tag"].astype(int)
+    hits = hits.sort_values("_rank", ascending=False)
+    best_rank = int(hits.iloc[0]["_rank"])
+    if best_rank <= 0:
         base["evidence"] = (
-            f"OSM name match for '{token}' (osm_id={poi['osm_id']}) but no "
-            f"direction-compatible motorway connection for {candidate.travel_direction}; "
-            "refusing opposite-carriageway snap"
+            f"OSM name token '{candidate.name_token}' matched only non-service features "
+            f"(e.g. '{hits.iloc[0]['name']}'); refusing false-positive location match"
         )
         return base
 
-    base.update(best)
+    poi = hits.iloc[0]
+    lon, lat = float(poi["lon"]), float(poi["lat"])
+    base.update(
+        {
+            "lat": lat,
+            "lon": lon,
+            "osm_id": poi["osm_id"],
+            "location_match_status": "matched_osm",
+        }
+    )
+
+    access = find_directed_access(
+        G,
+        lon,
+        lat,
+        candidate.travel_direction,
+        max_facility_node_dist_m=max_match_distance_m,
+        bearing_tol=bearing_tol,
+        max_path_length_m=max(2500.0, max_connection_distance_m * 4),
+    )
+    base.update(
+        {
+            "directed_access_status": access["directed_access_status"],
+            "hgv_access_status": access["hgv_access_status"],
+            "entrance_node_id": access.get("entrance_node_id"),
+            "exit_node_id": access.get("exit_node_id"),
+            "connected_node_id": access.get("carriageway_attach_node_id")
+            or access.get("entrance_node_id")
+            or access.get("exit_node_id"),
+            "entrance_path_m": access.get("entrance_path_m"),
+            "exit_path_m": access.get("exit_path_m"),
+            "connection_distance_m": access.get("entrance_path_m") or access.get("exit_path_m"),
+            "evidence": (
+                f"OSM location osm_id={poi['osm_id']} name='{poi['name']}'. "
+                f"{access.get('access_evidence', '')}"
+            ),
+        }
+    )
+
+    # Conservative legacy match_status for continuity
+    if access["directed_access_status"] == "entrance_and_exit":
+        base["match_status"] = "access_topology_ok"
+        # Still require manual review unless HGV explicitly permitted
+        base["requires_manual_review"] = access["hgv_access_status"] != "permitted"
+    elif access["directed_access_status"] in {"entrance_only", "exit_only", "proximity_only", "opposite_carriageway_only"}:
+        base["match_status"] = "partial_access"
+        base["requires_manual_review"] = True
+    else:
+        base["match_status"] = "unresolved"
+        base["requires_manual_review"] = True
+
     return base
 
 
 def build_candidate_sites(
     config: dict[str, Any],
-    G: nx.DiGraph,
+    G: nx.Graph,
     pbf_path: Path,
     bbox: list[float],
     adm_html_cache: Path | None = None,
+    *,
+    allow_network: bool = True,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     sa = config["service_areas"]
     url = sa["source_url"]
-    meta: dict[str, Any] = {"adm_url": url, "adm_trafic": probe_adm_trafic()}
+    meta: dict[str, Any] = {"adm_url": url}
 
     if adm_html_cache and adm_html_cache.exists():
         html = adm_html_cache.read_text(encoding="utf-8")
         meta["adm_html_source"] = str(adm_html_cache)
+        meta["adm_fetched"] = False
     else:
+        if not allow_network:
+            raise ServiceAreaError("ADM HTML cache missing and network disallowed")
         html = fetch_adm_directory(url)
         if adm_html_cache:
             adm_html_cache.parent.mkdir(parents=True, exist_ok=True)
             adm_html_cache.write_text(html, encoding="utf-8")
             meta["adm_html_source"] = str(adm_html_cache)
+        meta["adm_fetched"] = True
+
+    if allow_network:
+        meta["adm_trafic"] = probe_adm_trafic()
+    else:
+        meta["adm_trafic"] = {"ok": False, "note": "Skipped (offline rebuild)"}
 
     candidates = parse_adm_candidates(html, url, sa["corridor_name_tokens"])
     pois = collect_osm_service_pois_pyrosm(pbf_path, bbox)
@@ -370,9 +648,7 @@ def build_candidate_sites(
         )
         for c in candidates
     ]
-    df = pd.DataFrame(rows)
-    # Ensure nulls stay empty for unresolved coords when truly missing
-    return df, meta
+    return pd.DataFrame(rows), meta
 
 
 def write_candidate_sites(df: pd.DataFrame, path: Path) -> None:

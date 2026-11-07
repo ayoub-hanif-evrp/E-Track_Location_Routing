@@ -36,16 +36,17 @@ def assert_edges_reference_nodes(nodes: pd.DataFrame, edges: pd.DataFrame) -> No
         raise AssertionError(f"Edges reference missing nodes u={missing_u} v={missing_v}")
 
 
-def assert_directed_graph(G: nx.DiGraph) -> None:
+def assert_directed_graph(G: nx.Graph) -> None:
     if not G.is_directed():
         raise AssertionError("Graph must be directed")
 
 
-def network_summary(G: nx.DiGraph) -> dict[str, Any]:
+def network_summary(G: nx.Graph) -> dict[str, Any]:
     und = G.to_undirected()
     return {
         "n_nodes": G.number_of_nodes(),
         "n_edges": G.number_of_edges(),
+        "is_multigraph": bool(G.is_multigraph()),
         "weakly_connected_components": nx.number_weakly_connected_components(G),
         "strongly_connected_components": nx.number_strongly_connected_components(G),
         "undirected_connected_components": nx.number_connected_components(und),
@@ -53,21 +54,21 @@ def network_summary(G: nx.DiGraph) -> dict[str, Any]:
 
 
 def candidate_coord_honesty(sites: pd.DataFrame) -> None:
-    """Unresolved rows without OSM evidence must not invent coordinates.
-
-    Rows may carry OSM POI coordinates while still unresolved for direction link.
-    Rows with match_status=unresolved AND empty evidence of OSM id must have null coords.
-    """
+    """Unmatched locations without OSM id must not invent coordinates."""
     for _, row in sites.iterrows():
-        status = str(row.get("match_status", ""))
+        loc = str(row.get("location_match_status", row.get("match_status", "")))
         osm_id = row.get("osm_id")
         lat, lon = row.get("lat"), row.get("lon")
         has_coords = pd.notna(lat) and pd.notna(lon)
-        if status == "unresolved" and (osm_id is None or (isinstance(osm_id, float) and math.isnan(osm_id)) or str(osm_id) == ""):
-            if has_coords:
-                raise AssertionError(
-                    f"Unresolved candidate without OSM id has fabricated coords: {row.get('official_name')}"
-                )
+        missing_osm = (
+            osm_id is None
+            or (isinstance(osm_id, float) and math.isnan(osm_id))
+            or str(osm_id).strip() == ""
+        )
+        if loc in {"unmatched", "unresolved"} and missing_osm and has_coords:
+            raise AssertionError(
+                f"Unmatched candidate without OSM id has fabricated coords: {row.get('official_name')}"
+            )
 
 
 def load_processed_tables(processed_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:

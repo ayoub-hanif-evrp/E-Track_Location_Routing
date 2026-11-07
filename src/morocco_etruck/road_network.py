@@ -12,7 +12,7 @@ import networkx as nx
 import pandas as pd
 from pyproj import Geod
 from shapely import wkt
-from shapely.geometry import LineString, mapping, shape
+from shapely.geometry import LineString, mapping
 
 logger = logging.getLogger(__name__)
 GEOD = Geod(ellps="WGS84")
@@ -28,12 +28,9 @@ def geodesic_length_m(coords: list[tuple[float, float]]) -> float:
     """Length in metres along WGS84 geodesic. coords are (lon, lat)."""
     if len(coords) < 2:
         return 0.0
-    lons = [c[0] for c in coords]
-    lats = [c[1] for c in coords]
-    # Geometry length via pairwise inverse
     total = 0.0
     for i in range(len(coords) - 1):
-        _, _, dist = GEOD.inv(lons[i], lats[i], lons[i + 1], lats[i + 1])
+        _, _, dist = GEOD.inv(coords[i][0], coords[i][1], coords[i + 1][0], coords[i + 1][1])
         total += abs(dist)
     return float(total)
 
@@ -73,24 +70,6 @@ def classify_hgv_access(tags: dict[str, Any]) -> str:
     return "unknown"
 
 
-def _edge_direction_mode(oneway: Any, highway: str) -> str:
-    """Return 'forward', 'both', or 'reverse' based on OSM oneway conventions."""
-    if oneway is None or (isinstance(oneway, float) and math.isnan(oneway)):
-        # Motorways are typically oneway in OSM; if unset, treat as forward-only
-        # but record uncertainty via attribute rather than inventing reverse edges.
-        if highway in HIGHWAY_MOTORWAY:
-            return "forward"
-        return "both"
-    v = str(oneway).strip().lower()
-    if v in {"yes", "true", "1"}:
-        return "forward"
-    if v in {"-1", "reverse"}:
-        return "reverse"
-    if v in {"no", "false", "0"}:
-        return "both"
-    return "forward"
-
-
 def bearing_deg(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
     az, _, _ = GEOD.inv(lon1, lat1, lon2, lat2)
     return (az + 360.0) % 360.0
@@ -114,20 +93,14 @@ def load_network_tables_pyrosm(
     nodes, edges = osm.get_network(nodes=True, network_type="driving")
     if edges is None or edges.empty:
         raise RoadNetworkError("pyrosm returned no driving edges for bbox")
-    # Filter highway classes
     edges = edges[edges["highway"].isin(highway_classes)].copy()
     if edges.empty:
-        raise RoadNetworkError(
-            f"No edges with highway in {highway_classes} inside bbox"
-        )
-    # Keep only nodes referenced by retained edges
+        raise RoadNetworkError(f"No edges with highway in {highway_classes} inside bbox")
     used = set(edges["u"].tolist()) | set(edges["v"].tolist())
-    if nodes is not None and not nodes.empty:
-        id_col = "id" if "id" in nodes.columns else "osmid"
-        nodes = nodes[nodes[id_col].isin(used)].copy()
-    else:
-        # Reconstruct minimal nodes from edge endpoints if needed
+    if nodes is None or nodes.empty:
         raise RoadNetworkError("pyrosm returned edges without nodes")
+    id_col = "id" if "id" in nodes.columns else "osmid"
+    nodes = nodes[nodes[id_col].isin(used)].copy()
     return nodes, edges
 
 
@@ -146,11 +119,27 @@ def _coords_from_geometry(geom: Any) -> list[tuple[float, float]]:
     return []
 
 
-def build_digraph_from_pyrosm(
+def _is_reverse_oneway(oneway: Any) -> bool:
+    if oneway is None or (isinstance(oneway, float) and math.isnan(oneway)):
+        return False
+    return str(oneway).strip().lower() in {"-1", "reverse"}
+
+
+def build_multidigraph_from_directed_edges(
     nodes: pd.DataFrame,
     edges: pd.DataFrame,
-) -> nx.DiGraph:
-    G = nx.DiGraph()
+    *,
+    assume_pyrosm_pre_expanded: bool = True,
+) -> tuple[nx.MultiDiGraph, dict[str, Any]]:
+    """
+    Build a MultiDiGraph from edge rows that are already travel-directed.
+
+    pyrosm ``get_network`` expands OSM ways into directed edge rows. Re-expanding
+    ``oneway=no`` into both directions would duplicate bidirectional roads.
+    When ``assume_pyrosm_pre_expanded`` is True (default), each row becomes exactly
+    one directed edge; ``oneway=-1`` reverses orientation and geometry.
+    """
+    G = nx.MultiDiGraph()
     id_col = "id" if "id" in nodes.columns else "osmid"
     for _, row in nodes.iterrows():
         nid = int(row[id_col])
@@ -165,6 +154,10 @@ def build_digraph_from_pyrosm(
             y=lat,
             crs_epsg=4326,
         )
+
+    parallel_if_digraph = 0
+    seen_uv: dict[tuple[int, int], int] = {}
+    edges_added = 0
 
     for idx, row in edges.iterrows():
         u = int(row["u"])
@@ -183,14 +176,16 @@ def build_digraph_from_pyrosm(
             "name": row.get("name"),
             "ref": row.get("ref"),
         }
-        # Drop NaNs from tags
-        tags = {k: v for k, v in tags.items() if v is not None and not (isinstance(v, float) and math.isnan(v))}
+        tags = {
+            k: v
+            for k, v in tags.items()
+            if v is not None and not (isinstance(v, float) and math.isnan(v))
+        }
 
-        coords = _coords_from_geometry(row.geometry if hasattr(row, "geometry") else row.get("geometry"))
-        length_m = geodesic_length_m(coords) if coords else float(row.get("length", 0.0) or 0.0)
-        if length_m <= 0 and coords:
-            length_m = geodesic_length_m(coords)
-        # pyrosm length is often in metres already when present
+        coords = _coords_from_geometry(
+            row.geometry if hasattr(row, "geometry") else row.get("geometry")
+        )
+        length_m = geodesic_length_m(coords) if coords else 0.0
         if length_m <= 0 and "length" in row.index and pd.notna(row["length"]):
             length_m = float(row["length"])
 
@@ -203,16 +198,30 @@ def build_digraph_from_pyrosm(
         hgv = classify_hgv_access(tags)
         maxspeed_raw = tags.get("maxspeed")
         maxspeed_kmh = parse_maxspeed(maxspeed_raw)
-        mode = _edge_direction_mode(oneway, highway)
 
-        def add_directed(a: int, b: int, reversed_flag: bool) -> None:
-            edge_coords = list(reversed(coords)) if reversed_flag and coords else coords
+        a, b, edge_coords = u, v, coords
+        if _is_reverse_oneway(oneway):
+            a, b = v, u
+            edge_coords = list(reversed(coords)) if coords else coords
+
+        # If not assuming pre-expansion and oneway explicitly allows both, add reverse too.
+        directions = [(a, b, edge_coords)]
+        if not assume_pyrosm_pre_expanded:
+            ow = "" if oneway is None else str(oneway).strip().lower()
+            if ow in {"no", "false", "0"} or (ow == "" and highway not in HIGHWAY_MOTORWAY):
+                directions.append((b, a, list(reversed(edge_coords)) if edge_coords else edge_coords))
+
+        for aa, bb, ecoords in directions:
+            key = (aa, bb)
+            seen_uv[key] = seen_uv.get(key, 0) + 1
+            if seen_uv[key] > 1:
+                parallel_if_digraph += 1
             brg = None
-            if len(edge_coords) >= 2:
-                brg = bearing_deg(edge_coords[0][0], edge_coords[0][1], edge_coords[-1][0], edge_coords[-1][1])
+            if ecoords and len(ecoords) >= 2:
+                brg = bearing_deg(ecoords[0][0], ecoords[0][1], ecoords[-1][0], ecoords[-1][1])
             G.add_edge(
-                a,
-                b,
+                aa,
+                bb,
                 osm_way_id=osm_way_id,
                 length_m=float(length_m),
                 highway=highway,
@@ -225,32 +234,62 @@ def build_digraph_from_pyrosm(
                 hgv_access=hgv,
                 name=str(tags.get("name", "")),
                 ref=str(tags.get("ref", "")),
-                geometry_wkt=LineString(edge_coords).wkt if len(edge_coords) >= 2 else "",
+                geometry_wkt=LineString(ecoords).wkt if ecoords and len(ecoords) >= 2 else "",
                 bearing_deg=brg if brg is not None else "",
                 crs_epsg=4326,
             )
+            edges_added += 1
 
-        if mode == "forward":
-            add_directed(u, v, False)
-        elif mode == "reverse":
-            add_directed(v, u, True)
-        else:
-            add_directed(u, v, False)
-            add_directed(v, u, True)
+    audit = {
+        "assume_pyrosm_pre_expanded": assume_pyrosm_pre_expanded,
+        "n_nodes": G.number_of_nodes(),
+        "n_edges_multidigraph": G.number_of_edges(),
+        "parallel_uv_collisions_if_digraph": parallel_if_digraph,
+        "unique_directed_uv_pairs": len(seen_uv),
+        "note": (
+            "parallel_uv_collisions_if_digraph counts additional edges that share the same "
+            "(u,v) and would overwrite attributes in nx.DiGraph; MultiDiGraph preserves them."
+        ),
+    }
+    logger.info(
+        "Built MultiDiGraph: %d nodes, %d edges (%d parallel collisions vs DiGraph)",
+        audit["n_nodes"],
+        audit["n_edges_multidigraph"],
+        parallel_if_digraph,
+    )
+    return G, audit
 
+
+# Backward-compatible alias used in older call sites / tests
+def build_digraph_from_pyrosm(
+    nodes: pd.DataFrame,
+    edges: pd.DataFrame,
+) -> nx.MultiDiGraph:
+    G, _ = build_multidigraph_from_directed_edges(nodes, edges)
     return G
 
 
-def resolve_extract_input(raw_dir: Path, extract_info: dict[str, Any], national_pbf: Path) -> tuple[Path, list[float]]:
+def resolve_extract_input(
+    raw_dir: Path,
+    extract_info: dict[str, Any],
+    national_pbf: Path,
+    root: Path | None = None,
+) -> tuple[Path, list[float]]:
     """Return the PBF path to read and bbox for Python-side filtering."""
+    root = root or raw_dir.parent.parent
+
+    def _abs(p: str | Path) -> Path:
+        path = Path(p)
+        if path.is_absolute():
+            return path
+        return (root / path).resolve()
+
     if extract_info.get("tool") == "osmium-extract":
-        out = Path(extract_info["output"])
-        return out, extract_info["bbox"]
+        return _abs(extract_info["output"]), extract_info["bbox"]
     if extract_info.get("tool") == "pyrosm-python-bbox-filter":
-        marker = Path(extract_info["marker"])
+        marker = _abs(extract_info["marker"])
         data = json.loads(marker.read_text(encoding="utf-8"))
-        return Path(data["source_pbf"]), list(data["bbox"])
-    # Default
+        return _abs(data["source_pbf"]), list(data["bbox"])
     return national_pbf, extract_info.get("bbox", [])
 
 
@@ -258,80 +297,84 @@ def build_pilot_graph(
     national_pbf: Path,
     extract_info: dict[str, Any],
     config: dict[str, Any],
-) -> nx.DiGraph:
+    root: Path | None = None,
+) -> tuple[nx.MultiDiGraph, dict[str, Any]]:
     raw_dir = Path(national_pbf).parent
-    pbf_path, bbox = resolve_extract_input(raw_dir, extract_info, national_pbf)
+    pbf_path, bbox = resolve_extract_input(raw_dir, extract_info, national_pbf, root=root)
     highway_classes = list(config["osm"]["highway_classes"])
     nodes, edges = load_network_tables_pyrosm(pbf_path, bbox, highway_classes)
-    G = build_digraph_from_pyrosm(nodes, edges)
+    G, audit = build_multidigraph_from_directed_edges(nodes, edges)
     if G.number_of_edges() == 0:
         raise RoadNetworkError("Directed graph has zero edges after filtering")
-    logger.info(
-        "Built digraph: %d nodes, %d edges",
-        G.number_of_nodes(),
-        G.number_of_edges(),
-    )
-    return G
+    return G, audit
 
 
-def export_graph_artifacts(G: nx.DiGraph, processed_dir: Path) -> dict[str, Path]:
+def export_graph_artifacts(G: nx.MultiDiGraph | nx.DiGraph, processed_dir: Path) -> dict[str, Path]:
     processed_dir.mkdir(parents=True, exist_ok=True)
     nodes_path = processed_dir / "road_nodes.csv"
     edges_path = processed_dir / "road_edges.csv"
     graphml_path = processed_dir / "pilot_network.graphml"
     geojson_path = processed_dir / "pilot_network.geojson"
 
-    node_rows = []
-    for nid, data in G.nodes(data=True):
-        node_rows.append(
-            {
-                "node_id": nid,
-                "osm_node_id": data.get("osm_node_id", nid),
-                "lon": data.get("lon"),
-                "lat": data.get("lat"),
-                "crs_epsg": data.get("crs_epsg", 4326),
-            }
-        )
+    node_rows = [
+        {
+            "node_id": nid,
+            "osm_node_id": data.get("osm_node_id", nid),
+            "lon": data.get("lon"),
+            "lat": data.get("lat"),
+            "crs_epsg": data.get("crs_epsg", 4326),
+        }
+        for nid, data in G.nodes(data=True)
+    ]
     pd.DataFrame(node_rows).to_csv(nodes_path, index=False)
 
     edge_rows = []
     features = []
-    for u, v, data in G.edges(data=True):
-        edge_rows.append(
-            {
-                "u": u,
-                "v": v,
-                "osm_way_id": data.get("osm_way_id"),
-                "length_m": data.get("length_m"),
-                "highway": data.get("highway"),
-                "oneway": data.get("oneway"),
-                "maxspeed_raw": data.get("maxspeed_raw"),
-                "maxspeed_kmh": data.get("maxspeed_kmh"),
-                "access": data.get("access"),
-                "hgv_tag": data.get("hgv_tag"),
-                "goods_tag": data.get("goods_tag"),
-                "hgv_access": data.get("hgv_access"),
-                "name": data.get("name"),
-                "ref": data.get("ref"),
-                "bearing_deg": data.get("bearing_deg"),
-                "geometry_wkt": data.get("geometry_wkt"),
-                "crs_epsg": data.get("crs_epsg", 4326),
-            }
-        )
+    # Support MultiDiGraph (u, v, key, data) and DiGraph (u, v, data)
+    if G.is_multigraph():
+        edge_iter = ((u, v, k, d) for u, v, k, d in G.edges(keys=True, data=True))
+    else:
+        edge_iter = ((u, v, 0, d) for u, v, d in G.edges(data=True))
+
+    for u, v, key, data in edge_iter:
+        row = {
+            "u": u,
+            "v": v,
+            "edge_key": key,
+            "osm_way_id": data.get("osm_way_id"),
+            "length_m": data.get("length_m"),
+            "highway": data.get("highway"),
+            "oneway": data.get("oneway"),
+            "maxspeed_raw": data.get("maxspeed_raw"),
+            "maxspeed_kmh": data.get("maxspeed_kmh"),
+            "access": data.get("access"),
+            "hgv_tag": data.get("hgv_tag"),
+            "goods_tag": data.get("goods_tag"),
+            "hgv_access": data.get("hgv_access"),
+            "name": data.get("name"),
+            "ref": data.get("ref"),
+            "bearing_deg": data.get("bearing_deg"),
+            "geometry_wkt": data.get("geometry_wkt"),
+            "crs_epsg": data.get("crs_epsg", 4326),
+        }
+        edge_rows.append(row)
         wkt_s = data.get("geometry_wkt") or ""
         if wkt_s:
             geom = wkt.loads(wkt_s)
-            props = {k: ("" if v is None else v) for k, v in edge_rows[-1].items() if k != "geometry_wkt"}
+            props = {k: ("" if val is None else val) for k, val in row.items() if k != "geometry_wkt"}
             features.append({"type": "Feature", "geometry": mapping(geom), "properties": props})
 
     pd.DataFrame(edge_rows).to_csv(edges_path, index=False)
 
-    # GraphML cannot store complex types cleanly; stringify Nones
-    H = nx.DiGraph()
+    H = nx.MultiDiGraph() if G.is_multigraph() else nx.DiGraph()
     for nid, data in G.nodes(data=True):
-        H.add_node(nid, **{k: ("" if v is None else v) for k, v in data.items()})
-    for u, v, data in G.edges(data=True):
-        H.add_edge(u, v, **{k: ("" if v is None else v) for k, v in data.items()})
+        H.add_node(nid, **{k: ("" if val is None else val) for k, val in data.items()})
+    if G.is_multigraph():
+        for u, v, key, data in G.edges(keys=True, data=True):
+            H.add_edge(u, v, key=key, **{k: ("" if val is None else val) for k, val in data.items()})
+    else:
+        for u, v, data in G.edges(data=True):
+            H.add_edge(u, v, **{k: ("" if val is None else val) for k, val in data.items()})
     nx.write_graphml(H, graphml_path)
 
     fc = {
@@ -340,7 +383,6 @@ def export_graph_artifacts(G: nx.DiGraph, processed_dir: Path) -> dict[str, Path
         "features": features,
     }
     geojson_path.write_text(json.dumps(fc), encoding="utf-8")
-
     logger.info("Exported graph artifacts to %s", processed_dir)
     return {
         "road_nodes": nodes_path,
@@ -350,10 +392,10 @@ def export_graph_artifacts(G: nx.DiGraph, processed_dir: Path) -> dict[str, Path
     }
 
 
-def load_graph_from_csv(nodes_csv: Path, edges_csv: Path) -> nx.DiGraph:
+def load_graph_from_csv(nodes_csv: Path, edges_csv: Path) -> nx.MultiDiGraph:
     nodes = pd.read_csv(nodes_csv)
     edges = pd.read_csv(edges_csv)
-    G = nx.DiGraph()
+    G = nx.MultiDiGraph()
     for _, row in nodes.iterrows():
         G.add_node(
             int(row["node_id"]),
@@ -366,5 +408,46 @@ def load_graph_from_csv(nodes_csv: Path, edges_csv: Path) -> nx.DiGraph:
         attrs = row.to_dict()
         u = int(attrs.pop("u"))
         v = int(attrs.pop("v"))
-        G.add_edge(u, v, **attrs)
+        key = int(attrs.pop("edge_key")) if "edge_key" in attrs and pd.notna(attrs.get("edge_key")) else 0
+        # Clean NaN
+        clean = {}
+        for k, val in attrs.items():
+            if isinstance(val, float) and math.isnan(val):
+                clean[k] = ""
+            else:
+                clean[k] = val
+        G.add_edge(u, v, key=key, **clean)
     return G
+
+
+def path_edge_geometries(
+    G: nx.Graph,
+    path: list[Any],
+) -> list[tuple[float, float]]:
+    """Concatenate directed edge geometries along a node path (travel orientation)."""
+    coords: list[tuple[float, float]] = []
+    for u, v in zip(path[:-1], path[1:]):
+        data = _best_edge_data(G, u, v)
+        wkt_s = data.get("geometry_wkt") or ""
+        if wkt_s:
+            geom = wkt.loads(str(wkt_s))
+            seg = list(geom.coords)
+        else:
+            seg = [(float(G.nodes[u]["lon"]), float(G.nodes[u]["lat"])),
+                   (float(G.nodes[v]["lon"]), float(G.nodes[v]["lat"]))]
+        if coords and seg and coords[-1] == seg[0]:
+            coords.extend(seg[1:])
+        else:
+            coords.extend(seg)
+    return coords
+
+
+def _best_edge_data(G: nx.Graph, u: Any, v: Any) -> dict[str, Any]:
+    if G.is_multigraph():
+        edges = G.get_edge_data(u, v)
+        if not edges:
+            raise KeyError((u, v))
+        # Prefer shortest length among parallel edges
+        key = min(edges, key=lambda k: float(edges[k].get("length_m") or 0.0))
+        return edges[key]
+    return G.edges[u, v]

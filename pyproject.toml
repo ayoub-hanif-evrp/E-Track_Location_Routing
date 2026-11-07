@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "morocco-etruck"
 version = "0.1.0"
-description = "Task 01: real Moroccan motorway network and candidate charging sites for e-truck research"
+description = "Task 01/01B: audited Moroccan motorway network and candidate charging sites for e-truck research"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Research code; OSM-derived data under ODbL 1.0" }

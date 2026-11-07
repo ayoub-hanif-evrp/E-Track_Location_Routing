@@ -9,7 +9,7 @@ from typing import Any
 
 import networkx as nx
 
-from morocco_etruck.road_network import geodesic_length_m
+from morocco_etruck.road_network import geodesic_length_m, path_edge_geometries
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,25 @@ class RoutingError(Exception):
     pass
 
 
-def nearest_node(G: nx.DiGraph, lon: float, lat: float, max_radius_m: float) -> int:
+def _as_simple_digraph(G: nx.Graph) -> nx.DiGraph:
+    """Collapse parallel edges to the shortest length for Dijkstra baselines."""
+    if not G.is_multigraph():
+        return G  # type: ignore[return-value]
+    H = nx.DiGraph()
+    for n, data in G.nodes(data=True):
+        H.add_node(n, **data)
+    for u, v, _k, data in G.edges(keys=True, data=True):
+        length = float(data.get("length_m") or 0.0)
+        if H.has_edge(u, v):
+            if length < float(H.edges[u, v].get("length_m") or 0.0):
+                H.edges[u, v].clear()
+                H.edges[u, v].update(data)
+        else:
+            H.add_edge(u, v, **data)
+    return H
+
+
+def nearest_node(G: nx.Graph, lon: float, lat: float, max_radius_m: float) -> int:
     best_id = None
     best_d = float("inf")
     for nid, data in G.nodes(data=True):
@@ -33,29 +51,33 @@ def nearest_node(G: nx.DiGraph, lon: float, lat: float, max_radius_m: float) -> 
     return int(best_id)
 
 
-def a3_motorway_subgraph(G: nx.DiGraph) -> nx.DiGraph:
+def a3_motorway_subgraph(G: nx.Graph) -> nx.DiGraph:
     """Directed subgraph of edges tagged ref=A3 and highway=motorway."""
     H = nx.DiGraph()
-    for u, v, data in G.edges(data=True):
+    edge_iter = (
+        G.edges(keys=True, data=True)
+        if G.is_multigraph()
+        else ((u, v, 0, d) for u, v, d in G.edges(data=True))
+    )
+    for u, v, _k, data in edge_iter:
         ref = str(data.get("ref", "") or "")
         highway = str(data.get("highway", "") or "")
         if ref == "A3" and highway == "motorway":
             H.add_node(u, **G.nodes[u])
             H.add_node(v, **G.nodes[v])
-            H.add_edge(u, v, **data)
+            length = float(data.get("length_m") or 0.0)
+            if H.has_edge(u, v):
+                if length < float(H.edges[u, v].get("length_m") or 0.0):
+                    H.edges[u, v].clear()
+                    H.edges[u, v].update(data)
+            else:
+                H.add_edge(u, v, **data)
     if H.number_of_edges() == 0:
         raise RoutingError("No A3 motorway edges found for baseline routing")
     return H
 
 
 def directional_a3_components(H: nx.DiGraph) -> tuple[nx.DiGraph, nx.DiGraph]:
-    """
-    Split A3 into the two directed carriageway components.
-
-    Moroccan A3 is dual carriageway: OSM encodes each direction as a separate
-    weakly connected digraph component. Identify southbound (Casa→Agadir) as the
-    component where a northern node can reach a southern node.
-    """
     components = [H.subgraph(c).copy() for c in nx.weakly_connected_components(H)]
     components = [c for c in components if c.number_of_nodes() >= 100]
     if len(components) < 2:
@@ -63,7 +85,7 @@ def directional_a3_components(H: nx.DiGraph) -> tuple[nx.DiGraph, nx.DiGraph]:
             f"Expected two large A3 carriageway components; found {len(components)}"
         )
 
-    def north_south(comp: nx.DiGraph) -> tuple[int, int]:
+    def north_south(comp: nx.DiGraph) -> tuple[Any, Any]:
         nodes = list(comp.nodes())
         north = max(nodes, key=lambda n: float(comp.nodes[n]["lat"]))
         south = min(nodes, key=lambda n: float(comp.nodes[n]["lat"]))
@@ -86,7 +108,7 @@ def directional_a3_components(H: nx.DiGraph) -> tuple[nx.DiGraph, nx.DiGraph]:
     return southbound, northbound
 
 
-def nearest_node_in_graph(G: nx.DiGraph, lon: float, lat: float) -> tuple[int, float]:
+def nearest_node_in_graph(G: nx.Graph, lon: float, lat: float) -> tuple[Any, float]:
     best_id = None
     best_d = float("inf")
     for nid, data in G.nodes(data=True):
@@ -96,35 +118,29 @@ def nearest_node_in_graph(G: nx.DiGraph, lon: float, lat: float) -> tuple[int, f
             best_id = nid
     if best_id is None:
         raise RoutingError("Empty graph when selecting anchor")
-    return int(best_id), float(best_d)
+    return best_id, float(best_d)
 
 
-def shortest_path_length_m(G: nx.DiGraph, source: int, target: int) -> tuple[list[int], float]:
-    path = nx.shortest_path(G, source=source, target=target, weight="length_m")
+def shortest_path_length_m(G: nx.Graph, source: Any, target: Any) -> tuple[list[Any], float]:
+    Gs = _as_simple_digraph(G)
+    path = nx.shortest_path(Gs, source=source, target=target, weight="length_m")
     length = 0.0
     for u, v in zip(path[:-1], path[1:]):
-        length += float(G.edges[u, v]["length_m"])
+        length += float(Gs.edges[u, v]["length_m"])
     return path, length
 
 
-def path_to_geojson(G: nx.DiGraph, path: list[int], properties: dict[str, Any]) -> dict[str, Any]:
-    coords = []
-    for nid in path:
-        coords.append([float(G.nodes[nid]["lon"]), float(G.nodes[nid]["lat"])])
+def path_to_geojson(G: nx.Graph, path: list[Any], properties: dict[str, Any]) -> dict[str, Any]:
+    """Build GeoJSON LineString from ordered OSM edge geometries (travel orientation)."""
+    coords = path_edge_geometries(G, path)
     return {
         "type": "Feature",
-        "geometry": {"type": "LineString", "coordinates": coords},
+        "geometry": {"type": "LineString", "coordinates": [[c[0], c[1]] for c in coords]},
         "properties": properties,
     }
 
 
-def run_baseline_routes(G: nx.DiGraph, config: dict[str, Any]) -> dict[str, Any]:
-    """
-    Run Casablanca↔Agadir shortest-distance baselines on directed A3 carriageways.
-
-    Dual-carriageway motorways are not strongly connected as a whole; each travel
-    direction is routed on its own A3 component.
-    """
+def run_baseline_routes(G: nx.Graph, config: dict[str, Any]) -> dict[str, Any]:
     anchors = config["anchors"]
     casa_lon = float(anchors["casablanca"]["lon"])
     casa_lat = float(anchors["casablanca"]["lat"])
@@ -144,7 +160,7 @@ def run_baseline_routes(G: nx.DiGraph, config: dict[str, Any]) -> dict[str, Any]
             "Shortest-distance paths on directed OSM A3 motorway carriageways for "
             "connectivity validation only. Dual carriageways are separate directed "
             "components. Not certified for heavy-goods vehicles; HGV access tags are "
-            "often unknown."
+            "often unknown. Route geometries use ordered OSM edge WKT."
         ),
         "method": "A3_ref_motorway_directional_components",
         "anchors": {
@@ -166,20 +182,8 @@ def run_baseline_routes(G: nx.DiGraph, config: dict[str, Any]) -> dict[str, Any]
 
     features = []
     jobs = [
-        (
-            "casablanca_to_agadir",
-            southbound,
-            casa_sb,
-            aga_sb,
-            "Casablanca→Agadir",
-        ),
-        (
-            "agadir_to_casablanca",
-            northbound,
-            aga_nb,
-            casa_nb,
-            "Agadir→Casablanca",
-        ),
+        ("casablanca_to_agadir", southbound, casa_sb, aga_sb, "Casablanca→Agadir"),
+        ("agadir_to_casablanca", northbound, aga_nb, casa_nb, "Agadir→Casablanca"),
     ]
 
     for key, graph, src, tgt, label in jobs:
@@ -204,6 +208,7 @@ def run_baseline_routes(G: nx.DiGraph, config: dict[str, Any]) -> dict[str, Any]
                         "route": key,
                         "label": label,
                         "distance_km": round(length_m / 1000.0, 3),
+                        "geometry_source": "edge_wkt",
                     },
                 )
             )
@@ -225,11 +230,9 @@ def run_baseline_routes(G: nx.DiGraph, config: dict[str, Any]) -> dict[str, Any]
 
     c2a = results["routes"]["casablanca_to_agadir"].get("distance_km")
     a2c = results["routes"]["agadir_to_casablanca"].get("distance_km")
-    if c2a is not None and a2c is not None:
-        results["direction_asymmetry_km"] = abs(c2a - a2c)
-    else:
-        results["direction_asymmetry_km"] = None
-
+    results["direction_asymmetry_km"] = (
+        abs(c2a - a2c) if c2a is not None and a2c is not None else None
+    )
     results["geojson"] = {"type": "FeatureCollection", "features": features}
     return results
 

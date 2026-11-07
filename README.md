@@ -97,10 +97,20 @@ Open `reports/pilot_corridor_report.html` after a successful build. Literature o
 
 ## Licences and attribution
 
-- **OpenStreetMap** data: © OpenStreetMap contributors, licensed under **ODbL 1.0**. Attribution required; derivative databases must remain ODbL-compatible. See https://www.openstreetmap.org/copyright
+- **Python research code** in this repository is provided for academic reproducibility of Task 01/01B. That grant does **not** change OSM licensing.
+- **OpenStreetMap-derived data** (road graphs, candidate location matches, route geometries): © OpenStreetMap contributors, **ODbL 1.0**. Attribution and share-alike apply to derivative databases. See https://www.openstreetmap.org/copyright
 - **Geofabrik** distributes OSM extracts under the same OSM licence terms.
-- **ADM** pages are cited for official naming and direction labels; ADM content is not treated as an open geospatial database. Seek permission before republishing ADM materials beyond fair academic citation.
-- Research code in this repository: provided for academic reproducibility of Task 01.
+- **ADM** pages are cited for official naming and direction labels; ADM content is not treated as an open geospatial database.
+
+### Accessibility field definitions (Task 01B)
+
+| Field | Meaning |
+|---|---|
+| `location_match_status` | `matched_osm` / `unmatched` — geographic identification only |
+| `directed_access_status` | `entrance_and_exit` / `entrance_only` / `exit_only` / `opposite_carriageway_only` / `proximity_only` / `unresolved` |
+| `hgv_access_status` | `permitted` / `restricted` / `unknown` from OSM tags along access paths |
+
+Proximity or bearing alone never yields truck-accessible verification. OSM topology ≠ legal HGV certification.
 
 ## Not yet implemented
 

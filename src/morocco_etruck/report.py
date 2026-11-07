@@ -1,4 +1,4 @@
-"""Generate an HTML research report for the pilot corridor."""
+"""Generate HTML and static figures for the pilot corridor."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import folium
+import matplotlib.pyplot as plt
 import pandas as pd
 
 from morocco_etruck.validation import network_summary
@@ -18,24 +19,36 @@ def _html_table(df: pd.DataFrame) -> str:
     return df.fillna("").to_html(index=False, border=1, classes="data")
 
 
+def _access_color(status: str) -> str:
+    return {
+        "entrance_and_exit": "green",
+        "entrance_only": "orange",
+        "exit_only": "orange",
+        "proximity_only": "purple",
+        "opposite_carriageway_only": "brown",
+        "unresolved": "red",
+    }.get(status, "gray")
+
+
 def generate_report(
     G,
     sites: pd.DataFrame,
     baseline: dict[str, Any],
     processed_dir: Path,
     reports_dir: Path,
-    title: str = "Task 01 — Casablanca–Agadir Pilot Network",
+    title: str = "Task 01B — Casablanca–Agadir Pilot Network (audited)",
 ) -> Path:
     reports_dir.mkdir(parents=True, exist_ok=True)
     out = reports_dir / "pilot_corridor_report.html"
 
-    # Map centre roughly mid-corridor
     m = folium.Map(location=[31.8, -8.4], zoom_start=7, tiles="OpenStreetMap")
 
-    # Sample edges for performance
-    edge_list = list(G.edges(data=True))
+    if G.is_multigraph():
+        edge_list = list(G.edges(keys=True, data=True))
+    else:
+        edge_list = [(u, v, 0, d) for u, v, d in G.edges(data=True)]
     step = max(1, len(edge_list) // 4000)
-    for i, (u, v, data) in enumerate(edge_list):
+    for i, (u, v, _k, data) in enumerate(edge_list):
         if i % step != 0:
             continue
         coords = [
@@ -47,27 +60,21 @@ def generate_report(
             brg_f = float(brg) if brg not in ("", None) else None
         except (TypeError, ValueError):
             brg_f = None
-        # Colour by rough travel direction: SW-ish = Casa→Agadir (blue), NE-ish = Agadir→Casa (orange)
         color = "#1f77b4"
         if brg_f is not None:
-            if 120 <= brg_f <= 300:
-                color = "#1f77b4"  # toward Agadir
-            else:
-                color = "#ff7f0e"
+            color = "#1f77b4" if 120 <= brg_f <= 300 else "#ff7f0e"
         folium.PolyLine(coords, color=color, weight=1, opacity=0.35).add_to(m)
 
-    # Baseline paths
     for feat in baseline.get("geojson", {}).get("features", []):
         coords = [[c[1], c[0]] for c in feat["geometry"]["coordinates"]]
         label = feat["properties"].get("label", "route")
         folium.PolyLine(coords, color="#d62728", weight=4, opacity=0.9, tooltip=label).add_to(m)
 
-    # Candidates
     for _, row in sites.iterrows():
-        status = str(row.get("match_status", "unresolved"))
         if pd.isna(row.get("lat")) or pd.isna(row.get("lon")):
             continue
-        color = {"verified": "green", "probable": "orange"}.get(status, "red")
+        status = str(row.get("directed_access_status", "unresolved"))
+        color = _access_color(status)
         folium.CircleMarker(
             location=[float(row["lat"]), float(row["lon"])],
             radius=7,
@@ -75,23 +82,25 @@ def generate_report(
             fill=True,
             fill_opacity=0.8,
             tooltip=f"{row.get('official_name')} [{status}]",
-            popup=f"{row.get('official_name')}<br>{row.get('travel_direction')}<br>{status}",
+            popup=(
+                f"{row.get('official_name')}<br>{row.get('travel_direction')}<br>"
+                f"location={row.get('location_match_status')}<br>"
+                f"access={status}<br>hgv={row.get('hgv_access_status')}"
+            ),
         ).add_to(m)
 
     map_html = m.get_root().render()
-
     summary = network_summary(G)
-    route_rows = []
-    for key, r in baseline.get("routes", {}).items():
-        route_rows.append(
-            {
-                "route": r.get("label", key),
-                "ok": r.get("ok"),
-                "distance_km": r.get("distance_km"),
-                "n_nodes": r.get("n_nodes"),
-                "error": r.get("error"),
-            }
-        )
+    route_rows = [
+        {
+            "route": r.get("label", key),
+            "ok": r.get("ok"),
+            "distance_km": r.get("distance_km"),
+            "n_nodes": r.get("n_nodes"),
+            "error": r.get("error"),
+        }
+        for key, r in baseline.get("routes", {}).items()
+    ]
     routes_df = pd.DataFrame(route_rows)
     net_df = pd.DataFrame([summary])
     site_cols = [
@@ -103,9 +112,11 @@ def generate_report(
             "lat",
             "lon",
             "osm_id",
-            "connected_node_id",
-            "connection_distance_m",
-            "match_status",
+            "location_match_status",
+            "directed_access_status",
+            "hgv_access_status",
+            "entrance_path_m",
+            "exit_path_m",
             "requires_manual_review",
             "evidence",
         ]
@@ -115,13 +126,12 @@ def generate_report(
     limitations = """
     <h2>Data quality limitations</h2>
     <ul>
-      <li>ADM public HTML provides official names, partners, and travel directions but <strong>not coordinates</strong>.</li>
-      <li>Candidate locations are matched to OpenStreetMap features when possible; unresolved rows are never given invented coordinates.</li>
-      <li>A service area’s existence does <strong>not</strong> establish grid capacity, truck parking suitability, or high-power charging feasibility.</li>
-      <li>HGV / goods access tags are frequently missing in OSM; such edges are labelled <code>hgv_access=unknown</code>.</li>
-      <li>Baseline routes are shortest-distance connectivity checks on the directed motorway graph, not certified truck routes.</li>
-      <li>Opposite-direction carriageways are never used as automatic snaps for a directional ADM aire.</li>
-      <li>OpenStreetMap data is © OpenStreetMap contributors, ODbL 1.0.</li>
+      <li>ADM HTML has names/directions but <strong>no coordinates</strong>.</li>
+      <li><code>location_match_status</code> is separate from <code>directed_access_status</code>.</li>
+      <li>Proximity or bearing alone never yields truck-accessible verification.</li>
+      <li>OSM entrance/exit topology ≠ legal HGV certification; <code>hgv_access_status</code> is usually unknown.</li>
+      <li>Service areas are not claimed as electrically suitable charger sites.</li>
+      <li>OpenStreetMap © contributors, ODbL 1.0. Python code licence is separate.</li>
     </ul>
     """
 
@@ -131,33 +141,71 @@ def generate_report(
       body {{ font-family: Georgia, serif; margin: 24px; }}
       table.data {{ border-collapse: collapse; font-size: 13px; }}
       table.data th, table.data td {{ border: 1px solid #444; padding: 4px 8px; }}
-      .map {{ margin: 16px 0; }}
-      .legend span {{ display:inline-block; width:12px; height:12px; margin-right:6px; }}
     </style></head><body>
     <h1>{title}</h1>
-    <p>Joint charging placement and energy-feasible routing research — <em>Task 01 data foundation only</em>.
-    No optimization algorithm is implemented in this report.</p>
-    <div class="legend">
-      <p><span style="background:#1f77b4"></span> Motorway edges (approx. Casa→Agadir bearing)
-         <span style="background:#ff7f0e;margin-left:12px"></span> Motorway edges (approx. Agadir→Casa bearing)
-         <span style="background:#d62728;margin-left:12px"></span> Baseline shortest paths
-         <span style="background:green;margin-left:12px"></span> Verified candidates
-         <span style="background:orange;margin-left:12px"></span> Probable
-         <span style="background:red;margin-left:12px"></span> Unresolved (with coords only if OSM evidence exists)
-      </p>
-    </div>
+    <p>Task 01B audited data foundation. No energy model or optimization.</p>
     <div class="map">{map_html}</div>
     <h2>Network summary</h2>
     {_html_table(net_df)}
     <h2>Baseline route distances</h2>
     {_html_table(routes_df)}
     <p>Direction asymmetry (km): {baseline.get('direction_asymmetry_km')}</p>
-    <h2>Candidate service areas (ADM directory, corridor only)</h2>
+    <h2>Candidate access audit</h2>
     {_html_table(sites[site_cols])}
     {limitations}
-    <p><em>Generated from processed artifacts in {processed_dir.as_posix()}</em></p>
     </body></html>
     """
     out.write_text(body, encoding="utf-8")
     logger.info("Wrote report %s", out)
+    return out
+
+
+def write_static_corridor_figure(
+    sites: pd.DataFrame,
+    baseline: dict[str, Any],
+    reports_dir: Path,
+) -> Path:
+    """Lightweight PNG suitable for GitHub review (edge-geometry baselines + sites)."""
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    out = reports_dir / "pilot_corridor_overview.png"
+    fig, ax = plt.subplots(figsize=(7.5, 9), dpi=120)
+
+    for feat in baseline.get("geojson", {}).get("features", []):
+        coords = feat["geometry"]["coordinates"]
+        xs = [c[0] for c in coords]
+        ys = [c[1] for c in coords]
+        label = feat["properties"].get("label", "route")
+        ax.plot(xs, ys, linewidth=1.8, label=label)
+
+    for _, row in sites.iterrows():
+        if pd.isna(row.get("lat")) or pd.isna(row.get("lon")):
+            continue
+        status = str(row.get("directed_access_status", "unresolved"))
+        ax.scatter(
+            float(row["lon"]),
+            float(row["lat"]),
+            s=36,
+            c=_access_color(status),
+            edgecolors="black",
+            linewidths=0.4,
+            zorder=5,
+        )
+        ax.annotate(
+            str(row.get("name_token", ""))[:10],
+            (float(row["lon"]), float(row["lat"])),
+            fontsize=7,
+            xytext=(3, 3),
+            textcoords="offset points",
+        )
+
+    ax.set_xlabel("Longitude (EPSG:4326)")
+    ax.set_ylabel("Latitude (EPSG:4326)")
+    ax.set_title("A3 pilot baselines and ADM candidates\n(green=entrance+exit topology; red=unresolved)")
+    ax.legend(loc="best", fontsize=8)
+    ax.set_aspect("equal", adjustable="datalim")
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(out, bbox_inches="tight")
+    plt.close(fig)
+    logger.info("Wrote static figure %s", out)
     return out

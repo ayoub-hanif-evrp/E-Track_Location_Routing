@@ -1,5 +1,5 @@
 {
-  "disclaimer": "Shortest-distance paths on directed OSM A3 motorway carriageways for connectivity validation only. Dual carriageways are separate directed components. Not certified for heavy-goods vehicles; HGV access tags are often unknown.",
+  "disclaimer": "Shortest-distance paths on directed OSM A3 motorway carriageways for connectivity validation only. Dual carriageways are separate directed components. Not certified for heavy-goods vehicles; HGV access tags are often unknown. Route geometries use ordered OSM edge WKT.",
   "method": "A3_ref_motorway_directional_components",
   "anchors": {
     "casablanca_to_agadir": {

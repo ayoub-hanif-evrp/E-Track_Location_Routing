@@ -49,8 +49,13 @@ def test_oneway_restrictions_respected(synthetic_digraph):
 
 
 def test_facility_coords_never_fabricated_when_matching_fails(candidate_sites_frame):
-    candidate_coord_honesty(candidate_sites_frame)
-    unresolved = candidate_sites_frame[candidate_sites_frame["match_status"] == "unresolved"].iloc[0]
+    # Extend fixture with Task 01B location field
+    df = candidate_sites_frame.copy()
+    df["location_match_status"] = [
+        "matched_osm" if pd.notna(r.lat) else "unmatched" for r in df.itertuples()
+    ]
+    candidate_coord_honesty(df)
+    unresolved = df[df["match_status"] == "unresolved"].iloc[0]
     assert pd.isna(unresolved["lat"]) and pd.isna(unresolved["lon"])
 
 
@@ -107,6 +112,7 @@ def test_reject_fabricated_unresolved_coords():
             {
                 "official_name": "X",
                 "match_status": "unresolved",
+                "location_match_status": "unmatched",
                 "osm_id": None,
                 "lat": 33.0,
                 "lon": -7.0,
