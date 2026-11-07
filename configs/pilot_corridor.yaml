@@ -1,0 +1,67 @@
+# Pilot corridor configuration — Casablanca–Agadir (A3)
+# Coordinate reference: EPSG:4326 (WGS84) for stored lon/lat.
+# Lengths are computed geodesically in metres (never Euclidean degrees).
+
+crs:
+  storage_epsg: 4326
+  length_method: geodesic_metres
+
+bbox:
+  # Osmium order: west, south, east, north
+  west: -9.60
+  south: 30.25
+  east: -7.40
+  north: 33.70
+  description: "Buffered Casablanca–Agadir motorway corridor"
+
+osm:
+  # Dated Geofabrik snapshot for reproducibility
+  download_url: "https://download.geofabrik.de/africa/morocco-261106.osm.pbf"
+  md5_url: "https://download.geofabrik.de/africa/morocco-261106.osm.pbf.md5"
+  filename: "morocco-261106.osm.pbf"
+  snapshot_label: "morocco-261106"
+  data_timestamp_hint: "2026-11-07"
+  highway_classes:
+    - motorway
+    - motorway_link
+  # Do not silently include trunk unless needed for connectivity; flagged in manifest if used.
+  allow_trunk_fallback: false
+
+anchors:
+  # Approximate motorway-access search points near corridor ends (EPSG:4326).
+  # Used only to locate graph nodes for baseline routing — NOT service-area coordinates.
+  casablanca:
+    lon: -7.62
+    lat: 33.45
+    label: "Casablanca_A3_access_search"
+  agadir:
+    lon: -9.35
+    lat: 30.45
+    label: "Agadir_A3_access_search"
+  search_radius_m: 25000
+
+service_areas:
+  source_url: "https://www.adm.co.ma/fr/gares-de-peage-et-aires-de-services"
+  a3_page_url: "https://www.adm.co.ma/fr/nos-autoroutes/a3-casablanca-agadir"
+  # Only ADM-directory corridor aires (Task 01 choice 1A)
+  corridor_name_tokens:
+    - amskroud
+    - benguerir
+    - berrchid
+    - berrechid
+    - marrakech
+    - "oum rbii"
+    - "oum rbia"
+    - settat
+  max_match_distance_m: 1500
+  max_connection_distance_m: 800
+  # Direction must be consistent with motorway carriageway orientation.
+  # Bearing of Casa→Agadir along A3 is generally south-westward.
+  direction_bearing_tolerance_deg: 90
+
+paths:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  metadata_dir: "data/metadata"
+  reports_dir: "reports"
+  results_dir: "results"

@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+.env
+
+# Testing / tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Large / regenerable raw OSM extracts (keep processed CSVs/metadata auditable)
+data/raw/**/*.osm.pbf
+data/raw/**/*.osm
+data/raw/**/*.pbf
+data/raw/**/*.md5
+data/raw/**/*.sha256
+data/raw/**/*.bbox.json
+data/raw/**/*.html
+data/raw/**/*.partial
+!data/raw/.gitkeep
+
+# Large regenerable graph exports (rebuild via scripts/build_pilot.py)
+data/processed/pilot_network.graphml
+data/processed/pilot_network.geojson
+results/baseline_routes.geojson
+reports/pilot_corridor_report.html
+
+# Local caches
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp

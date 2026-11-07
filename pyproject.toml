@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "morocco-etruck"
+version = "0.1.0"
+description = "Task 01: real Moroccan motorway network and candidate charging sites for e-truck research"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Research code; OSM-derived data under ODbL 1.0" }
+authors = [{ name = "Ayoub Hanif" }]
+dependencies = [
+  "networkx>=3.2",
+  "numpy>=1.26",
+  "pandas>=2.1",
+  "pyyaml>=6.0",
+  "requests>=2.31",
+  "pyproj>=3.6",
+  "shapely>=2.0",
+  "geopandas>=0.14",
+  "beautifulsoup4>=4.12",
+  "lxml>=4.9",
+  "folium>=0.15",
+  "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4"]
+extract = ["pyrosm>=0.6"]
+
+[project.scripts]
+build-pilot = "morocco_etruck.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "integration: tests that require built pilot artifacts or network downloads",
+]
+filterwarnings = ["ignore::DeprecationWarning"]

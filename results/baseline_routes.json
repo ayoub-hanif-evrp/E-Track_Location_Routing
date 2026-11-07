@@ -1,0 +1,43 @@
+{
+  "disclaimer": "Shortest-distance paths on directed OSM A3 motorway carriageways for connectivity validation only. Dual carriageways are separate directed components. Not certified for heavy-goods vehicles; HGV access tags are often unknown.",
+  "method": "A3_ref_motorway_directional_components",
+  "anchors": {
+    "casablanca_to_agadir": {
+      "source": 1546253587,
+      "target": 1873981884,
+      "source_distance_to_search_m": 1237.162004256285,
+      "target_distance_to_search_m": 1255.1063087571413
+    },
+    "agadir_to_casablanca": {
+      "source": 3227750605,
+      "target": 1546253716,
+      "source_distance_to_search_m": 1243.5097781666573,
+      "target_distance_to_search_m": 1222.678418856944
+    }
+  },
+  "routes": {
+    "casablanca_to_agadir": {
+      "label": "Casablanca\u2192Agadir",
+      "source": 1546253587,
+      "target": 1873981884,
+      "n_nodes": 4908,
+      "n_edges": 4907,
+      "distance_m": 417000.3892629537,
+      "distance_km": 417.0003892629537,
+      "ok": true,
+      "error": null
+    },
+    "agadir_to_casablanca": {
+      "label": "Agadir\u2192Casablanca",
+      "source": 3227750605,
+      "target": 1546253716,
+      "n_nodes": 4860,
+      "n_edges": 4859,
+      "distance_m": 417112.8311766245,
+      "distance_km": 417.1128311766245,
+      "ok": true,
+      "error": null
+    }
+  },
+  "direction_asymmetry_km": 0.11244191367080703
+}
