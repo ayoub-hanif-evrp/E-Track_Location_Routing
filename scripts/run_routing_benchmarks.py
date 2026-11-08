@@ -56,12 +56,20 @@ def main() -> int:
 
         dom_off_obj = ""
         dom_same = ""
-        if inst.name == "I_dominance":
+        dom_off_expanded = ""
+        dom_off_runtime = ""
+        if inst.name in ("I_dominance", "K_dominance_stress"):
             off = solve_mrls(inst, use_dominance=False)
             dom_off_obj = off.objective if off.objective is not None else off.status.value
             dom_same = bool(off.status == mrls.status and off.objective == mrls.objective)
+            dom_off_expanded = off.stats.get("labels_expanded")
+            dom_off_runtime = round(float(off.stats.get("runtime_s", 0.0)), 6)
             if not dom_same:
                 exp_ok = False
+            if inst.name == "K_dominance_stress":
+                min_dom = int(exp.get("min_dominated", 1))
+                if int(mrls.stats.get("labels_dominated", 0)) < min_dom:
+                    exp_ok = False
 
         print(
             f"{inst.name:24s} MRLS={mrls.status.value}/{mrls.objective} "
@@ -89,6 +97,8 @@ def main() -> int:
                 "ref_runtime_s": round(float(ref.stats.get("runtime_s", 0.0)), 6),
                 "dominance_off_objective": dom_off_obj,
                 "dominance_same_opt": dom_same,
+                "dominance_off_expanded": dom_off_expanded,
+                "dominance_off_runtime_s": dom_off_runtime,
             }
         )
 

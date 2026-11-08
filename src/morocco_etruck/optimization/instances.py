@@ -56,6 +56,7 @@ def instance_from_dict(d: dict[str, Any]) -> RoutingInstance:
         tru_kwh_per_step=int(d.get("tru_kwh_per_step", 0)),
         wait_max_steps=int(d.get("wait_max_steps", 0)),
         time_step_min=int(d.get("time_step_min", 5)),
+        energy_quantum_kwh=int(d.get("energy_quantum_kwh", 1)),
         notes=str(d.get("notes", "")),
         expected=dict(d.get("expected", {})),
     )

@@ -55,6 +55,46 @@ def _check_floors(
 
 
 def apply_drive(inst: RoutingInstance, lab: Label, arc: ArcData, new_id: int) -> TransitionResult:
+    if arc.u != lab.node:
+        return TransitionResult(False, reason="drive_not_from_label_node")
+
+    # Morocco / physics macros: state-dependent table
+    if arc.drive_table is not None:
+        key = (lab.E_truck, lab.E_trailer)
+        entry = arc.drive_table.get(key)
+        if entry is None or not entry.feasible:
+            return TransitionResult(
+                False,
+                reason=(entry.reason if entry else "drive_table_missing"),
+            )
+        t2 = lab.t + entry.dt_steps
+        if t2 > inst.deadline_steps:
+            return TransitionResult(False, reason="deadline")
+        reason = _check_floors(inst, entry.E_end_truck, entry.E_end_trailer)
+        if reason:
+            return TransitionResult(False, reason=reason)
+        return TransitionResult(
+            True,
+            Label(
+                node=arc.v,
+                t=t2,
+                E_truck=entry.E_end_truck,
+                E_trailer=entry.E_end_trailer,
+                cost=lab.cost + arc.road_cost,
+                pred_id=lab.label_id,
+                action={
+                    "type": "DRIVE",
+                    "u": arc.u,
+                    "v": arc.v,
+                    "road_cost": arc.road_cost,
+                    "dt_steps": entry.dt_steps,
+                    "table": True,
+                },
+                label_id=new_id,
+                can_charge=True,
+            ),
+        )
+
     if not arc.power_ok:
         return TransitionResult(False, reason="peak_motor_power_exceeded")
     t2 = lab.t + arc.dt_steps
@@ -188,7 +228,8 @@ def expand_actions(inst: RoutingInstance, lab: Label, id_start: int) -> list[Tra
     if lab.node in inst.active_stations:
         st = inst.stations[lab.node]
         headroom = inst.E_truck_cap - lab.E_truck
-        for de in range(1, headroom + 1):
+        q = max(1, int(inst.energy_quantum_kwh))
+        for de in range(q, headroom + 1, q):
             r = apply_charge(inst, lab, de, nid)
             out.append(r)
             nid += 1

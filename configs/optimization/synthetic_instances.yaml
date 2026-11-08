@@ -230,3 +230,36 @@ instances:
       objective: 50
       path: [O, D]
       charge_total_kwh: 0
+
+  - name: K_dominance_stress
+    notes: >
+      Parallel O→M arcs create a dominated label (same energy, higher cost) plus a
+      high-energy costly arrival needed for M→D. Asserts mrls_dominated > 0.
+      wait_max_steps=0 keeps the instance tiny while still exercising dominance.
+    nodes: [O, M, D]
+    origin: O
+    destination: D
+    deadline_steps: 20
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 100
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    active_stations: []
+    stations: []
+    arcs:
+      # Arrive M t=2, E=70, cost=5
+      - {u: O, v: M, dt_steps: 2, dE_truck_kwh: 30, road_cost: 5, power_ok: true}
+      # Dominated twin: same E=70, worse cost=25
+      - {u: O, v: M, dt_steps: 2, dE_truck_kwh: 30, road_cost: 25, power_ok: true}
+      # High energy needed for MD: E=90, cost=20
+      - {u: O, v: M, dt_steps: 2, dE_truck_kwh: 10, road_cost: 20, power_ok: true}
+      # Needs E>=85 at M
+      - {u: M, v: D, dt_steps: 2, dE_truck_kwh: 75, road_cost: 1, power_ok: true}
+    expected:
+      status: OPTIMAL
+      objective: 21
+      path: [O, M, D]
+      charge_total_kwh: 0
+      min_dominated: 1

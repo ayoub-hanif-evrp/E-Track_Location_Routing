@@ -8,7 +8,7 @@ PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible r
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–03A)
+## Current scope (Tasks 01–03B)
 
 **Task 01 / 01B / 01C — geographic foundation**
 
@@ -37,6 +37,13 @@ Eventually determine which Moroccan motorway service areas should receive truck-
 - Exactness only for the **finite integer-grid** synthetic problem (1 kWh / 5 min); validated vs an independent exhaustive reference on cases A–J.
 - Incremental physics adapter `apply_drive` (incoming SOC) bridges Task 02B without copying force equations into the router.
 - **Not claimed:** continuous charging optimality, Moroccan network optimality, or certified operational chargers at ADM sites.
+
+**Task 03B — Moroccan corridor charging-stop pilot**
+
+- Validation gates: dominance stress `K`, transition oracle, instance validation, solution replay.
+- Fixed A3 baselines → macro-arcs with **state-dependent DRIVE tables** (conservative floor-kWh / ceil-time); edge/macro-local terrain (no misused global DEM `s_cursor`).
+- Hypothetical `entrance_and_exit` chargers only; S1–S5 experiments + continuous physics replay.
+- **Not claimed:** certified HGV access, multi-path LRP, or continuous optimality beyond replay checks.
 
 ## Requirements
 
@@ -175,11 +182,28 @@ pytest -q tests/unit/test_label_setting.py tests/unit/test_routing_reference.py
 
 Outputs: `results/routing_benchmarks.csv`, `reports/task03a_problem_formulation.md`, `reports/task03a_algorithm_validation.md`.
 
-## Not yet implemented (stop after Task 03A)
+## Task 03B — Morocco MRLS integration
+
+```bash
+python scripts/run_morocco_routing.py
+# faster subset:
+python scripts/run_morocco_routing.py --flat-only
+pytest -q tests/unit/test_transition_oracle.py tests/unit/test_morocco_adapter_offline.py
+```
+
+Outputs:
+
+- `results/morocco_routing_experiments.csv`
+- `reports/figures/morocco_routing_corridor_map.geojson` / `.png`
+- `reports/task03b_morocco_integration.md`
+- `reports/task03b_discretization_validation.md`
+- Cached DRIVE tables under `data/processed/optimization/drive_tables/`
+
+## Not yet implemented (stop after Task 03B)
 
 - Station placement / branch-and-bound (Task 04)
-- Full Moroccan corridor EVRP with physics-derived arcs (Task 03B)
+- Nationwide search / multi-path LRP
 - ALNS, GA, Gurobi, OR-Tools, etc.
 - Redesign of Task 01C access classifiers
 
-**Stop after Task 03A** until the researcher reviews.
+**Stop after Task 03B** until the researcher reviews.

@@ -1,0 +1,125 @@
+# Task 03B — Moroccan corridor charging-stop pilot (fixed A3 baselines)
+# Research assumptions only: stations are HYPOTHETICAL; not certified HGV chargers.
+
+vehicle_config: configs/vehicles/eactros_600.yaml
+refrigeration_config: configs/energy/refrigeration_approx.yaml
+pilot_corridor_config: configs/pilot_corridor.yaml
+energy_pilot_config: configs/energy/pilot_scenarios.yaml
+
+nodes_csv: data/processed/road_nodes.csv
+edges_csv: data/processed/road_edges.csv
+candidate_sites_csv: data/processed/candidate_sites.csv
+baseline_json: results/baseline_routes.json
+baseline_geojson: results/baseline_routes.geojson
+elevation_dir: data/processed/energy
+weather_cache_dir: data/raw/weather
+weather_fixture_dir: tests/fixtures/weather
+
+disclaimer: >
+  Charging-stop optimization on fixed directed A3 baseline paths.
+  Station access is hypothetical (entrance_and_exit topology only);
+  HGV legality and in-facility path continuity are NOT verified.
+  Discrete MRLS uses state-dependent DRIVE tables with conservative
+  quantization (floor energy, ceil time). Continuous replay must pass
+  before Moroccan mission claims.
+
+# Discrete grid (corridor default)
+time_step_min: 5
+energy_quantum_kwh: 5
+energy_quantum_sensitivity_kwh: 1
+wait_max_steps: 0
+# ~10 h mission window at 5 min steps (cruise ~5.2 h + charge slack)
+deadline_steps: 120
+
+charger:
+  power_kw: 350.0
+  eta: 0.95
+  # Uniform default price (cents per grid kWh)
+  price_uniform_cents: 20
+  # Differentiated prices by station key (S4)
+  price_differentiated_cents:
+    settat: 15
+    benguerir: 25
+    amskroud: 30
+
+# Only entrance_and_exit sites matching travel_direction (Task 01C)
+# Opposite-carriageway (Berrchid) and unresolved Marrakech/Oum Rbii excluded.
+stations_by_direction:
+  casablanca_to_agadir:
+    - key: settat
+      name_contains: SETTAT
+      travel_direction: "Casablanca→Agadir"
+    - key: benguerir
+      name_contains: BENGUERIR
+      travel_direction: "Casablanca→Agadir"
+    - key: amskroud
+      name_contains: AMSKROUD
+      travel_direction: "Casablanca→Agadir"
+  agadir_to_casablanca:
+    - key: settat
+      name_contains: SETTAT
+      travel_direction: "Agadir→Casablanca"
+    - key: benguerir
+      name_contains: BENGUERIR
+      travel_direction: "Agadir→Casablanca"
+
+road_cost_per_km: 0.0
+
+default_mission:
+  direction: casablanca_to_agadir
+  gcm: light          # light | heavy
+  weather: cool       # cool | hot
+  terrain: flat       # flat | dem
+  refrigeration: "off"  # off | on
+  power_source: A     # A | B
+
+scenarios:
+  - id: S1
+    family: no_chargers
+    intent: Feasibility without en-route charge
+    active_policy: none
+    price_mode: uniform
+  - id: S2
+    family: one_charger
+    intent: Whether one mid-corridor site restores feasibility
+    active_policy: one
+    # Prefer Benguerir (mid); fall back to first available
+    preferred_station: benguerir
+    price_mode: uniform
+  - id: S3
+    family: all_chargers
+    intent: Min-cost charge sequence/amounts with all direction-matched sites
+    active_policy: all
+    price_mode: uniform
+  - id: S4
+    family: differentiated_prices
+    intent: Charge location/amount shift under differentiated prices
+    active_policy: all
+    price_mode: differentiated
+  - id: S5
+    family: refrig_A_vs_B
+    intent: Tractor vs trailer pack coupling
+    active_policy: all
+    price_mode: uniform
+    refrigeration: "on"
+    variants:
+      - power_source: A
+      - power_source: B
+
+# Experiment matrix expansions (flat first; DEM when quality valid)
+experiment_directions:
+  - casablanca_to_agadir
+  - agadir_to_casablanca
+experiment_gcms:
+  - light
+  - heavy
+experiment_terrains:
+  - flat
+  - dem
+experiment_weather: cool
+
+outputs:
+  csv: results/morocco_routing_experiments.csv
+  figures_dir: reports/figures
+  map_geojson: reports/figures/morocco_routing_corridor_map.geojson
+  table_cache_dir: data/processed/optimization/drive_tables

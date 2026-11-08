@@ -9,7 +9,7 @@ from heapq import heappop, heappush
 from typing import Any
 
 from morocco_etruck.optimization.dominance import DominanceStore
-from morocco_etruck.optimization.problem import RoutingInstance
+from morocco_etruck.optimization.problem import RoutingInstance, validate_routing_instance
 from morocco_etruck.optimization.resource_transitions import (
     Label,
     apply_charge,
@@ -67,6 +67,7 @@ def solve_mrls(
 
     Priority: minimize cost, then time.
     """
+    validate_routing_instance(inst)
     t0 = time.perf_counter()
     store = DominanceStore(enabled=use_dominance)
     labels_by_id: dict[int, Label] = {}
@@ -148,7 +149,8 @@ def solve_mrls(
         # CHARGE (at most one burst per visit; see Label.can_charge)
         if lab.can_charge and lab.node in inst.active_stations:
             headroom = inst.E_truck_cap - lab.E_truck
-            for de in range(1, headroom + 1):
+            q = max(1, int(inst.energy_quantum_kwh))
+            for de in range(q, headroom + 1, q):
                 r = apply_charge(inst, lab, de, next_id)
                 if not r.ok or r.label is None:
                     continue
