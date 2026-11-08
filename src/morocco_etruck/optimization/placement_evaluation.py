@@ -14,6 +14,11 @@ from morocco_etruck.optimization.morocco_adapter import (
     build_routing_instance,
     load_pilot_config,
 )
+from morocco_etruck.optimization.placement_cache import CachedMissionResult, PlacementMemo
+from morocco_etruck.optimization.placement_certification import (
+    ServiceabilityClass,
+    is_peak_motor_reason,
+)
 from morocco_etruck.optimization.placement_problem import (
     PlacementConfig,
     PlacementMission,
@@ -39,6 +44,7 @@ class MissionSolveResult:
     discrete_replay_ok: bool
     active_stations: str
     reason: str | None = None
+    serviceability: str | None = None
 
 
 @dataclass
@@ -157,6 +163,29 @@ def _clone_instance_for_subset(template_inst, *, active: set[str], price_mode: s
     )
 
 
+def _result_from_cache(
+    mission_id: str,
+    active: set[str],
+    is_struct: bool,
+    cached: CachedMissionResult,
+) -> MissionSolveResult:
+    return MissionSolveResult(
+        mission_id=mission_id,
+        status=cached.status,
+        served=cached.served,
+        structural=is_struct,
+        uncertified=cached.uncertified,
+        objective_cents=cached.objective_cents,
+        charge_kwh=cached.charge_kwh,
+        charges=cached.charges,
+        path=cached.path,
+        continuous_replay_ok=cached.continuous_replay_ok,
+        discrete_replay_ok=cached.discrete_replay_ok,
+        active_stations=",".join(sorted(active)),
+        reason=cached.reason,
+    )
+
+
 def evaluate_mission_on_subset(
     mission: PlacementMission,
     ctx: MoroccoMissionContext,
@@ -169,8 +198,24 @@ def evaluate_mission_on_subset(
     structural_ids: set[str],
     max_seconds: float,
     max_expansions: int,
+    memo: PlacementMemo | None = None,
+    skip_continuous_replay: bool = False,
 ) -> MissionSolveResult:
     active = active_keys_for_subset(sites, installed, mission.direction)
+    is_struct = mission.id in structural_ids
+    cache_key = None
+    if memo is not None:
+        cache_key = memo.make_key(
+            mission_id=mission.id,
+            active_station_keys=frozenset(active),
+            price_mode=price_mode,
+            q=template_inst.energy_quantum_kwh,
+            time_step_min=template_inst.time_step_min,
+        )
+        hit = memo.get(cache_key)
+        if hit is not None:
+            return _result_from_cache(mission.id, active, is_struct, hit)
+
     inst = _clone_instance_for_subset(
         template_inst,
         active=active,
@@ -180,52 +225,37 @@ def evaluate_mission_on_subset(
     )
     _ = morocco_cfg
 
-    is_struct = mission.id in structural_ids
     result = solve_mrls(
         inst,
         use_dominance=True,
         max_seconds=max_seconds,
         max_expansions=max_expansions,
     )
-    if result.status == SolverStatus.LIMIT_REACHED:
-        return MissionSolveResult(
-            mission_id=mission.id,
-            status=result.status.value,
-            served=False,
-            structural=is_struct,
-            uncertified=True,
-            objective_cents=result.objective,
-            charge_kwh=_charge_total(result.actions),
-            charges=_charge_nodes(result.actions),
-            path="->".join(result.path_nodes),
-            continuous_replay_ok=False,
-            discrete_replay_ok=False,
-            active_stations=",".join(sorted(active)),
-            reason="LIMIT_REACHED",
-        )
-    if result.status != SolverStatus.OPTIMAL or result.final_label is None:
-        return MissionSolveResult(
-            mission_id=mission.id,
-            status=result.status.value,
-            served=False,
-            structural=is_struct,
-            uncertified=False,
-            objective_cents=result.objective,
-            charge_kwh=0,
-            charges="",
-            path="",
-            continuous_replay_ok=False,
-            discrete_replay_ok=False,
-            active_stations=",".join(sorted(active)),
-            reason=result.status.value,
-        )
 
-    # Coupling: charges only at active stations
-    for act in result.actions:
-        if act.get("type") == "CHARGE" and act.get("node") not in active:
-            return MissionSolveResult(
+    def _store(mr: MissionSolveResult) -> MissionSolveResult:
+        if memo is not None and cache_key is not None:
+            memo.put(
+                cache_key,
+                CachedMissionResult(
+                    status=mr.status,
+                    served=mr.served,
+                    uncertified=mr.uncertified,
+                    objective_cents=mr.objective_cents,
+                    charge_kwh=mr.charge_kwh,
+                    charges=mr.charges,
+                    path=mr.path,
+                    continuous_replay_ok=mr.continuous_replay_ok,
+                    discrete_replay_ok=mr.discrete_replay_ok,
+                    reason=mr.reason,
+                ),
+            )
+        return mr
+
+    if result.status == SolverStatus.LIMIT_REACHED:
+        return _store(
+            MissionSolveResult(
                 mission_id=mission.id,
-                status="COUPLING_FAIL",
+                status=result.status.value,
                 served=False,
                 structural=is_struct,
                 uncertified=True,
@@ -236,34 +266,174 @@ def evaluate_mission_on_subset(
                 continuous_replay_ok=False,
                 discrete_replay_ok=False,
                 active_stations=",".join(sorted(active)),
-                reason="charge_at_inactive",
+                reason="LIMIT_REACHED",
+            )
+        )
+    if result.status != SolverStatus.OPTIMAL or result.final_label is None:
+        return _store(
+            MissionSolveResult(
+                mission_id=mission.id,
+                status=result.status.value,
+                served=False,
+                structural=is_struct,
+                uncertified=False,
+                objective_cents=result.objective,
+                charge_kwh=0,
+                charges="",
+                path="",
+                continuous_replay_ok=False,
+                discrete_replay_ok=False,
+                active_stations=",".join(sorted(active)),
+                reason=result.status.value,
+            )
+        )
+
+    # Coupling: charges only at active stations
+    for act in result.actions:
+        if act.get("type") == "CHARGE" and act.get("node") not in active:
+            return _store(
+                MissionSolveResult(
+                    mission_id=mission.id,
+                    status="COUPLING_FAIL",
+                    served=False,
+                    structural=is_struct,
+                    uncertified=True,
+                    objective_cents=result.objective,
+                    charge_kwh=_charge_total(result.actions),
+                    charges=_charge_nodes(result.actions),
+                    path="->".join(result.path_nodes),
+                    continuous_replay_ok=False,
+                    discrete_replay_ok=False,
+                    active_stations=",".join(sorted(active)),
+                    reason="charge_at_inactive",
+                )
             )
 
     disc = replay_solution(inst, result.actions, expected_cost=result.objective)
-    cont = continuous_replay(
+    if skip_continuous_replay:
+        cont_ok = True
+        cont_reason = None
+    else:
+        cont = continuous_replay(
+            ctx,
+            inst,
+            result.actions,
+            discrete_cost=result.objective,
+            discrete_t=result.final_label.t,
+            discrete_E_truck=result.final_label.E_truck,
+        )
+        cont_ok = cont.ok
+        cont_reason = cont.reason
+    served = bool(disc.ok and cont_ok)
+    return _store(
+        MissionSolveResult(
+            mission_id=mission.id,
+            status=result.status.value,
+            served=served,
+            structural=is_struct,
+            uncertified=False,
+            objective_cents=result.objective,
+            charge_kwh=_charge_total(result.actions),
+            charges=_charge_nodes(result.actions),
+            path="->".join(result.path_nodes),
+            continuous_replay_ok=cont_ok,
+            discrete_replay_ok=disc.ok,
+            active_stations=",".join(sorted(active)),
+            reason=None if served else (cont_reason or disc.reason),
+        )
+    )
+
+
+def _peak_motor_from_tables(template_inst) -> bool:
+    """True if any drive-table entry is infeasible specifically for peak motor."""
+    for arc in template_inst.arcs:
+        table = arc.drive_table or {}
+        for entry in table.values():
+            if entry.feasible:
+                continue
+            if is_peak_motor_reason(entry.reason):
+                return True
+    # Also: if ALL starts infeasible and majority peak-motor
+    peak = 0
+    bad = 0
+    for arc in template_inst.arcs:
+        table = arc.drive_table or {}
+        for entry in table.values():
+            if entry.feasible:
+                continue
+            bad += 1
+            if is_peak_motor_reason(entry.reason):
+                peak += 1
+    return bad > 0 and peak >= max(1, bad // 2)
+
+
+def classify_mission_serviceability(
+    mission: PlacementMission,
+    prepared: dict[str, tuple[MoroccoMissionContext, Any]],
+    *,
+    sites: list[PlacementSite],
+    morocco_cfg: dict[str, Any],
+    max_seconds: float,
+    max_expansions: int,
+) -> tuple[ServiceabilityClass, MissionSolveResult]:
+    """
+    Probe full direction-compatible install set for one mission.
+
+    Classes: serviceable | peak_motor | unserved_all_candidates | limit_reached | replay_invalid
+    """
+    # Only sites matching mission direction count as "all candidates" for that mission
+    dir_ids = {s.id for s in sites if s.direction == mission.direction}
+    ctx, tmpl = prepared[mission.id]
+    r = evaluate_mission_on_subset(
+        mission,
         ctx,
-        inst,
-        result.actions,
-        discrete_cost=result.objective,
-        discrete_t=result.final_label.t,
-        discrete_E_truck=result.final_label.E_truck,
+        tmpl,
+        installed=dir_ids,
+        sites=sites,
+        price_mode="uniform",
+        morocco_cfg=morocco_cfg,
+        structural_ids=set(),
+        max_seconds=max_seconds,
+        max_expansions=max_expansions,
     )
-    served = bool(disc.ok and cont.ok)
-    return MissionSolveResult(
-        mission_id=mission.id,
-        status=result.status.value,
-        served=served,
-        structural=is_struct,
-        uncertified=False,
-        objective_cents=result.objective,
-        charge_kwh=_charge_total(result.actions),
-        charges=_charge_nodes(result.actions),
-        path="->".join(result.path_nodes),
-        continuous_replay_ok=cont.ok,
-        discrete_replay_ok=disc.ok,
-        active_stations=",".join(sorted(active)),
-        reason=None if served else (cont.reason or disc.reason),
-    )
+    if r.uncertified and r.status == "LIMIT_REACHED":
+        cls = ServiceabilityClass.LIMIT_REACHED
+    elif r.served:
+        cls = ServiceabilityClass.SERVICEABLE
+    elif r.status == "OPTIMAL" and (not r.continuous_replay_ok or not r.discrete_replay_ok):
+        cls = ServiceabilityClass.REPLAY_INVALID
+    elif is_peak_motor_reason(r.reason) or _peak_motor_from_tables(tmpl):
+        # Unserved and tables / solve reason indicate peak motor under fixed speed
+        cls = ServiceabilityClass.PEAK_MOTOR
+    else:
+        cls = ServiceabilityClass.UNSERVED_ALL_CANDIDATES
+    r.serviceability = cls.value
+    r.structural = cls == ServiceabilityClass.PEAK_MOTOR
+    return cls, r
+
+
+def classify_all_missions(
+    missions: list[PlacementMission],
+    prepared: dict[str, tuple[MoroccoMissionContext, Any]],
+    *,
+    sites: list[PlacementSite],
+    morocco_cfg: dict[str, Any],
+    max_seconds: float,
+    max_expansions: int,
+) -> dict[str, ServiceabilityClass]:
+    """Classify every mission; peak_motor IDs form the structural reporting set."""
+    out: dict[str, ServiceabilityClass] = {}
+    for m in missions:
+        cls, _ = classify_mission_serviceability(
+            m,
+            prepared,
+            sites=sites,
+            morocco_cfg=morocco_cfg,
+            max_seconds=max_seconds,
+            max_expansions=max_expansions,
+        )
+        out[m.id] = cls
+    return out
 
 
 def detect_structural_missions(
@@ -275,28 +445,16 @@ def detect_structural_missions(
     max_seconds: float,
     max_expansions: int,
 ) -> set[str]:
-    """Missions infeasible even with all direction-matched sites installed."""
-    all_ids = {s.id for s in sites}
-    structural: set[str] = set()
-    for m in missions:
-        if not m.structural_candidate:
-            continue
-        ctx, tmpl = prepared[m.id]
-        r = evaluate_mission_on_subset(
-            m,
-            ctx,
-            tmpl,
-            installed=all_ids,
-            sites=sites,
-            price_mode="uniform",
-            morocco_cfg=morocco_cfg,
-            structural_ids=set(),
-            max_seconds=max_seconds,
-            max_expansions=max_expansions,
-        )
-        if not r.served:
-            structural.add(m.id)
-    return structural
+    """Peak-motor missions only (power-policy structural infeasibility)."""
+    classes = classify_all_missions(
+        missions,
+        prepared,
+        sites=sites,
+        morocco_cfg=morocco_cfg,
+        max_seconds=max_seconds,
+        max_expansions=max_expansions,
+    )
+    return {mid for mid, cls in classes.items() if cls == ServiceabilityClass.PEAK_MOTOR}
 
 
 def evaluate_subset(
@@ -310,6 +468,7 @@ def evaluate_subset(
     max_capex: float | None,
     price_mode: str,
     morocco_cfg: dict[str, Any],
+    memo: PlacementMemo | None = None,
 ) -> SubsetEvaluation:
     rows: list[MissionSolveResult] = []
     certified = True
@@ -331,6 +490,7 @@ def evaluate_subset(
             structural_ids=structural_ids,
             max_seconds=cfg.solver_max_seconds,
             max_expansions=cfg.solver_max_expansions,
+            memo=memo,
         )
         rows.append(r)
         if r.uncertified:

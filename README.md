@@ -8,7 +8,7 @@ PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible r
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–04A)
+## Current scope (Tasks 01–04B)
 
 **Task 01 / 01B / 01C — geographic foundation**
 
@@ -49,7 +49,14 @@ Eventually determine which Moroccan motorway service areas should receive truck-
 
 - Action-level stationary Wh drains + quantum-floor after CHARGE/WAIT; fingerprinted DRIVE-table cache.
 - Exhaustive evaluation of all **32** subsets of five directional hypothetical sites; lex coverage-then-cost objective under illustrative budgets.
-- **Not claimed:** market CAPEX/tariffs, certified HGV chargers, or branch-and-bound (Task 04B).
+- **Not claimed:** market CAPEX/tariffs or certified HGV chargers.
+
+**Task 04B — Certified placement branch-and-bound + MRLS**
+
+- Full terrain fingerprint; global certification statuses; serviceability taxonomy (`peak_motor` structural only).
+- Install/exclude B&B with proved budget, coverage UB, and secondary LB pruning; MRLS memoization.
+- Matches all **32** Task 04A scenario optima; synthetic 12-site pruning demo.
+- **Not claimed:** market prices, nationwide LRP, or metaheuristics/MIP solvers.
 
 ## Requirements
 
@@ -220,11 +227,24 @@ Outputs:
 - `reports/task04a_location_enumeration_results.md`
 - `reports/figures/placement_budget_*_CA.png`
 
-## Not yet implemented (stop after Task 04A)
+## Task 04B — certified placement B&B
 
-- Infrastructure branch-and-bound (Task 04B), independently benchmarked against this enumeration
+```bash
+python scripts/run_branch_and_bound.py
+pytest -q tests/unit/test_branch_and_bound.py tests/unit/test_placement_bounds.py tests/unit/test_placement_certification.py
+```
+
+Outputs:
+
+- `results/branch_bound_comparison.csv`
+- `reports/task04b_branch_bound_methodology.md`
+- `reports/task04b_algorithm_validation.md`
+- `configs/optimization/branch_bound_benchmarks.yaml` (synthetic prune demo)
+
+## Not yet implemented (stop after Task 04B)
+
 - Nationwide search / multi-path LRP
 - ALNS, GA, Gurobi, OR-Tools, etc.
 - Redesign of Task 01C access classifiers
 
-**Stop after Task 04A** until the researcher reviews.
+**Stop after Task 04B** until the researcher reviews.

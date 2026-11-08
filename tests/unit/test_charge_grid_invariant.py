@@ -11,6 +11,7 @@ from morocco_etruck.optimization.drive_table_cache import (
     DRIVE_TABLE_CACHE_VERSION,
     build_drive_table_fingerprint,
     fingerprint_payload,
+    terrain_sample_hash,
 )
 from morocco_etruck.optimization.label_setting import SolverStatus, solve_mrls
 from morocco_etruck.optimization.problem import ArcData, DriveTableEntry, RoutingInstance, StationData
@@ -226,6 +227,48 @@ def test_fingerprint_changes_with_weather():
     assert fp1 != fp2
     assert isinstance(DRIVE_TABLE_CACHE_VERSION, str) and len(DRIVE_TABLE_CACHE_VERSION) > 0
     assert fingerprint_payload({"a": 1}) != fingerprint_payload({"a": 2})
+
+
+def test_terrain_hash_detects_interior_elevation_change():
+    """Head/tail unchanged but interior elevation mutates ⇒ fingerprint miss."""
+    n = 20
+    distances = [float(i) * 100.0 for i in range(n)]
+    elevations = [10.0 + 0.1 * i for i in range(n)]
+    mask = [True] * n
+    h1 = terrain_sample_hash(distances, elevations, "dem", valid_mask=mask)
+    elevations2 = list(elevations)
+    elevations2[n // 2] += 25.0  # interior only
+    # First/last five unchanged
+    assert elevations2[:5] == elevations[:5]
+    assert elevations2[-5:] == elevations[-5:]
+    h2 = terrain_sample_hash(distances, elevations2, "dem", valid_mask=mask)
+    assert h1 != h2
+    # Cache fingerprint must also diverge when terrain_hash changes
+    base = dict(
+        vehicle_yaml=ROOT / "configs/vehicles/eactros_600.yaml",
+        fridge_yaml=ROOT / "configs/energy/refrigeration_approx.yaml",
+        weather_points={"mid": {"T_mean_c": 15.0}},
+        terrain_mode="dem",
+        terrain_source="dem",
+        terrain_hash=h1,
+        macro_u="O",
+        macro_v="D",
+        edge_pairs=[(1, 2)],
+        length_m=1000.0,
+        gcm_kg=25000.0,
+        refrigeration_on=False,
+        power_source="A",
+        energy_quantum_kwh=5,
+        time_step_min=5,
+        E_truck_min=60,
+        E_truck_cap=600,
+        E_trailer_min=None,
+        E_trailer_cap=None,
+    )
+    fp1 = build_drive_table_fingerprint(**base)
+    base["terrain_hash"] = h2
+    fp2 = build_drive_table_fingerprint(**base)
+    assert fp1 != fp2
 
 
 def test_mrls_synthetic_still_optimal():

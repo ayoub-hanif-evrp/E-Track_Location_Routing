@@ -1,0 +1,273 @@
+# SYNTHETIC charger-placement B&B pruning demo (Task 04B).
+# Not Moroccan traffic / not HGV-certified infrastructure.
+# 12 binary sites; each mission needs its own station on a private O–Si–D path.
+
+note: >
+  Synthetic independent-mission placement instance for proved pruning demo.
+  Exhaustive reference is 2^12 = 4096 subsets (manageable).
+
+annualization:
+  interest_rate: 0.08
+  lifetime_years: 15
+
+cents_to_currency: 0.01
+
+solver:
+  max_seconds: 10.0
+  max_expansions: 100000
+
+budgets:
+  - name: B3
+    max_capex: 300.0
+  - name: Ball
+    max_capex: null
+
+# Sites s00..s11; s09–s11 are expensive (secondary prune fodder)
+site_capex:
+  s00: 100.0
+  s01: 100.0
+  s02: 100.0
+  s03: 100.0
+  s04: 100.0
+  s05: 100.0
+  s06: 100.0
+  s07: 100.0
+  s08: 100.0
+  s09: 250.0
+  s10: 250.0
+  s11: 250.0
+
+sites:
+  - {id: s00, station_key: S00, direction: synth, label: synth_0}
+  - {id: s01, station_key: S01, direction: synth, label: synth_1}
+  - {id: s02, station_key: S02, direction: synth, label: synth_2}
+  - {id: s03, station_key: S03, direction: synth, label: synth_3}
+  - {id: s04, station_key: S04, direction: synth, label: synth_4}
+  - {id: s05, station_key: S05, direction: synth, label: synth_5}
+  - {id: s06, station_key: S06, direction: synth, label: synth_6}
+  - {id: s07, station_key: S07, direction: synth, label: synth_7}
+  - {id: s08, station_key: S08, direction: synth, label: synth_8}
+  - {id: s09, station_key: S09, direction: synth, label: synth_9}
+  - {id: s10, station_key: S10, direction: synth, label: synth_10}
+  - {id: s11, station_key: S11, direction: synth, label: synth_11}
+
+missions:
+  - {id: M00, weight: 1.0, direction: synth}
+  - {id: M01, weight: 1.0, direction: synth}
+  - {id: M02, weight: 1.0, direction: synth}
+  - {id: M03, weight: 1.0, direction: synth}
+  - {id: M04, weight: 1.0, direction: synth}
+  - {id: M05, weight: 1.0, direction: synth}
+  - {id: M06, weight: 1.0, direction: synth}
+  - {id: M07, weight: 1.0, direction: synth}
+  - {id: M08, weight: 1.0, direction: synth}
+  - {id: M09, weight: 1.0, direction: synth}
+  - {id: M10, weight: 1.0, direction: synth}
+  - {id: M11, weight: 1.0, direction: synth}
+
+# Each mission: O – Si – D; needs charge at Si (same physics as Task 03A B_charge_required)
+mission_instances:
+  - name: M00
+    nodes: [O, S00, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S00, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 2, compatible: true}
+    active_stations: []
+    arcs:
+      - {u: O, v: S00, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S00, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+  - name: M01
+    nodes: [O, S01, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S01, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 2, compatible: true}
+    active_stations: []
+    arcs:
+      - {u: O, v: S01, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S01, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+  - name: M02
+    nodes: [O, S02, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S02, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 2, compatible: true}
+    active_stations: []
+    arcs:
+      - {u: O, v: S02, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S02, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+  - name: M03
+    nodes: [O, S03, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S03, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 2, compatible: true}
+    active_stations: []
+    arcs:
+      - {u: O, v: S03, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S03, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+  - name: M04
+    nodes: [O, S04, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S04, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 2, compatible: true}
+    active_stations: []
+    arcs:
+      - {u: O, v: S04, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S04, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+  - name: M05
+    nodes: [O, S05, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S05, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 2, compatible: true}
+    active_stations: []
+    arcs:
+      - {u: O, v: S05, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S05, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+  - name: M06
+    nodes: [O, S06, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S06, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 2, compatible: true}
+    active_stations: []
+    arcs:
+      - {u: O, v: S06, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S06, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+  - name: M07
+    nodes: [O, S07, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S07, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 2, compatible: true}
+    active_stations: []
+    arcs:
+      - {u: O, v: S07, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S07, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+  - name: M08
+    nodes: [O, S08, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S08, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 2, compatible: true}
+    active_stations: []
+    arcs:
+      - {u: O, v: S08, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S08, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+  - name: M09
+    nodes: [O, S09, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S09, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 2, compatible: true}
+    active_stations: []
+    arcs:
+      - {u: O, v: S09, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S09, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+  - name: M10
+    nodes: [O, S10, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S10, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 2, compatible: true}
+    active_stations: []
+    arcs:
+      - {u: O, v: S10, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S10, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+  - name: M11
+    nodes: [O, S11, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S11, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 2, compatible: true}
+    active_stations: []
+    arcs:
+      - {u: O, v: S11, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S11, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}

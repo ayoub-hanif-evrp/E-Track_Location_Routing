@@ -8,8 +8,15 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from morocco_etruck.optimization.morocco_adapter import load_pilot_config
+from morocco_etruck.optimization.drive_table_cache import DRIVE_TABLE_CACHE_VERSION
+from morocco_etruck.optimization.placement_cache import (
+    PlacementMemo,
+    default_energy_fingerprint,
+)
+from morocco_etruck.optimization.placement_certification import OptimalityStatus
 from morocco_etruck.optimization.placement_evaluation import (
     SubsetEvaluation,
+    classify_all_missions,
     detect_structural_missions,
     evaluate_subset,
     prepare_mission,
@@ -35,6 +42,7 @@ class EnumerationResult:
     rows: list[dict[str, Any]]
     optimal_rows: list[dict[str, Any]]
     structural_ids: set[str]
+    serviceability: dict[str, str] | None = None
 
 
 def greedy_by_marginal_coverage(
@@ -114,19 +122,34 @@ def run_enumeration(
             m, morocco_cfg, root=root, G=G, table_cache_dir=table_cache
         )
 
-    structural_ids = detect_structural_missions(
-        missions,
-        prepared,
-        sites=cfg.sites,
-        morocco_cfg=morocco_cfg,
-        max_seconds=cfg.solver_max_seconds,
-        max_expansions=cfg.solver_max_expansions,
-    )
+    serviceability = {
+        mid: cls.value
+        for mid, cls in classify_all_missions(
+            missions,
+            prepared,
+            sites=cfg.sites,
+            morocco_cfg=morocco_cfg,
+            max_seconds=cfg.solver_max_seconds,
+            max_expansions=cfg.solver_max_expansions,
+        ).items()
+    }
+    structural_ids = {mid for mid, v in serviceability.items() if v == "peak_motor"}
+    # Keep detect_structural_missions available for callers; assert consistency
+    _ = detect_structural_missions
 
     site_ids = [s.id for s in cfg.sites]
     subsets = list(all_subsets(site_ids))
     if max_subsets is not None:
         subsets = subsets[: max_subsets]
+
+    sample_inst = next(iter(prepared.values()))[1]
+    memo = PlacementMemo(
+        energy_model_fingerprint=default_energy_fingerprint(
+            version=DRIVE_TABLE_CACHE_VERSION,
+            q=sample_inst.energy_quantum_kwh,
+            time_step_min=sample_inst.time_step_min,
+        )
+    )
 
     # Evaluate each subset once (budget filter applied when selecting optima)
     evals: list[SubsetEvaluation] = []
@@ -141,6 +164,7 @@ def run_enumeration(
             max_capex=None,  # record all; filter per budget later
             price_mode=price_mode,
             morocco_cfg=morocco_cfg,
+            memo=memo,
         )
         evals.append(ev)
 
@@ -184,32 +208,54 @@ def run_enumeration(
     for bud in cfg.budgets:
         bname = bud["name"]
         max_c = bud.get("max_capex")
-        feasible = [
-            e
-            for e in evals
-            if e.certified
-            and (max_c is None or e.infra_capex <= float(max_c) + 1e-9)
-        ]
-        if not feasible:
-            # Prefer certified; if none, mark uncertified best
-            feasible = [
-                e for e in evals if max_c is None or e.infra_capex <= float(max_c) + 1e-9
-            ]
-            cert = False
-        else:
-            cert = True
-        if not feasible:
+
+        def in_budget(e: SubsetEvaluation) -> bool:
+            return max_c is None or e.infra_capex <= float(max_c) + 1e-9
+
+        budget_evals = [e for e in evals if in_budget(e)]
+        certified_pool = [e for e in budget_evals if e.certified]
+        uncertified_pool = [e for e in budget_evals if not e.certified]
+
+        if not budget_evals:
+            optimal_rows.append(
+                {
+                    "demand_scenario": demand_name,
+                    "capex_scenario": capex_name,
+                    "price_mode": price_mode,
+                    "budget_name": bname,
+                    "max_capex": max_c,
+                    "best_sites": "",
+                    "optimality_status": OptimalityStatus.NO_FEASIBLE.value,
+                    "certified": False,
+                    "structural_ids": ",".join(sorted(structural_ids)),
+                    "serviceability_json": str(serviceability),
+                }
+            )
             continue
+
+        # Lex-best among certified budget-feasible; else among all (unproved)
+        pool = certified_pool if certified_pool else budget_evals
         best = min(
-            feasible,
+            pool,
             key=lambda e: LexScore.from_parts(
                 e.coverage_serviceable, e.secondary_cost, e.certified
             ),
         )
+        # Global certificate: all budget-feasible subsets certified (or none unresolved)
+        if uncertified_pool:
+            # Without proved dominance bounds over unresolved competitors, cannot certify
+            opt_status = OptimalityStatus.INCUMBENT_UNPROVED.value
+            globally_certified = False
+        elif certified_pool:
+            opt_status = OptimalityStatus.CERTIFIED_OPTIMAL.value
+            globally_certified = True
+        else:
+            opt_status = OptimalityStatus.INCUMBENT_UNPROVED.value
+            globally_certified = False
+
         greedy = greedy_by_marginal_coverage(
             evals, site_ids=site_ids, capex=capex, max_capex=None if max_c is None else float(max_c)
         )
-        # Baselines
         baseline_gap = {}
         for bname_bl, bl_sites in cfg.baselines.items():
             bl_set = frozenset(bl_sites)
@@ -242,7 +288,9 @@ def run_enumeration(
                 "infra_annual": best.infra_annual,
                 "variable_cost": best.variable_cost,
                 "secondary_cost": best.secondary_cost,
-                "certified": cert and best.certified,
+                "certified": globally_certified and best.certified,
+                "optimality_status": opt_status,
+                "n_uncertified_competitors": len(uncertified_pool),
                 "greedy_sites": ",".join(sorted(greedy.site_ids)) if greedy else "",
                 "greedy_coverage": greedy.coverage_serviceable if greedy else None,
                 "greedy_secondary": greedy.secondary_cost if greedy else None,
@@ -251,10 +299,16 @@ def run_enumeration(
                 ),
                 "baselines_json": str(baseline_gap),
                 "structural_ids": ",".join(sorted(structural_ids)),
+                "serviceability_json": str(serviceability),
             }
         )
 
-    return EnumerationResult(rows=rows, optimal_rows=optimal_rows, structural_ids=structural_ids)
+    return EnumerationResult(
+        rows=rows,
+        optimal_rows=optimal_rows,
+        structural_ids=structural_ids,
+        serviceability=serviceability,
+    )
 
 
 def load_configs(placement_yaml: Path, root: Path) -> PlacementConfig:

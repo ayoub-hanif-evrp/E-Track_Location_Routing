@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-DRIVE_TABLE_CACHE_VERSION = "04a.1"
+DRIVE_TABLE_CACHE_VERSION = "04b.1"
 
 
 def _sha256_text(text: str) -> str:
@@ -68,15 +68,23 @@ def build_drive_table_fingerprint(
     )
 
 
-def terrain_sample_hash(distances_m: list[float], elevations_m: list[float], source: str) -> str:
+def terrain_sample_hash(
+    distances_m: list[float],
+    elevations_m: list[float],
+    source: str,
+    valid_mask: list[bool] | None = None,
+) -> str:
+    """Digest the full elevation profile (not head/tail only)."""
     return fingerprint_payload(
         {
             "source": source,
             "n": len(distances_m),
-            "d0": distances_m[0] if distances_m else None,
-            "d1": distances_m[-1] if distances_m else None,
-            "z_head": elevations_m[:5],
-            "z_tail": elevations_m[-5:],
+            "distances_m": [round(float(x), 6) for x in distances_m],
+            "elevations_m": [
+                None if (isinstance(z, float) and z != z) else (round(float(z), 6) if z is not None else None)
+                for z in elevations_m
+            ],
+            "valid_mask": list(valid_mask) if valid_mask is not None else None,
         }
     )
 

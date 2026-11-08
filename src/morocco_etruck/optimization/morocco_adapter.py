@@ -391,6 +391,7 @@ def build_routing_instance(
             macro.terrain.distances_m,
             macro.terrain.elevations_m,
             macro.terrain.source,
+            valid_mask=macro.terrain.valid_mask,
         )
         fp = build_drive_table_fingerprint(
             vehicle_yaml=vehicle_yaml,
