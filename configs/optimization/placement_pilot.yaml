@@ -1,0 +1,226 @@
+# Task 04A — Exact joint charger-placement enumeration (illustrative costs)
+# Station costs and tariffs are RESEARCH SCENARIO PARAMETERS, not Moroccan market prices.
+
+morocco_pilot_config: configs/optimization/morocco_pilot.yaml
+
+disclaimer: >
+  Exhaustive enumeration over five directional hypothetical charger sites.
+  Not certified HGV infrastructure. Lexicographic coverage-then-cost objective.
+  Annualized CAPEX uses an illustrative CRF — not observed Moroccan prices.
+
+# Five directional binary decisions (opposite carriageways do NOT share install)
+sites:
+  - id: y_settat_ca
+    direction: casablanca_to_agadir
+    station_key: settat
+    label: Settat_Casa_to_Agadir
+  - id: y_benguerir_ca
+    direction: casablanca_to_agadir
+    station_key: benguerir
+    label: Benguerir_Casa_to_Agadir
+  - id: y_amskroud_ca
+    direction: casablanca_to_agadir
+    station_key: amskroud
+    label: Amskroud_Casa_to_Agadir
+  - id: y_settat_ac
+    direction: agadir_to_casablanca
+    station_key: settat
+    label: Settat_Agadir_to_Casablanca
+  - id: y_benguerir_ac
+    direction: agadir_to_casablanca
+    station_key: benguerir
+    label: Benguerir_Agadir_to_Casablanca
+
+# Illustrative CAPEX scenarios (currency units = "illustrative dollars")
+capex_scenarios:
+  equal:
+    note: "Equal illustrative CAPEX per directional site"
+    site_capex:
+      y_settat_ca: 100.0
+      y_benguerir_ca: 100.0
+      y_amskroud_ca: 100.0
+      y_settat_ac: 100.0
+      y_benguerir_ac: 100.0
+  amskroud_premium:
+    note: "Amskroud more expensive (illustrative remote-site premium)"
+    site_capex:
+      y_settat_ca: 100.0
+      y_benguerir_ca: 100.0
+      y_amskroud_ca: 180.0
+      y_settat_ac: 100.0
+      y_benguerir_ac: 100.0
+
+# Annualization (illustrative)
+annualization:
+  interest_rate: 0.08
+  lifetime_years: 15
+  # CRF = r(1+r)^n / ((1+r)^n - 1)
+
+# Convert MRLS objective (cents) to illustrative currency units
+cents_to_currency: 0.01
+
+# Budgets (same units as site_capex). null = unlimited
+budgets:
+  - name: B0
+    max_capex: 0.0
+  - name: B1
+    max_capex: 100.0
+  - name: B2
+    max_capex: 200.0
+  - name: Ball
+    max_capex: null
+
+# Mission portfolio (cool weather). Weights are research demand weights.
+demand_scenarios:
+  default:
+    note: "Default demand weights"
+    missions:
+      - id: M_light_flat_CA
+        direction: casablanca_to_agadir
+        gcm: light
+        terrain: flat
+        weather: cool
+        refrigeration: "off"
+        power_source: A
+        weight: 1.0
+        structural_candidate: false
+      - id: M_heavy_flat_CA
+        direction: casablanca_to_agadir
+        gcm: heavy
+        terrain: flat
+        weather: cool
+        refrigeration: "off"
+        power_source: A
+        weight: 2.0
+        structural_candidate: false
+      - id: M_heavy_flat_AC
+        direction: agadir_to_casablanca
+        gcm: heavy
+        terrain: flat
+        weather: cool
+        refrigeration: "off"
+        power_source: A
+        weight: 2.0
+        structural_candidate: false
+      - id: M_heavy_flat_CA_refA
+        direction: casablanca_to_agadir
+        gcm: heavy
+        terrain: flat
+        weather: cool
+        refrigeration: "on"
+        power_source: A
+        weight: 1.5
+        structural_candidate: false
+      - id: M_heavy_flat_CA_refB
+        direction: casablanca_to_agadir
+        gcm: heavy
+        terrain: flat
+        weather: cool
+        refrigeration: "on"
+        power_source: B
+        weight: 1.5
+        structural_candidate: false
+      - id: M_light_dem_CA
+        direction: casablanca_to_agadir
+        gcm: light
+        terrain: dem
+        weather: cool
+        refrigeration: "off"
+        power_source: A
+        weight: 1.0
+        structural_candidate: false
+      - id: M_struct_dem_AC
+        direction: agadir_to_casablanca
+        gcm: light
+        terrain: dem
+        weather: cool
+        refrigeration: "off"
+        power_source: A
+        weight: 1.0
+        structural_candidate: true
+  heavy_emphasis:
+    note: "Emphasize heavy GCM missions"
+    missions:
+      - id: M_light_flat_CA
+        direction: casablanca_to_agadir
+        gcm: light
+        terrain: flat
+        weather: cool
+        refrigeration: "off"
+        power_source: A
+        weight: 0.5
+        structural_candidate: false
+      - id: M_heavy_flat_CA
+        direction: casablanca_to_agadir
+        gcm: heavy
+        terrain: flat
+        weather: cool
+        refrigeration: "off"
+        power_source: A
+        weight: 3.0
+        structural_candidate: false
+      - id: M_heavy_flat_AC
+        direction: agadir_to_casablanca
+        gcm: heavy
+        terrain: flat
+        weather: cool
+        refrigeration: "off"
+        power_source: A
+        weight: 3.0
+        structural_candidate: false
+      - id: M_heavy_flat_CA_refA
+        direction: casablanca_to_agadir
+        gcm: heavy
+        terrain: flat
+        weather: cool
+        refrigeration: "on"
+        power_source: A
+        weight: 2.0
+        structural_candidate: false
+      - id: M_heavy_flat_CA_refB
+        direction: casablanca_to_agadir
+        gcm: heavy
+        terrain: flat
+        weather: cool
+        refrigeration: "on"
+        power_source: B
+        weight: 2.0
+        structural_candidate: false
+      - id: M_light_dem_CA
+        direction: casablanca_to_agadir
+        gcm: light
+        terrain: dem
+        weather: cool
+        refrigeration: "off"
+        power_source: A
+        weight: 0.5
+        structural_candidate: false
+      - id: M_struct_dem_AC
+        direction: agadir_to_casablanca
+        gcm: light
+        terrain: dem
+        weather: cool
+        refrigeration: "off"
+        power_source: A
+        weight: 0.5
+        structural_candidate: true
+
+price_modes:
+  - uniform
+  - differentiated
+
+# Predeclared baseline install (site ids)
+baselines:
+  empty: []
+  benguerir_pair: [y_benguerir_ca, y_benguerir_ac]
+  full: [y_settat_ca, y_benguerir_ca, y_amskroud_ca, y_settat_ac, y_benguerir_ac]
+
+solver:
+  max_seconds: 60.0
+  max_expansions: 500000
+
+outputs:
+  enumeration_csv: results/location_enumeration.csv
+  optimal_csv: results/location_optimal_solutions.csv
+  figures_dir: reports/figures
+  table_cache_dir: data/processed/optimization/drive_tables

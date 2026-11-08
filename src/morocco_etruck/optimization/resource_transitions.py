@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -31,13 +32,61 @@ class TransitionResult:
     reason: str | None = None
 
 
-def _stationary_drain(inst: RoutingInstance, steps: int) -> tuple[int, int]:
-    """Return (truck_drain, trailer_drain) kWh over stationary steps."""
-    aux = inst.aux_kwh_per_step * steps
-    tru = inst.tru_kwh_per_step * steps if inst.refrigeration_on else 0
+def _uses_watt_stationary(inst: RoutingInstance) -> bool:
+    return float(inst.aux_w) > 0.0 or float(inst.tru_mean_w) > 0.0
+
+
+def _floor_to_quantum(kwh: float, quantum: int) -> int:
+    """Conservative remaining energy: never round up onto the discrete lattice."""
+    q = max(1, int(quantum))
+    return int(math.floor(kwh / q) * q)
+
+
+def stationary_drain_kwh(inst: RoutingInstance, steps: int) -> tuple[float, float]:
+    """
+    Continuous (or legacy integer) stationary drains over a full CHARGE/WAIT action.
+
+    Morocco: aux_w / tru_mean_w integrated over the whole duration (no per-step ceil).
+    Synthetics: aux_kwh_per_step * steps (+ TRU) when watts are unset.
+    """
+    if steps < 0:
+        raise ValueError("steps must be >= 0")
+    if _uses_watt_stationary(inst):
+        dt_h = steps * inst.time_step_min / 60.0
+        aux = float(inst.aux_w) * dt_h / 1000.0
+        tru = 0.0
+        if inst.refrigeration_on:
+            tru = float(inst.tru_mean_w) * dt_h / 1000.0
+        if inst.power_source == "A":
+            return aux + tru, 0.0
+        return aux, tru
+    aux = float(inst.aux_kwh_per_step * steps)
+    tru = float(inst.tru_kwh_per_step * steps) if inst.refrigeration_on else 0.0
     if inst.power_source == "A":
-        return aux + tru, 0
+        return aux + tru, 0.0
     return aux, tru
+
+
+def _snap_energies_after_stationary(
+    inst: RoutingInstance,
+    E_truck_cont: float,
+    E_trailer_cont: float | None,
+) -> tuple[int, int | None, str | None]:
+    """Floor continuous energies onto the quantum grid and check SOC floors."""
+    q = max(1, int(inst.energy_quantum_kwh))
+    if _uses_watt_stationary(inst):
+        E_tr = _floor_to_quantum(E_truck_cont, q)
+        E_tl = None if E_trailer_cont is None else _floor_to_quantum(E_trailer_cont, q)
+    else:
+        # Legacy integer path: already integer kWh; keep exact synthetics.
+        E_tr = int(E_truck_cont)
+        E_tl = None if E_trailer_cont is None else int(E_trailer_cont)
+    if E_tr > inst.E_truck_cap:
+        E_tr = inst.E_truck_cap
+    if E_tl is not None and inst.E_trailer_cap is not None and E_tl > inst.E_trailer_cap:
+        E_tl = inst.E_trailer_cap
+    reason = _check_floors(inst, E_tr, E_tl)
+    return E_tr, E_tl, reason
 
 
 def _check_floors(
@@ -60,6 +109,9 @@ def apply_drive(inst: RoutingInstance, lab: Label, arc: ArcData, new_id: int) ->
 
     # Morocco / physics macros: state-dependent table
     if arc.drive_table is not None:
+        q = max(1, int(inst.energy_quantum_kwh))
+        if lab.E_truck % q != 0 or (lab.E_trailer is not None and lab.E_trailer % q != 0):
+            return TransitionResult(False, reason="off_grid_energy_before_drive")
         key = (lab.E_truck, lab.E_trailer)
         entry = arc.drive_table.get(key)
         if entry is None or not entry.feasible:
@@ -151,16 +203,16 @@ def apply_charge(
     t2 = lab.t + steps
     if t2 > inst.deadline_steps:
         return TransitionResult(False, reason="deadline")
-    drain_tr, drain_tl = _stationary_drain(inst, steps)
-    E_tr = lab.E_truck + delta_e - drain_tr
-    E_tl = lab.E_trailer
-    if E_tl is not None:
-        E_tl = E_tl - drain_tl
-    reason = _check_floors(inst, E_tr, E_tl)
+    drain_tr, drain_tl = stationary_drain_kwh(inst, steps)
+    E_tr_cont = float(lab.E_truck) + float(delta_e) - drain_tr
+    E_tl_cont: float | None
+    if lab.E_trailer is None:
+        E_tl_cont = None
+    else:
+        E_tl_cont = float(lab.E_trailer) - drain_tl
+    E_tr, E_tl, reason = _snap_energies_after_stationary(inst, E_tr_cont, E_tl_cont)
     if reason:
         return TransitionResult(False, reason=reason)
-    if E_tr > inst.E_truck_cap:
-        E_tr = inst.E_truck_cap
     grid = inst.grid_kwh_for_batt(st, delta_e)
     cost2 = lab.cost + st.price_cents_per_grid_kwh * grid
     return TransitionResult(
@@ -178,6 +230,8 @@ def apply_charge(
                 "delta_e_kwh": delta_e,
                 "grid_kwh": grid,
                 "steps": steps,
+                "drain_truck_kwh": round(drain_tr, 6),
+                "drain_trailer_kwh": round(drain_tl, 6),
             },
             label_id=new_id,
             can_charge=False,
@@ -193,12 +247,14 @@ def apply_wait(inst: RoutingInstance, lab: Label, k_steps: int, new_id: int) -> 
     t2 = lab.t + k_steps
     if t2 > inst.deadline_steps:
         return TransitionResult(False, reason="deadline")
-    drain_tr, drain_tl = _stationary_drain(inst, k_steps)
-    E_tr = lab.E_truck - drain_tr
-    E_tl = lab.E_trailer
-    if E_tl is not None:
-        E_tl = E_tl - drain_tl
-    reason = _check_floors(inst, E_tr, E_tl)
+    drain_tr, drain_tl = stationary_drain_kwh(inst, k_steps)
+    E_tr_cont = float(lab.E_truck) - drain_tr
+    E_tl_cont: float | None
+    if lab.E_trailer is None:
+        E_tl_cont = None
+    else:
+        E_tl_cont = float(lab.E_trailer) - drain_tl
+    E_tr, E_tl, reason = _snap_energies_after_stationary(inst, E_tr_cont, E_tl_cont)
     if reason:
         return TransitionResult(False, reason=reason)
     return TransitionResult(
@@ -210,7 +266,12 @@ def apply_wait(inst: RoutingInstance, lab: Label, k_steps: int, new_id: int) -> 
             E_trailer=E_tl,
             cost=lab.cost,
             pred_id=lab.label_id,
-            action={"type": "WAIT", "steps": k_steps},
+            action={
+                "type": "WAIT",
+                "steps": k_steps,
+                "drain_truck_kwh": round(drain_tr, 6),
+                "drain_trailer_kwh": round(drain_tl, 6),
+            },
             label_id=new_id,
             can_charge=lab.can_charge,
         ),

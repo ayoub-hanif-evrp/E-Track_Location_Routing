@@ -24,9 +24,14 @@ from morocco_etruck.optimization.arc_preprocessing import (
     build_drive_table,
     build_macro_arc,
 )
+from morocco_etruck.optimization.drive_table_cache import (
+    build_drive_table_fingerprint,
+    load_cached_table,
+    save_cached_table,
+    terrain_sample_hash,
+)
 from morocco_etruck.optimization.problem import (
     ArcData,
-    DriveTableEntry,
     RoutingInstance,
     StationData,
 )
@@ -363,26 +368,57 @@ def build_routing_instance(
             ctx.fridge.trailer_soc_initial,
         )
 
-    # Build / cache DRIVE tables
+    vehicle_yaml = _resolve(ROOT, ctx.cfg["vehicle_config"])
+    fridge_yaml = _resolve(ROOT, ctx.cfg["refrigeration_config"])
+    weather_ser = {
+        pid: {
+            "T_mean_c": wp.T_mean_c,
+            "wind_speed_mean_mps": wp.wind_speed_mean_mps,
+            "wind_dir_mean_deg": wp.wind_dir_mean_deg,
+            "date": wp.date,
+        }
+        for pid, wp in ctx.weather.points.items()
+    }
+
+    # Build / cache DRIVE tables (fingerprinted)
     arcs: list[ArcData] = []
     for macro in ctx.macros:
         cache_key = (
             f"{ctx.direction}_{macro.u}_{macro.v}_{ctx.terrain_mode}_{ctx.gcm_label}_"
             f"{ctx.weather.day_id}_refrig{int(ctx.refrigeration_on)}_{ctx.power_source}_q{q}"
         )
+        t_hash = terrain_sample_hash(
+            macro.terrain.distances_m,
+            macro.terrain.elevations_m,
+            macro.terrain.source,
+        )
+        fp = build_drive_table_fingerprint(
+            vehicle_yaml=vehicle_yaml,
+            fridge_yaml=fridge_yaml,
+            weather_points=weather_ser,
+            terrain_mode=ctx.terrain_mode,
+            terrain_source=macro.terrain.source,
+            terrain_hash=t_hash,
+            macro_u=macro.u,
+            macro_v=macro.v,
+            edge_pairs=macro.osm_edge_pairs,
+            length_m=macro.length_m,
+            gcm_kg=ctx.gcm_kg,
+            refrigeration_on=ctx.refrigeration_on,
+            power_source=ctx.power_source,
+            energy_quantum_kwh=q,
+            time_step_min=ctx.time_step_min,
+            E_truck_min=E_min,
+            E_truck_cap=E_cap,
+            E_trailer_min=El_min,
+            E_trailer_cap=El_cap,
+        )
         table = None
         cache_path = None
         if table_cache_dir is not None:
             table_cache_dir.mkdir(parents=True, exist_ok=True)
             cache_path = table_cache_dir / f"{cache_key}.json"
-            if cache_path.exists():
-                raw = json.loads(cache_path.read_text(encoding="utf-8"))
-                table = {
-                    (int(k.split(",")[0]), None if k.split(",")[1] == "None" else int(k.split(",")[1])): DriveTableEntry(
-                        **v
-                    )
-                    for k, v in raw.items()
-                }
+            table = load_cached_table(cache_path, fp)
         if table is None:
             table = build_drive_table(
                 macro,
@@ -400,19 +436,8 @@ def build_routing_instance(
                 time_step_min=ctx.time_step_min,
             )
             if cache_path is not None:
-                ser = {
-                    f"{k[0]},{k[1]}": {
-                        "feasible": v.feasible,
-                        "dt_steps": v.dt_steps,
-                        "E_end_truck": v.E_end_truck,
-                        "E_end_trailer": v.E_end_trailer,
-                        "reason": v.reason,
-                    }
-                    for k, v in table.items()
-                }
-                cache_path.write_text(json.dumps(ser), encoding="utf-8")
+                save_cached_table(cache_path, fp, table)
         ctx.drive_tables[(macro.u, macro.v)] = table
-        # Placeholder fixed dE unused when drive_table set; dt_steps>=1 for validation
         arcs.append(
             ArcData(
                 u=macro.u,
@@ -443,23 +468,21 @@ def build_routing_instance(
         )
 
     nodes = ["O"] + [s.node for s in ctx.stations] + ["D"]
-    # Stationary drain per step (ceil kWh) from aux / TRU mean order
-    aux_per_step = int(
-        math.ceil(ctx.vehicle.P_aux_w * (ctx.time_step_min * 60.0) / J_PER_KWH_SAFE())
-    )
-    # TRU approx at 20C ambient for stationary charge: use fridge model via weather mid
-    tru_per_step = 0
+    # Continuous stationary watts (action-level integration in resource_transitions)
+    aux_w = float(ctx.vehicle.P_aux_w)
+    tru_mean_w = 0.0
     if ctx.refrigeration_on:
         from morocco_etruck.energy.refrigeration import refrigeration_energy_j
 
         mid = next(iter(ctx.weather.points.values()))
+        step_s = ctx.time_step_min * 60.0
         e_j = refrigeration_energy_j(
-            duration_s=ctx.time_step_min * 60.0,
+            duration_s=step_s,
             T_amb_c=mid.T_mean_c,
             params=ctx.fridge,
             refrigeration_on=True,
         )
-        tru_per_step = int(math.ceil(e_j / 3.6e6))
+        tru_mean_w = e_j / step_s  # mean W over one discrete time step
 
     return RoutingInstance(
         name=name,
@@ -478,17 +501,15 @@ def build_routing_instance(
         active_stations=set(active_stations),
         power_source=ctx.power_source,  # type: ignore[arg-type]
         refrigeration_on=ctx.refrigeration_on,
-        aux_kwh_per_step=aux_per_step if ctx.power_source == "A" or not ctx.refrigeration_on else aux_per_step,
-        tru_kwh_per_step=tru_per_step if ctx.power_source == "A" else tru_per_step,
+        aux_kwh_per_step=0,
+        tru_kwh_per_step=0,
+        aux_w=aux_w,
+        tru_mean_w=tru_mean_w,
         wait_max_steps=ctx.wait_max_steps,
         time_step_min=ctx.time_step_min,
         energy_quantum_kwh=q,
         notes=str(ctx.cfg.get("disclaimer", "")),
     )
-
-
-def J_PER_KWH_SAFE() -> float:
-    return 3.6e6
 
 
 def corridor_map_features(ctx: MoroccoMissionContext) -> dict[str, Any]:

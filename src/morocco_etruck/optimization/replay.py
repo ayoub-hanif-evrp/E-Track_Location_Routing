@@ -74,21 +74,45 @@ def replay_solution(
             if path[-1] != lab.node:
                 path.append(lab.node)
         elif typ == "CHARGE":
+            if act.get("node") and act["node"] != lab.node:
+                return ReplayReport(
+                    False, None, None, None, None, path, reason="charge_wrong_node"
+                )
+            if lab.node not in inst.active_stations:
+                return ReplayReport(
+                    False, None, None, None, None, path, reason="station_inactive"
+                )
             de = int(act["delta_e_kwh"])
             r = apply_charge(inst, lab, de, nid)
             if not r.ok or r.label is None:
                 return ReplayReport(False, None, None, None, None, path, reason=r.reason)
             lab = r.label
             nid += 1
+            q = max(1, int(inst.energy_quantum_kwh))
+            if lab.E_truck % q != 0:
+                return ReplayReport(
+                    False, lab.cost, lab.t, lab.E_truck, lab.E_trailer, path,
+                    reason="off_grid_after_charge",
+                )
         elif typ == "WAIT":
             r = apply_wait(inst, lab, int(act["steps"]), nid)
             if not r.ok or r.label is None:
                 return ReplayReport(False, None, None, None, None, path, reason=r.reason)
             lab = r.label
             nid += 1
+            q = max(1, int(inst.energy_quantum_kwh))
+            if lab.E_truck % q != 0:
+                return ReplayReport(
+                    False, lab.cost, lab.t, lab.E_truck, lab.E_trailer, path,
+                    reason="off_grid_after_wait",
+                )
         else:
             return ReplayReport(False, None, None, None, None, path, reason=f"unknown_action:{typ}")
 
+    if lab.t > inst.deadline_steps:
+        return ReplayReport(
+            False, lab.cost, lab.t, lab.E_truck, lab.E_trailer, path, reason="deadline"
+        )
     if expected_cost is not None and lab.cost != expected_cost:
         return ReplayReport(
             False,

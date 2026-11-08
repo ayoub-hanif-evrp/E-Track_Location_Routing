@@ -39,6 +39,13 @@ def continuous_replay(
     """
     Replay DRIVE/CHARGE/WAIT with Task 02B continuous apply_drive + charge model.
 
+    Uses the same underlying physics helpers as DRIVE-table preprocessing
+    (numerical reconstruction of the action sequence). This is NOT independent
+    empirical validation against measured truck logs.
+
+    Charging uses station power×η for duration, aux_w / TRU for stationary load,
+    and the same efficiency for battery vs grid energy definitions as discrete MRLS.
+
     If the discrete solution fails continuous floors / peak power → ok=False
     (invalid for Moroccan mission claims).
     """
@@ -83,18 +90,37 @@ def continuous_replay(
                     None, None, min_soc,
                 )
         elif typ == "CHARGE":
+            node = act["node"]
+            if node not in inst.active_stations:
+                return ContinuousReplayReport(
+                    False, "station_inactive", discrete_cost, discrete_t, discrete_E_truck,
+                    t_s, None, None, None, None, min_soc,
+                )
+            st = inst.stations.get(node)
+            if st is None or not st.compatible:
+                return ContinuousReplayReport(
+                    False, "incompatible_charger", discrete_cost, discrete_t, discrete_E_truck,
+                    t_s, None, None, None, None, min_soc,
+                )
             de = float(act["delta_e_kwh"])
-            st = inst.stations[act["node"]]
-            batt_kw = st.power_kw * st.eta
-            dt = (de / batt_kw) * 3600.0 if batt_kw > 0 else 0.0
-            mid = next(iter(ctx.weather.points.values()))
-            e_aux_kwh = ctx.vehicle.P_aux_w * dt / 3.6e6
-            e_ref_kwh = refrigeration_energy_j(
-                duration_s=dt,
-                T_amb_c=mid.T_mean_c,
-                params=ctx.fridge,
-                refrigeration_on=ctx.refrigeration_on,
-            ) / 3.6e6
+            # Match discrete duration (integer steps) when provided
+            if "steps" in act:
+                dt = int(act["steps"]) * ctx.time_step_min * 60.0
+            else:
+                batt_kw = st.power_kw * st.eta
+                dt = (de / batt_kw) * 3600.0 if batt_kw > 0 else 0.0
+            aux_w = float(inst.aux_w) if inst.aux_w > 0 else float(ctx.vehicle.P_aux_w)
+            e_aux_kwh = aux_w * dt / 3.6e6
+            if inst.tru_mean_w > 0 and ctx.refrigeration_on:
+                e_ref_kwh = float(inst.tru_mean_w) * dt / 3.6e6
+            else:
+                mid = next(iter(ctx.weather.points.values()))
+                e_ref_kwh = refrigeration_energy_j(
+                    duration_s=dt,
+                    T_amb_c=mid.T_mean_c,
+                    params=ctx.fridge,
+                    refrigeration_on=ctx.refrigeration_on,
+                ) / 3.6e6
             E_tr = soc * usable + de
             if ctx.power_source == "A":
                 E_tr -= e_aux_kwh + e_ref_kwh
@@ -107,6 +133,13 @@ def continuous_replay(
             E_tr = min(usable * ctx.vehicle.soc_max, E_tr)
             soc = E_tr / usable
             t_s += dt
+            if discrete_t is not None and t_s > (inst.deadline_steps + 1e-9) * ctx.time_step_min * 60.0:
+                return ContinuousReplayReport(
+                    False, "deadline", discrete_cost, discrete_t, discrete_E_truck,
+                    t_s, soc * usable,
+                    None if trailer_soc is None else trailer_soc * ctx.fridge.trailer_usable_kwh,
+                    None, None, min_soc,
+                )
             min_soc = min(min_soc, soc)
             if soc < ctx.vehicle.soc_min - 1e-9:
                 return ContinuousReplayReport(

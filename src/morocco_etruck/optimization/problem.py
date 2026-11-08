@@ -75,9 +75,13 @@ class RoutingInstance:
     active_stations: set[str]
     power_source: PowerSource
     refrigeration_on: bool
-    # Stationary consumption per time step while CHARGE or WAIT
+    # Legacy integer kWh/step drains (synthetics). Prefer aux_w / tru_mean_w for Morocco.
     aux_kwh_per_step: int = 0
     tru_kwh_per_step: int = 0
+    # Continuous stationary loads (W). When >0, CHARGE/WAIT use action-level Wh accounting
+    # then floor onto energy_quantum_kwh (never per-step ceil of sub-kWh loads).
+    aux_w: float = 0.0
+    tru_mean_w: float = 0.0
     wait_max_steps: int = 6
     time_step_min: int = 5
     energy_quantum_kwh: int = 1
@@ -128,12 +132,23 @@ def validate_routing_instance(inst: RoutingInstance) -> None:
         raise InstanceValidationError("truck energy init must satisfy min <= init <= cap")
     if inst.E_truck_min < 0 or inst.E_truck_cap < 0:
         raise InstanceValidationError("truck capacities must be non-negative")
+    q = int(inst.energy_quantum_kwh)
+    if inst.E_truck_init % q != 0 or inst.E_truck_min % q != 0 or inst.E_truck_cap % q != 0:
+        raise InstanceValidationError("truck energy bounds must lie on energy_quantum_kwh grid")
+    if inst.aux_w < 0 or inst.tru_mean_w < 0:
+        raise InstanceValidationError("aux_w and tru_mean_w must be non-negative")
 
     if inst.power_source == "B" and inst.refrigeration_on:
         if inst.E_trailer_cap is None or inst.E_trailer_min is None or inst.E_trailer_init is None:
             raise InstanceValidationError("config B + refrigeration requires trailer fields")
         if not (inst.E_trailer_min <= inst.E_trailer_init <= inst.E_trailer_cap):
             raise InstanceValidationError("trailer energy init must satisfy min <= init <= cap")
+        if (
+            inst.E_trailer_init % q != 0
+            or inst.E_trailer_min % q != 0
+            or inst.E_trailer_cap % q != 0
+        ):
+            raise InstanceValidationError("trailer energy bounds must lie on energy_quantum_kwh grid")
 
     for arc in inst.arcs:
         if arc.u not in node_set or arc.v not in node_set:

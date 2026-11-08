@@ -8,7 +8,7 @@ PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible r
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–03B)
+## Current scope (Tasks 01–04A)
 
 **Task 01 / 01B / 01C — geographic foundation**
 
@@ -44,6 +44,12 @@ Eventually determine which Moroccan motorway service areas should receive truck-
 - Fixed A3 baselines → macro-arcs with **state-dependent DRIVE tables** (conservative floor-kWh / ceil-time); edge/macro-local terrain (no misused global DEM `s_cursor`).
 - Hypothetical `entrance_and_exit` chargers only; S1–S5 experiments + continuous physics replay.
 - **Not claimed:** certified HGV access, multi-path LRP, or continuous optimality beyond replay checks.
+
+**Task 04A — Charging-grid fix + exact placement enumeration**
+
+- Action-level stationary Wh drains + quantum-floor after CHARGE/WAIT; fingerprinted DRIVE-table cache.
+- Exhaustive evaluation of all **32** subsets of five directional hypothetical sites; lex coverage-then-cost objective under illustrative budgets.
+- **Not claimed:** market CAPEX/tariffs, certified HGV chargers, or branch-and-bound (Task 04B).
 
 ## Requirements
 
@@ -199,11 +205,26 @@ Outputs:
 - `reports/task03b_discretization_validation.md`
 - Cached DRIVE tables under `data/processed/optimization/drive_tables/`
 
-## Not yet implemented (stop after Task 03B)
+## Task 04A — joint placement enumeration
 
-- Station placement / branch-and-bound (Task 04)
+```bash
+python scripts/run_location_enumeration.py
+pytest -q tests/unit/test_charge_grid_invariant.py tests/unit/test_placement_enumeration.py
+```
+
+Outputs:
+
+- `results/location_enumeration.csv`, `results/location_optimal_solutions.csv`
+- `reports/task04a_charging_grid_correction.md`
+- `reports/task04a_joint_problem_formulation.md`
+- `reports/task04a_location_enumeration_results.md`
+- `reports/figures/placement_budget_*_CA.png`
+
+## Not yet implemented (stop after Task 04A)
+
+- Infrastructure branch-and-bound (Task 04B), independently benchmarked against this enumeration
 - Nationwide search / multi-path LRP
 - ALNS, GA, Gurobi, OR-Tools, etc.
 - Redesign of Task 01C access classifiers
 
-**Stop after Task 03B** until the researcher reviews.
+**Stop after Task 04A** until the researcher reviews.
