@@ -1,0 +1,11 @@
+instance,mrls_status,ref_status,mrls_objective,ref_objective,mrls_path,ref_path,mrls_charge_kwh,match_ref,match_expected,mrls_generated,mrls_expanded,mrls_dominated,mrls_runtime_s,ref_runtime_s,dominance_off_objective,dominance_same_opt
+A_no_charge,OPTIMAL,OPTIMAL,10.0,10.0,O->D,O->D,0,True,True,2,1,0,2.6e-05,1.1e-05,,
+B_charge_required,OPTIMAL,OPTIMAL,90.0,90.0,O->S->D,O->S->D,40,True,True,95,44,0,0.00034,0.000247,,
+C_station_unavailable,INFEASIBLE,INFEASIBLE,,,,,0,True,True,2,2,0,7e-06,5e-06,,
+D_alternative_roads,OPTIMAL,OPTIMAL,24.0,24.0,O->M->D,O->M->D,0,True,True,3,2,0,8e-06,7e-06,,
+E_partial_charge,OPTIMAL,OPTIMAL,156.0,156.0,O->S->D,O->S->D,15,True,True,23,17,0,7.9e-05,6.5e-05,,
+F_refrigeration_trailer,INFEASIBLE,INFEASIBLE,,,,,0,True,True,4,4,0,7.7e-05,7.5e-05,,
+G_soc_boundary,INFEASIBLE,INFEASIBLE,,,,,0,True,True,1,1,0,3e-06,3e-06,,
+H_directionality,INFEASIBLE,INFEASIBLE,,,,,0,True,True,1,1,0,2e-06,2e-06,,
+I_dominance,OPTIMAL,OPTIMAL,90.0,90.0,O->S->D,O->S->D,40,True,True,95,44,0,0.00031,0.000259,90,True
+J_deadline,OPTIMAL,OPTIMAL,50.0,50.0,O->D,O->D,0,True,True,2,1,0,7e-06,6e-06,,

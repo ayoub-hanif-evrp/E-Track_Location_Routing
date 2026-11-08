@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "morocco-etruck"
 version = "0.1.0"
-description = "Moroccan A3 e-truck research: audited network/candidates (Task 01) + physics-based refrigerated energy model (Task 02)"
+description = "Moroccan A3 e-truck research: network/candidates, physics energy model, discrete MRLS routing solver"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Research code; OSM-derived data under ODbL 1.0" }

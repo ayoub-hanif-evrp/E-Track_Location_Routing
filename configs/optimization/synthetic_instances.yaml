@@ -1,0 +1,232 @@
+# Task 03A synthetic discrete instances (exact on 1 kWh / 5 min grid).
+# Expected values are for the finite discrete problem only.
+
+instances:
+  - name: A_no_charge
+    notes: "Short feasible directed route; no charging needed."
+    nodes: [O, D]
+    origin: O
+    destination: D
+    deadline_steps: 20
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 100
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    active_stations: []
+    stations: []
+    arcs:
+      - {u: O, v: D, dt_steps: 2, dE_truck_kwh: 5, dE_trailer_kwh: 0, road_cost: 10, power_ok: true}
+    expected:
+      status: OPTIMAL
+      objective: 10
+      path: [O, D]
+      charge_total_kwh: 0
+
+  - name: B_charge_required
+    notes: "Cannot reach D without charging at S."
+    nodes: [O, S, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    # 60 kW * 1.0 * 5/60 min = 5 kWh/step
+    stations:
+      - {node: S, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 2, compatible: true}
+    active_stations: [S]
+    arcs:
+      - {u: O, v: S, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+    expected:
+      status: OPTIMAL
+      objective: 90  # road 10 + charge 40 kWh * 2 cents
+      path: [O, S, D]
+      charge_total_kwh: 40
+
+  - name: C_station_unavailable
+    notes: "Same as B but S inactive → infeasible."
+    nodes: [O, S, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 2, compatible: true}
+    active_stations: []
+    arcs:
+      - {u: O, v: S, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+    expected:
+      status: INFEASIBLE
+
+  - name: D_alternative_roads
+    notes: "Short path energy-infeasible; longer path feasible."
+    nodes: [O, M, D]
+    origin: O
+    destination: D
+    deadline_steps: 40
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    active_stations: []
+    stations: []
+    arcs:
+      - {u: O, v: D, dt_steps: 2, dE_truck_kwh: 80, road_cost: 5, power_ok: true}
+      - {u: O, v: M, dt_steps: 3, dE_truck_kwh: 20, road_cost: 12, power_ok: true}
+      - {u: M, v: D, dt_steps: 3, dE_truck_kwh: 20, road_cost: 12, power_ok: true}
+    expected:
+      status: OPTIMAL
+      objective: 24
+      path: [O, M, D]
+      charge_total_kwh: 0
+
+  - name: E_partial_charge
+    notes: "Partial charge cheaper than full charge; both deadline-feasible."
+    nodes: [O, S, D]
+    origin: O
+    destination: D
+    deadline_steps: 40
+    E_truck_cap: 30
+    E_truck_min: 5
+    E_truck_init: 20
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 10, compatible: true}
+    active_stations: [S]
+    arcs:
+      - {u: O, v: S, dt_steps: 2, dE_truck_kwh: 10, road_cost: 3, power_ok: true}
+      - {u: S, v: D, dt_steps: 2, dE_truck_kwh: 20, road_cost: 3, power_ok: true}
+    expected:
+      status: OPTIMAL
+      # After OS: E=10; need ≥25 for SD → charge ≥15. Optimal charge 15 → grid 15*10=150 + road 6 = 156
+      objective: 156
+      path: [O, S, D]
+      charge_total_kwh: 15
+
+  - name: F_refrigeration_trailer
+    notes: "Config B: slow charge drains trailer TRU below floor → infeasible."
+    nodes: [O, S, D]
+    origin: O
+    destination: D
+    deadline_steps: 40
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    trailer: {cap: 30, min: 1, init: 3}
+    power_source: B
+    refrigeration_on: true
+    tru_kwh_per_step: 1
+    aux_kwh_per_step: 0
+    wait_max_steps: 0
+    # 12 kW → 1 kWh/step; need +40 batt ⇒ 40 steps of TRU drain → trailer dies
+    stations:
+      - {node: S, power_kw: 12, eta: 1.0, price_cents_per_grid_kwh: 1, compatible: true}
+    active_stations: [S]
+    arcs:
+      - {u: O, v: S, dt_steps: 2, dE_truck_kwh: 40, dE_trailer_kwh: 0, road_cost: 5, power_ok: true}
+      - {u: S, v: D, dt_steps: 2, dE_truck_kwh: 40, dE_trailer_kwh: 0, road_cost: 5, power_ok: true}
+    expected:
+      status: INFEASIBLE
+
+  - name: G_soc_boundary
+    notes: "Intermediate SOC floor breach; later regen cannot repair."
+    nodes: [O, M, D]
+    origin: O
+    destination: D
+    deadline_steps: 40
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 45
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    active_stations: []
+    stations: []
+    arcs:
+      - {u: O, v: M, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      # Regen would add 30 kWh, but never reached if OM rejected (45-40=5 < min 10)
+      - {u: M, v: D, dt_steps: 2, dE_truck_kwh: -30, road_cost: 5, power_ok: true}
+    expected:
+      status: INFEASIBLE
+
+  - name: H_directionality
+    notes: "Only O→D exists; journey D→O is infeasible."
+    nodes: [O, D]
+    origin: D
+    destination: O
+    deadline_steps: 20
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 100
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    active_stations: []
+    stations: []
+    arcs:
+      - {u: O, v: D, dt_steps: 2, dE_truck_kwh: 5, road_cost: 10, power_ok: true}
+    expected:
+      status: INFEASIBLE
+
+  - name: I_dominance
+    notes: "Same as B; used to compare dominance on vs off."
+    nodes: [O, S, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 2, compatible: true}
+    active_stations: [S]
+    arcs:
+      - {u: O, v: S, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+    expected:
+      status: OPTIMAL
+      objective: 90
+      path: [O, S, D]
+      charge_total_kwh: 40
+
+  - name: J_deadline
+    notes: "Cheaper slow path misses deadline; expensive fast path is optimal."
+    nodes: [O, D]
+    origin: O
+    destination: D
+    deadline_steps: 5
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 100
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    active_stations: []
+    stations: []
+    arcs:
+      - {u: O, v: D, dt_steps: 10, dE_truck_kwh: 5, road_cost: 5, power_ok: true}
+      - {u: O, v: D, dt_steps: 2, dE_truck_kwh: 8, road_cost: 50, power_ok: true}
+    expected:
+      status: OPTIMAL
+      objective: 50
+      path: [O, D]
+      charge_total_kwh: 0

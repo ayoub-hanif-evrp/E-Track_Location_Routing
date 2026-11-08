@@ -8,7 +8,7 @@ PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible r
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–02)
+## Current scope (Tasks 01–03A)
 
 **Task 01 / 01B / 01C — geographic foundation**
 
@@ -30,6 +30,13 @@ Eventually determine which Moroccan motorway service areas should receive truck-
 - Refrigeration configs **A** (tractor battery) / **B** (independent trailer pack); GCM labels (not “payload”).
 - Pilot CSV + figures; methodology, validation, and Task 02B audit/diagnostics reports.
 - **Not claimed:** calibrated TRU reproduction, OEM coast-down parameters, empirical trip validation, or charger-feasible routing.
+
+**Task 03A — multi-resource label-setting (MRLS) routing solver**
+
+- Custom discrete MRLS with DRIVE / CHARGE / WAIT; active stations are **inputs** (no placement B&B yet).
+- Exactness only for the **finite integer-grid** synthetic problem (1 kWh / 5 min); validated vs an independent exhaustive reference on cases A–J.
+- Incremental physics adapter `apply_drive` (incoming SOC) bridges Task 02B without copying force equations into the router.
+- **Not claimed:** continuous charging optimality, Moroccan network optimality, or certified operational chargers at ADM sites.
 
 ## Requirements
 
@@ -159,11 +166,20 @@ Open `reports/pilot_corridor_report.html` after a successful build. Literature o
 
 Proximity or bearing alone never yields truck-accessible verification. OSM topology ≠ legal HGV certification.
 
-## Not yet implemented (stop after Task 02)
+## Task 03A — routing benchmarks
 
-- Charging decisions or dwell times
-- Station placement optimization (no ALNS, GA, Gurobi, OR-Tools, etc.)
-- EVRP / multi-stop energy-feasible routing with en-route charge
+```bash
+python scripts/run_routing_benchmarks.py
+pytest -q tests/unit/test_label_setting.py tests/unit/test_routing_reference.py
+```
+
+Outputs: `results/routing_benchmarks.csv`, `reports/task03a_problem_formulation.md`, `reports/task03a_algorithm_validation.md`.
+
+## Not yet implemented (stop after Task 03A)
+
+- Station placement / branch-and-bound (Task 04)
+- Full Moroccan corridor EVRP with physics-derived arcs (Task 03B)
+- ALNS, GA, Gurobi, OR-Tools, etc.
 - Redesign of Task 01C access classifiers
 
-**Stop after Task 02** until the next phase is authorized.
+**Stop after Task 03A** until the researcher reviews.
