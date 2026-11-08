@@ -1,7 +1,7 @@
 {
-  "built_at_utc": "2026-11-07T23:52:40.338998+00:00",
+  "built_at_utc": "2026-11-08T00:01:13.650516+00:00",
   "package_version": "0.1.0",
-  "task": "01B",
+  "task": "01C",
   "config": "configs/pilot_corridor.yaml",
   "osm": {
     "url": "https://download.geofabrik.de/africa/morocco-261106.osm.pbf",
@@ -33,7 +33,19 @@
     "n_edges_multidigraph": 23267,
     "parallel_uv_collisions_if_digraph": 0,
     "unique_directed_uv_pairs": 23267,
-    "note": "parallel_uv_collisions_if_digraph counts additional edges that share the same (u,v) and would overwrite attributes in nx.DiGraph; MultiDiGraph preserves them."
+    "note": "parallel_uv_collisions_if_digraph counts additional edges that share the same (u,v) and would overwrite attributes in nx.DiGraph; MultiDiGraph preserves them.",
+    "facility_access": {
+      "highway_classes": [
+        "motorway",
+        "motorway_link",
+        "service"
+      ],
+      "n_nodes": 23199,
+      "n_edges": 23267,
+      "n_service_edges": 0,
+      "parallel_uv_collisions_if_digraph": 0,
+      "note": "access_G is for facility entrance/exit probes only; not used for A3 baselines"
+    }
   },
   "crs": {
     "storage_epsg": 4326,
@@ -65,8 +77,9 @@
       "unmatched": 4
     },
     "directed_access_status_counts": {
-      "entrance_and_exit": 6,
-      "unresolved": 4
+      "entrance_and_exit": 5,
+      "unresolved": 4,
+      "opposite_carriageway_only": 1
     },
     "hgv_access_status_counts": {
       "unknown": 10

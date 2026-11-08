@@ -81,6 +81,21 @@ def load_network_tables_pyrosm(
     highway_classes: list[str],
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Load driving network edges/nodes clipped to bbox using pyrosm."""
+    nodes, edges = load_driving_tables_pyrosm(pbf_path, bbox)
+    edges = edges[edges["highway"].isin(highway_classes)].copy()
+    if edges.empty:
+        raise RoadNetworkError(f"No edges with highway in {highway_classes} inside bbox")
+    used = set(edges["u"].tolist()) | set(edges["v"].tolist())
+    id_col = "id" if "id" in nodes.columns else "osmid"
+    nodes = nodes[nodes[id_col].isin(used)].copy()
+    return nodes, edges
+
+
+def load_driving_tables_pyrosm(
+    pbf_path: Path,
+    bbox: list[float],
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Load unfiltered driving network tables for a bbox (one pyrosm read)."""
     try:
         from pyrosm import OSM
     except ImportError as exc:
@@ -93,14 +108,8 @@ def load_network_tables_pyrosm(
     nodes, edges = osm.get_network(nodes=True, network_type="driving")
     if edges is None or edges.empty:
         raise RoadNetworkError("pyrosm returned no driving edges for bbox")
-    edges = edges[edges["highway"].isin(highway_classes)].copy()
-    if edges.empty:
-        raise RoadNetworkError(f"No edges with highway in {highway_classes} inside bbox")
-    used = set(edges["u"].tolist()) | set(edges["v"].tolist())
     if nodes is None or nodes.empty:
         raise RoadNetworkError("pyrosm returned edges without nodes")
-    id_col = "id" if "id" in nodes.columns else "osmid"
-    nodes = nodes[nodes[id_col].isin(used)].copy()
     return nodes, edges
 
 
@@ -298,15 +307,51 @@ def build_pilot_graph(
     extract_info: dict[str, Any],
     config: dict[str, Any],
     root: Path | None = None,
-) -> tuple[nx.MultiDiGraph, dict[str, Any]]:
+) -> tuple[nx.MultiDiGraph, nx.MultiDiGraph, dict[str, Any]]:
+    """
+    Build routing graph and a separate facility-access graph from one OSM read.
+
+    - routing_G: motorway + motorway_link (baseline routing unchanged in intent)
+    - access_G: routing classes + highway=service for entrance/exit probes only
+    """
     raw_dir = Path(national_pbf).parent
     pbf_path, bbox = resolve_extract_input(raw_dir, extract_info, national_pbf, root=root)
     highway_classes = list(config["osm"]["highway_classes"])
-    nodes, edges = load_network_tables_pyrosm(pbf_path, bbox, highway_classes)
-    G, audit = build_multidigraph_from_directed_edges(nodes, edges)
+    access_classes = list(
+        dict.fromkeys(highway_classes + list(config["osm"].get("facility_access_classes", ["service"])))
+    )
+
+    all_nodes, all_edges = load_driving_tables_pyrosm(pbf_path, bbox)
+    id_col = "id" if "id" in all_nodes.columns else "osmid"
+
+    route_edges = all_edges[all_edges["highway"].isin(highway_classes)].copy()
+    if route_edges.empty:
+        raise RoadNetworkError(f"No edges with highway in {highway_classes} inside bbox")
+    used_route = set(route_edges["u"].tolist()) | set(route_edges["v"].tolist())
+    route_nodes = all_nodes[all_nodes[id_col].isin(used_route)].copy()
+    G, audit = build_multidigraph_from_directed_edges(route_nodes, route_edges)
     if G.number_of_edges() == 0:
         raise RoadNetworkError("Directed graph has zero edges after filtering")
-    return G, audit
+
+    access_edges = all_edges[all_edges["highway"].isin(access_classes)].copy()
+    used_access = set(access_edges["u"].tolist()) | set(access_edges["v"].tolist())
+    access_nodes = all_nodes[all_nodes[id_col].isin(used_access)].copy()
+    access_G, access_audit = build_multidigraph_from_directed_edges(access_nodes, access_edges)
+    audit["facility_access"] = {
+        "highway_classes": access_classes,
+        "n_nodes": access_G.number_of_nodes(),
+        "n_edges": access_G.number_of_edges(),
+        "n_service_edges": int((access_edges["highway"] == "service").sum()),
+        "parallel_uv_collisions_if_digraph": access_audit["parallel_uv_collisions_if_digraph"],
+        "note": "access_G is for facility entrance/exit probes only; not used for A3 baselines",
+    }
+    logger.info(
+        "Facility-access graph: %d nodes, %d edges (%d service)",
+        access_G.number_of_nodes(),
+        access_G.number_of_edges(),
+        audit["facility_access"]["n_service_edges"],
+    )
+    return G, access_G, audit
 
 
 def export_graph_artifacts(G: nx.MultiDiGraph | nx.DiGraph, processed_dir: Path) -> dict[str, Path]:

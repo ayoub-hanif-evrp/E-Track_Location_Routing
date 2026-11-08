@@ -57,6 +57,14 @@ def test_pilot_network_integrity_and_schema():
         assert col in sites.columns
     assert (sites["match_status"] != "verified").all()
     assert len(sites) <= 20
+    # Task 01C: no zero-length false positives
+    ee = sites[sites["directed_access_status"] == "entrance_and_exit"]
+    if len(ee):
+        assert (ee["entrance_path_m"].astype(float) >= 1.0).all()
+        assert (ee["exit_path_m"].astype(float) >= 1.0).all()
+        assert (ee["entrance_node_id"] != ee["connected_node_id"]).any() or (
+            ee["entrance_path_m"].astype(float) > 0
+        ).all()
 
 
 @pytest.mark.skipif(not _artifacts_ready(), reason="Pilot artifacts not built yet")

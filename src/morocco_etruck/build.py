@@ -51,7 +51,9 @@ def run_build(config_path: Path, *, skip_download: bool = False) -> dict[str, An
         raw_dir, extract_info, national_pbf, root=root
     )
 
-    G, graph_audit = build_pilot_graph(national_pbf, extract_info, config, root=root)
+    G, access_G, graph_audit = build_pilot_graph(
+        national_pbf, extract_info, config, root=root
+    )
     export_graph_artifacts(G, processed_dir)
     net_stats = network_summary(G)
 
@@ -63,6 +65,7 @@ def run_build(config_path: Path, *, skip_download: bool = False) -> dict[str, An
         bbox,
         adm_html_cache=adm_cache,
         allow_network=not skip_download,
+        access_G=access_G,
     )
     write_candidate_sites(sites, processed_dir / "candidate_sites.csv")
 
@@ -83,7 +86,7 @@ def run_build(config_path: Path, *, skip_download: bool = False) -> dict[str, An
     manifest = {
         "built_at_utc": datetime.now(timezone.utc).isoformat(),
         "package_version": __version__,
-        "task": "01B",
+        "task": "01C",
         "config": relpath_posix(config_path, root),
         "osm": osm_meta,
         "extract": extract_info,

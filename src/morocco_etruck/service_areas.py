@@ -266,19 +266,21 @@ def _in_edges(G: nx.Graph, v: Any):
             yield u, 0, d
 
 
+MIN_ACCESS_PATH_M = 1.0  # reject zero-length / self-node "paths"
+ACCESS_EDGE_TYPES = {"motorway", "motorway_link", "service"}
+FACILITY_ATTACH_TYPES = {"motorway_link", "service"}
+
+
 def local_access_subgraph(G: nx.Graph, seed_nodes: list[Any], max_hops: int = 8) -> nx.DiGraph:
-    """Undirected BFS neighbourhood, returned as DiGraph preserving original directions."""
-    allowed = {"motorway", "motorway_link"}
+    """Undirected BFS neighbourhood for access probing (motorway/link/service)."""
+    allowed = ACCESS_EDGE_TYPES
     visited: set[Any] = set(seed_nodes)
     frontier = list(seed_nodes)
     for _ in range(max_hops):
         nxt = []
         for n in frontier:
             for nbr in set(G.successors(n)) | set(G.predecessors(n)):
-                # Keep neighbour if any connecting edge is motorway/link
                 keep = False
-                for _, _, d in list(_out_edges(G, n)) + list(_out_edges(G, nbr)):
-                    pass
                 for vv, _, d in _out_edges(G, n):
                     if vv == nbr and str(d.get("highway", "")) in allowed:
                         keep = True
@@ -295,14 +297,15 @@ def local_access_subgraph(G: nx.Graph, seed_nodes: list[Any], max_hops: int = 8)
     for n in visited:
         H.add_node(n, **G.nodes[n])
     for u in visited:
-        for v, _, d in _out_edges(G, u):
+        for v, key, d in _out_edges(G, u):
             if v in visited and str(d.get("highway", "")) in allowed:
-                # Collapse parallel edges to shortest for access probe
+                payload = dict(d)
+                payload["edge_key"] = key
                 if H.has_edge(u, v):
                     if float(d.get("length_m") or 0) < float(H.edges[u, v].get("length_m") or 0):
-                        H.edges[u, v].update(d)
+                        H.edges[u, v].update(payload)
                 else:
-                    H.add_edge(u, v, **d)
+                    H.add_edge(u, v, **payload)
     return H
 
 
@@ -324,6 +327,68 @@ def path_hgv_status(G: nx.Graph, path: list[Any]) -> str:
     return "unknown"
 
 
+def path_length_and_edges(G: nx.Graph, path: list[Any]) -> tuple[float, list[str]]:
+    length = 0.0
+    edge_ids: list[str] = []
+    for u, v in zip(path[:-1], path[1:]):
+        data = G.edges[u, v]
+        length += float(data.get("length_m") or 0.0)
+        wid = data.get("osm_way_id", "")
+        key = data.get("edge_key", "")
+        edge_ids.append(f"{u}->{v}:{wid}:{key}")
+    return length, edge_ids
+
+
+def incident_highways(G: nx.Graph, n: Any) -> set[str]:
+    hw: set[str] = set()
+    for _, _, d in _out_edges(G, n):
+        hw.add(str(d.get("highway", "") or ""))
+    for _, _, d in _in_edges(G, n):
+        hw.add(str(d.get("highway", "") or ""))
+    return hw
+
+
+def is_facility_attachment_node(G: nx.Graph, n: Any, carriageway_nodes: set[Any]) -> bool:
+    """
+    Facility attachment must be independently identifiable from access roads.
+
+    Pure carriageway motorway nodes are never valid facility endpoints — this
+    rejects the Task 01B zero-length self-path false positive.
+    """
+    hw = incident_highways(G, n)
+    if hw & FACILITY_ATTACH_TYPES:
+        return True
+    # Allow non-carriageway nodes that only appear via service/link neighbourhood
+    if n in carriageway_nodes and hw <= {"motorway", ""}:
+        return False
+    if "motorway" in hw and not (hw & FACILITY_ATTACH_TYPES):
+        return False
+    return False
+
+
+def _valid_access_path(
+    H: nx.DiGraph,
+    source: Any,
+    target: Any,
+    *,
+    max_path_length_m: float,
+) -> tuple[float, list[Any], list[str]] | None:
+    """Return positive-length path with ≥1 edge, else None."""
+    if source == target:
+        return None
+    if source not in H or target not in H:
+        return None
+    if not nx.has_path(H, source, target):
+        return None
+    path = nx.shortest_path(H, source, target, weight="length_m")
+    if len(path) < 2:
+        return None
+    length, edge_ids = path_length_and_edges(H, path)
+    if length < MIN_ACCESS_PATH_M or length > max_path_length_m:
+        return None
+    return length, path, edge_ids
+
+
 def find_directed_access(
     G: nx.Graph,
     facility_lon: float,
@@ -335,9 +400,12 @@ def find_directed_access(
     max_path_length_m: float = 2500.0,
 ) -> dict[str, Any]:
     """
-    Probe directed entrance/exit via motorway / motorway_link topology.
+    Probe directed entrance/exit using motorway, motorway_link, and service edges.
 
-    Proximity to a motorway node is never treated as confirmed access.
+    Rules:
+    - Facility attachment ≠ carriageway attach node
+    - Paths must traverse real edges with length ≥ MIN_ACCESS_PATH_M
+    - Proximity alone never yields entrance_and_exit
     """
     result = {
         "directed_access_status": "unresolved",
@@ -346,50 +414,62 @@ def find_directed_access(
         "carriageway_attach_node_id": None,
         "entrance_path_m": None,
         "exit_path_m": None,
+        "entrance_edge_ids": "",
+        "exit_edge_ids": "",
         "hgv_access_status": "unknown",
         "access_evidence": "",
     }
     dir_nodes = motorway_nodes_for_direction(G, travel_direction, bearing_tol)
     opp_nodes = opposite_motorway_nodes(G, travel_direction, bearing_tol)
-    near = nearest_nodes(G, facility_lon, facility_lat, k=30)
-    near = [(n, d) for n, d in near if d <= max_facility_node_dist_m]
+    near = [(n, d) for n, d in nearest_nodes(G, facility_lon, facility_lat, k=40) if d <= max_facility_node_dist_m]
     if not near:
-        result["directed_access_status"] = "unresolved"
         result["access_evidence"] = "No graph nodes within facility search radius"
         return result
 
-    facility_nodes = [n for n, _ in near]
-    # Build local subgraph around facility + nearby carriageway nodes
-    seeds = facility_nodes + [n for n, d in nearest_nodes(G, facility_lon, facility_lat, k=80) if d <= max_facility_node_dist_m * 3]
-    H = local_access_subgraph(G, seeds, max_hops=10)
+    facility_nodes = [
+        n for n, _ in near if is_facility_attachment_node(G, n, dir_nodes | opp_nodes)
+    ]
+    if not facility_nodes:
+        # Location may be near motorway only — not an access demonstration
+        result["directed_access_status"] = "proximity_only"
+        result["access_evidence"] = (
+            "Nearby nodes are carriageway-only; no motorway_link/service attachment "
+            "node found for the facility (zero-length self-paths rejected)"
+        )
+        return result
 
-    fac_set = set(facility_nodes)
+    seeds = list({n for n, _ in near} | set(facility_nodes))
+    seeds += [n for n, d in nearest_nodes(G, facility_lon, facility_lat, k=100) if d <= max_facility_node_dist_m * 3]
+    H = local_access_subgraph(G, seeds, max_hops=12)
+
+    fac_set = [n for n in facility_nodes if n in H]
     dir_in_H = [n for n in dir_nodes if n in H]
     opp_in_H = [n for n in opp_nodes if n in H]
 
-    best_in: tuple[float, Any, Any, list[Any]] | None = None
-    best_out: tuple[float, Any, Any, list[Any]] | None = None
+    best_in: tuple[float, Any, Any, list[Any], list[str]] | None = None
+    best_out: tuple[float, Any, Any, list[Any], list[str]] | None = None
 
     for c in dir_in_H:
         for f in fac_set:
-            if f not in H or c not in H:
+            if c == f:
                 continue
-            if nx.has_path(H, c, f):
-                path = nx.shortest_path(H, c, f, weight="length_m")
-                length = sum(float(H.edges[a, b]["length_m"]) for a, b in zip(path[:-1], path[1:]))
-                if length <= max_path_length_m and (best_in is None or length < best_in[0]):
-                    best_in = (length, c, f, path)
-            if nx.has_path(H, f, c):
-                path = nx.shortest_path(H, f, c, weight="length_m")
-                length = sum(float(H.edges[a, b]["length_m"]) for a, b in zip(path[:-1], path[1:]))
-                if length <= max_path_length_m and (best_out is None or length < best_out[0]):
-                    best_out = (length, f, c, path)
+            got = _valid_access_path(H, c, f, max_path_length_m=max_path_length_m)
+            if got and (best_in is None or got[0] < best_in[0]):
+                length, path, eids = got
+                best_in = (length, c, f, path, eids)
+            got = _valid_access_path(H, f, c, max_path_length_m=max_path_length_m)
+            if got and (best_out is None or got[0] < best_out[0]):
+                length, path, eids = got
+                best_out = (length, f, c, path, eids)
 
-    # Opposite carriageway probe (must not be accepted as valid for this direction)
     opp_touch = False
     for c in opp_in_H:
         for f in fac_set:
-            if f in H and c in H and (nx.has_path(H, c, f) or nx.has_path(H, f, c)):
+            if c == f:
+                continue
+            if _valid_access_path(H, c, f, max_path_length_m=max_path_length_m) or _valid_access_path(
+                H, f, c, max_path_length_m=max_path_length_m
+            ):
                 opp_touch = True
                 break
         if opp_touch:
@@ -412,13 +492,14 @@ def find_directed_access(
                 "carriageway_attach_node_id": best_in[1],
                 "entrance_path_m": round(best_in[0], 2),
                 "exit_path_m": round(best_out[0], 2),
+                "entrance_edge_ids": "|".join(best_in[4]),
+                "exit_edge_ids": "|".join(best_out[4]),
                 "hgv_access_status": hgv,
                 "access_evidence": (
-                    f"Directed motorway/link path from carriageway node {best_in[1]} "
-                    f"to facility node {best_in[2]} ({best_in[0]:.1f} m) and return "
-                    f"from {best_out[1]} to {best_out[2]} ({best_out[0]:.1f} m). "
-                    f"HGV tags along paths aggregate to '{hgv}'. "
-                    "OSM topology ≠ verified legal truck access."
+                    f"Positive-length directed paths: carriageway {best_in[1]} → "
+                    f"facility attach {best_in[2]} ({best_in[0]:.1f} m, edges={len(best_in[4])}); "
+                    f"return {best_out[1]} → {best_out[2]} ({best_out[0]:.1f} m, edges={len(best_out[4])}). "
+                    f"HGV aggregate='{hgv}'. OSM topology ≠ legal truck certification."
                 ),
             }
         )
@@ -431,6 +512,7 @@ def find_directed_access(
                 "entrance_node_id": best_in[2],
                 "carriageway_attach_node_id": best_in[1],
                 "entrance_path_m": round(best_in[0], 2),
+                "entrance_edge_ids": "|".join(best_in[4]),
                 "hgv_access_status": path_hgv_status(H, best_in[3]),
                 "access_evidence": "Entrance path found; no directed return/exit within limits",
             }
@@ -444,35 +526,26 @@ def find_directed_access(
                 "exit_node_id": best_out[1],
                 "carriageway_attach_node_id": best_out[2],
                 "exit_path_m": round(best_out[0], 2),
+                "exit_edge_ids": "|".join(best_out[4]),
                 "hgv_access_status": path_hgv_status(H, best_out[3]),
                 "access_evidence": "Exit/return path found; no directed entrance within limits",
             }
         )
         return result
 
-    if opp_touch and not best_in and not best_out:
+    if opp_touch:
         result["directed_access_status"] = "opposite_carriageway_only"
         result["access_evidence"] = (
-            "Facility touches opposite carriageway topology only; "
-            "refusing opposite-direction snap for this ADM travel direction"
+            "Facility attaches only to opposite carriageway topology; "
+            "refusing opposite-direction snap"
         )
         return result
 
-    # Near motorway but no link paths
-    near_mw = any(
-        any(str(d.get("highway", "")) == "motorway" for _, _, d in _out_edges(G, n))
-        or any(str(d.get("highway", "")) == "motorway" for _, _, d in _in_edges(G, n))
-        for n, _ in near
+    result["directed_access_status"] = "proximity_only"
+    result["access_evidence"] = (
+        "Facility attachment candidates exist nearby, but no valid positive-length "
+        "directed entrance/exit to the required carriageway was found"
     )
-    if near_mw:
-        result["directed_access_status"] = "proximity_only"
-        result["access_evidence"] = (
-            "Facility is geometrically near motorway nodes, but no directed "
-            "motorway_link entrance/exit path was established"
-        )
-        return result
-
-    result["access_evidence"] = "No directed access evidence found"
     return result
 
 
@@ -487,16 +560,45 @@ def _poi_mask(pois: pd.DataFrame, token: str) -> pd.Series:
     return mask
 
 
-def match_candidate_to_graph(
-    candidate: AdmCandidate,
-    pois: pd.DataFrame,
-    G: nx.Graph,
-    max_match_distance_m: float,
-    max_connection_distance_m: float,
-    bearing_tol: float,
-) -> dict[str, Any]:
-    """Validate location and directed access. Never invents coordinates."""
-    base: dict[str, Any] = {
+def _rank_service_pois(hits: pd.DataFrame) -> pd.DataFrame:
+    hits = hits.copy()
+    name_l = hits["name"].astype(str).str.lower()
+    hwy = hits["highway"].astype(str).str.lower()
+    amen = hits["amenity"].astype(str).str.lower()
+    hits["_is_aire"] = name_l.str.contains(
+        r"aire\s+de\s+service|rest\s*area|aire\s+de\s+repos", regex=True
+    )
+    hits["_is_services_tag"] = hwy.isin(["services", "rest_area"]) | amen.isin(
+        ["fuel", "charging_station"]
+    )
+    hits["_rank"] = hits["_is_aire"].astype(int) * 3 + hits["_is_services_tag"].astype(int)
+    return hits[hits["_rank"] > 0].sort_values("_rank", ascending=False)
+
+
+def _name_side_affinity(name: str, travel_direction: str) -> float:
+    """Soft prior from est/ouest naming (not alone sufficient for access)."""
+    n = normalize_token(name)
+    # On A3, dual aires are often named est/ouest for opposite sides.
+    if "ouest" in n or "west" in n:
+        return 1.0 if travel_direction == DIR_CASA_AGADIR else 0.3
+    if "est" in n or "east" in n:
+        return 1.0 if travel_direction == DIR_AGADIR_CASA else 0.3
+    return 0.5
+
+
+def _access_score(status: str) -> float:
+    return {
+        "entrance_and_exit": 4.0,
+        "entrance_only": 2.0,
+        "exit_only": 2.0,
+        "opposite_carriageway_only": 0.2,
+        "proximity_only": 0.1,
+        "unresolved": 0.0,
+    }.get(status, 0.0)
+
+
+def _empty_candidate_row(candidate: AdmCandidate) -> dict[str, Any]:
+    return {
         "official_name": candidate.official_name,
         "partner": candidate.partner,
         "travel_direction": candidate.travel_direction,
@@ -505,7 +607,9 @@ def match_candidate_to_graph(
         "lat": None,
         "lon": None,
         "osm_id": None,
+        "osm_object_type": None,
         "location_match_status": "unmatched",
+        "location_match_confidence": "none",
         "directed_access_status": "unresolved",
         "hgv_access_status": "unknown",
         "connected_node_id": None,
@@ -514,61 +618,98 @@ def match_candidate_to_graph(
         "exit_node_id": None,
         "entrance_path_m": None,
         "exit_path_m": None,
+        "entrance_edge_ids": "",
+        "exit_edge_ids": "",
         "requires_manual_review": True,
         "evidence": "",
-        # Deprecated Task 01 field retained for schema continuity (never 'verified' by proximity alone)
         "match_status": "unresolved",
     }
+
+
+def match_candidate_to_graph(
+    candidate: AdmCandidate,
+    pois: pd.DataFrame,
+    access_G: nx.Graph,
+    max_match_distance_m: float,
+    max_connection_distance_m: float,
+    bearing_tol: float,
+    *,
+    reserved_osm_ids: set[Any] | None = None,
+) -> dict[str, Any]:
+    """
+    Evaluate all plausible OSM features for one ADM directional entry.
+
+    Does not invent coordinates. Does not accept zero-length self-paths.
+    Prefer features with positive-length directed access for this travel direction.
+    Avoid silently reusing an OSM object already claimed by the opposite direction
+    unless no alternative exists and access evidence is direction-specific.
+    """
+    base = _empty_candidate_row(candidate)
+    reserved_osm_ids = reserved_osm_ids or set()
 
     if pois.empty:
         base["evidence"] = "No OSM service/fuel POIs available in extract for matching"
         return base
 
-    hits = pois[_poi_mask(pois, candidate.name_token)]
+    hits = _rank_service_pois(pois[_poi_mask(pois, candidate.name_token)])
     if hits.empty:
-        base["evidence"] = f"No OSM POI name matched token '{candidate.name_token}'"
+        base["evidence"] = f"No OSM service-area POI matched token '{candidate.name_token}'"
         return base
 
-    # Prefer genuine service-area / rest-area / fuel features; reject weak name collisions
-    # (e.g. "Chambre de commerce ... Settat" must not count as ADS Settat).
-    hits = hits.copy()
-    name_l = hits["name"].astype(str).str.lower()
-    hwy = hits["highway"].astype(str).str.lower()
-    amen = hits["amenity"].astype(str).str.lower()
-    hits["_is_aire"] = name_l.str.contains(r"aire\s+de\s+service|rest\s*area|aire\s+de\s+repos", regex=True)
-    hits["_is_services_tag"] = hwy.isin(["services", "rest_area"]) | amen.isin(["fuel", "charging_station"])
-    hits["_rank"] = hits["_is_aire"].astype(int) * 3 + hits["_is_services_tag"].astype(int)
-    hits = hits.sort_values("_rank", ascending=False)
-    best_rank = int(hits.iloc[0]["_rank"])
-    if best_rank <= 0:
-        base["evidence"] = (
-            f"OSM name token '{candidate.name_token}' matched only non-service features "
-            f"(e.g. '{hits.iloc[0]['name']}'); refusing false-positive location match"
+    scored: list[tuple[float, dict[str, Any], dict[str, Any]]] = []
+    for _, poi in hits.iterrows():
+        lon, lat = float(poi["lon"]), float(poi["lat"])
+        access = find_directed_access(
+            access_G,
+            lon,
+            lat,
+            candidate.travel_direction,
+            max_facility_node_dist_m=max_match_distance_m,
+            bearing_tol=bearing_tol,
+            max_path_length_m=max(2500.0, max_connection_distance_m * 4),
         )
-        return base
+        osm_id = poi["osm_id"]
+        score = (
+            _access_score(access["directed_access_status"]) * 10.0
+            + float(poi["_rank"])
+            + _name_side_affinity(str(poi["name"]), candidate.travel_direction)
+        )
+        if osm_id in reserved_osm_ids:
+            # Strong penalty: opposite direction already claimed this object
+            score -= 50.0
+        scored.append((score, poi.to_dict(), access))
 
-    poi = hits.iloc[0]
+    scored.sort(key=lambda x: x[0], reverse=True)
+    best_score, poi, access = scored[0]
+
+    # If best is reserved and score collapsed, prefer next unreserved with any access
+    if poi["osm_id"] in reserved_osm_ids:
+        alternatives = [s for s in scored if s[1]["osm_id"] not in reserved_osm_ids]
+        if alternatives and alternatives[0][0] > best_score - 40:
+            best_score, poi, access = alternatives[0]
+        elif access["directed_access_status"] not in {"entrance_and_exit", "entrance_only", "exit_only"}:
+            # Ambiguous shared object without independent access — leave unresolved location reuse
+            base["evidence"] = (
+                f"Only OSM feature osm_id={poi['osm_id']} matched token, but it is already "
+                f"assigned to the opposite direction and lacks independent directed access "
+                f"for {candidate.travel_direction}"
+            )
+            return base
+
     lon, lat = float(poi["lon"]), float(poi["lat"])
+    osm_type = "way" if str(poi.get("highway", "")) else "node"
+    conf = "high" if access["directed_access_status"] == "entrance_and_exit" else "medium"
+    if access["directed_access_status"] in {"proximity_only", "unresolved"}:
+        conf = "low"
+
     base.update(
         {
             "lat": lat,
             "lon": lon,
             "osm_id": poi["osm_id"],
+            "osm_object_type": osm_type,
             "location_match_status": "matched_osm",
-        }
-    )
-
-    access = find_directed_access(
-        G,
-        lon,
-        lat,
-        candidate.travel_direction,
-        max_facility_node_dist_m=max_match_distance_m,
-        bearing_tol=bearing_tol,
-        max_path_length_m=max(2500.0, max_connection_distance_m * 4),
-    )
-    base.update(
-        {
+            "location_match_confidence": conf,
             "directed_access_status": access["directed_access_status"],
             "hgv_access_status": access["hgv_access_status"],
             "entrance_node_id": access.get("entrance_node_id"),
@@ -578,26 +719,38 @@ def match_candidate_to_graph(
             or access.get("exit_node_id"),
             "entrance_path_m": access.get("entrance_path_m"),
             "exit_path_m": access.get("exit_path_m"),
+            "entrance_edge_ids": access.get("entrance_edge_ids", ""),
+            "exit_edge_ids": access.get("exit_edge_ids", ""),
             "connection_distance_m": access.get("entrance_path_m") or access.get("exit_path_m"),
             "evidence": (
-                f"OSM location osm_id={poi['osm_id']} name='{poi['name']}'. "
-                f"{access.get('access_evidence', '')}"
+                f"OSM osm_id={poi['osm_id']} name='{poi['name']}' "
+                f"(score={best_score:.2f}). {access.get('access_evidence', '')}"
             ),
         }
     )
 
-    # Conservative legacy match_status for continuity
     if access["directed_access_status"] == "entrance_and_exit":
+        # Hard reject residual zero-length records
+        if (access.get("entrance_path_m") or 0) < MIN_ACCESS_PATH_M or (
+            access.get("exit_path_m") or 0
+        ) < MIN_ACCESS_PATH_M:
+            base["directed_access_status"] = "unresolved"
+            base["match_status"] = "unresolved"
+            base["evidence"] += " Rejected residual zero-length entrance/exit."
+            return base
         base["match_status"] = "access_topology_ok"
-        # Still require manual review unless HGV explicitly permitted
         base["requires_manual_review"] = access["hgv_access_status"] != "permitted"
-    elif access["directed_access_status"] in {"entrance_only", "exit_only", "proximity_only", "opposite_carriageway_only"}:
+    elif access["directed_access_status"] in {
+        "entrance_only",
+        "exit_only",
+        "proximity_only",
+        "opposite_carriageway_only",
+    }:
         base["match_status"] = "partial_access"
         base["requires_manual_review"] = True
     else:
         base["match_status"] = "unresolved"
         base["requires_manual_review"] = True
-
     return base
 
 
@@ -609,10 +762,12 @@ def build_candidate_sites(
     adm_html_cache: Path | None = None,
     *,
     allow_network: bool = True,
+    access_G: nx.Graph | None = None,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     sa = config["service_areas"]
     url = sa["source_url"]
     meta: dict[str, Any] = {"adm_url": url}
+    graph_for_access = access_G if access_G is not None else G
 
     if adm_html_cache and adm_html_cache.exists():
         html = adm_html_cache.read_text(encoding="utf-8")
@@ -636,18 +791,65 @@ def build_candidate_sites(
     candidates = parse_adm_candidates(html, url, sa["corridor_name_tokens"])
     pois = collect_osm_service_pois_pyrosm(pbf_path, bbox)
     meta["osm_poi_count"] = int(len(pois))
+    meta["access_graph_nodes"] = graph_for_access.number_of_nodes()
+    meta["access_graph_edges"] = graph_for_access.number_of_edges()
 
-    rows = [
-        match_candidate_to_graph(
-            c,
-            pois,
-            G,
-            float(sa["max_match_distance_m"]),
-            float(sa["max_connection_distance_m"]),
-            float(sa["direction_bearing_tolerance_deg"]),
-        )
-        for c in candidates
-    ]
+    # Match Casa→Agadir and Agadir→Casa independently; reserve OSM IDs after assignment
+    reserved: set[Any] = set()
+    # Process one direction family at a time so opposite entries compete fairly
+    rows: list[dict[str, Any]] = []
+    by_token: dict[str, list[AdmCandidate]] = {}
+    for c in candidates:
+        by_token.setdefault(c.name_token, []).append(c)
+
+    for token, group in by_token.items():
+        # Score each direction against all POIs without reservation first
+        provisional: list[tuple[AdmCandidate, dict[str, Any]]] = []
+        for c in group:
+            row = match_candidate_to_graph(
+                c,
+                pois,
+                graph_for_access,
+                float(sa["max_match_distance_m"]),
+                float(sa["max_connection_distance_m"]),
+                float(sa["direction_bearing_tolerance_deg"]),
+                reserved_osm_ids=set(),
+            )
+            provisional.append((c, row))
+
+        # If both directions selected the same osm_id, keep the better access one;
+        # re-match the other with that osm_id reserved.
+        ids = [r.get("osm_id") for _, r in provisional if r.get("osm_id") is not None]
+        if len(group) == 2 and len(set(map(str, ids))) == 1 and ids[0] is not None:
+            provisional.sort(
+                key=lambda cr: _access_score(cr[1].get("directed_access_status", "")),
+                reverse=True,
+            )
+            keep_c, keep_row = provisional[0]
+            other_c, _ = provisional[1]
+            other_row = match_candidate_to_graph(
+                other_c,
+                pois,
+                graph_for_access,
+                float(sa["max_match_distance_m"]),
+                float(sa["max_connection_distance_m"]),
+                float(sa["direction_bearing_tolerance_deg"]),
+                reserved_osm_ids={keep_row["osm_id"]},
+            )
+            rows.extend([keep_row, other_row])
+            if keep_row.get("osm_id") is not None:
+                reserved.add(keep_row["osm_id"])
+            if other_row.get("osm_id") is not None:
+                reserved.add(other_row["osm_id"])
+        else:
+            for _, row in provisional:
+                rows.append(row)
+                if row.get("osm_id") is not None:
+                    reserved.add(row["osm_id"])
+
+    # Restore ADM listing order
+    order = {(c.official_name, c.travel_direction): i for i, c in enumerate(candidates)}
+    rows.sort(key=lambda r: order.get((r["official_name"], r["travel_direction"]), 999))
     return pd.DataFrame(rows), meta
 
 

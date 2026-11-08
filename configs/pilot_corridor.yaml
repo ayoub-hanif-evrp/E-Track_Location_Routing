@@ -24,6 +24,9 @@ osm:
   highway_classes:
     - motorway
     - motorway_link
+  # Extra classes for facility entrance/exit probing only (not baseline routing).
+  facility_access_classes:
+    - service
   # Do not silently include trunk unless needed for connectivity; flagged in manifest if used.
   allow_trunk_fallback: false
 
