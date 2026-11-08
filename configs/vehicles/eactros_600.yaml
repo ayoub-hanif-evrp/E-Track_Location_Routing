@@ -1,0 +1,69 @@
+# Mercedes-Benz eActros 600 tractor 4x2 — research parameter pack
+# Product sheet model reference: 983403 (tractor)
+# Provenance labels: manufacturer | published | assumed | literature
+
+vehicle_id: eactros_600_tractor_4x2
+model_reference: "983403"
+name: "Mercedes-Benz eActros 600 tractor 4x2"
+
+battery:
+  installed_kwh: 621.0
+  usable_kwh: 600.0
+  provenance: manufacturer
+  source: "Mercedes-Benz eActros 600 product information / technical data (installed ~621 kWh, usable ~600 kWh)"
+
+drive:
+  continuous_power_kw: 400.0
+  peak_power_kw: 600.0
+  peak_regen_power_kw: 600.0  # assumed upper bound = peak drive; not MB-measured regen limit
+  continuous_power_provenance: manufacturer
+  peak_power_provenance: manufacturer
+  peak_regen_provenance: assumed
+
+mass:
+  unladen_tractor_kg: 11700.0
+  provenance_tractor: manufacturer
+  note_tractor: "≈11.7 t unladen tractor (product sheet order of magnitude)"
+  # Trailer curb mass is a research assumption for refrigerated combination GCM scenarios
+  unladen_trailer_kg: 8000.0
+  provenance_trailer: assumed
+  technically_permissible_combination_kg: 44000.0
+  provenance_gcm_limit: manufacturer
+
+aero:
+  # Literature / engineering assumptions (not MB coast-down measurements)
+  CdA_m2: 6.5
+  CdA_provenance: assumed
+  CdA_sensitivity: [5.5, 7.5]
+  Crr: 0.007
+  Crr_provenance: literature
+  Crr_sensitivity: [0.005, 0.010]
+  note: "CdA and Crr are research parameters for long-haul tractor–trailer; not manufacturer-measured for this pack"
+
+efficiency:
+  eta_prop: 0.90
+  eta_prop_provenance: assumed
+  eta_prop_sensitivity: [0.85, 0.93]
+  eta_regen: 0.70
+  eta_regen_provenance: assumed
+  eta_regen_sensitivity: [0.55, 0.80]
+
+auxiliaries:
+  P_aux_w: 2500.0
+  provenance: assumed
+  note: "Constant cabin/HVAC/electronics draw; research parameter (documented range 1–4 kW)"
+  P_aux_sensitivity_w: [1000.0, 4000.0]
+
+soc:
+  soc_initial: 1.0
+  soc_min: 0.10
+  soc_max: 1.0
+  soc_min_note: "Assumed operating floor (10%); not a manufacturer warranty limit"
+
+speed_policy:
+  cruise_kmh: 80.0
+  cruise_mps: 22.22222222222222
+  note: "Constant cruise; OSM maxspeed is NOT used as travel speed; a=0 under cruise"
+
+gravity_m_s2: 9.80665
+air_density_default_kg_m3: 1.225

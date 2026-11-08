@@ -1,0 +1,65 @@
+# Task 02 pilot experiment matrix (Problem A corridor energy; no charger optimization)
+
+vehicle_config: configs/vehicles/eactros_600.yaml
+refrigeration_config: configs/energy/refrigeration_approx.yaml
+baseline_geojson: results/baseline_routes.geojson
+baseline_json: results/baseline_routes.json
+
+cruise_kmh: 80.0
+
+gcm_scenarios:
+  light:
+    gcm_kg: 25000.0
+    label: light_25t
+    note: "Pilot light combination mass (GCM)"
+  heavy:
+    gcm_kg: 40000.0
+    label: heavy_40t
+    note: "Matches maker published range-test towing-weight condition order (~40 t)"
+
+directions:
+  - casablanca_to_agadir
+  - agadir_to_casablanca
+
+# Weather day IDs resolved after Open-Meteo retrieval (see data/raw/weather/selection.json)
+# Fixtures under tests/fixtures/weather/ used for CI / offline
+weather_days:
+  hot:
+    label: hot_day
+    # Prefer selection.json override when present
+    default_date: "2025-07-15"
+  cool:
+    label: cool_day
+    default_date: "2025-01-15"
+
+refrigeration:
+  - "off"
+  - "on"
+
+terrain:
+  - flat
+  - dem
+
+power_source:
+  - "A"
+  - "B"
+
+corridor_weather_points:
+  casablanca_end:
+    lat: 33.5731
+    lon: -7.5898
+    label: Casablanca-end
+  marrakech_mid:
+    lat: 31.6295
+    lon: -7.9811
+    label: Marrakech-mid
+  agadir_end:
+    lat: 30.4278
+    lon: -9.5981
+    label: Agadir-end
+
+outputs:
+  csv: results/energy_pilot.csv
+  figures_dir: reports/figures
+  dem_meta: data/processed/energy/dem_sampling_meta.json
+  weather_selection: data/raw/weather/selection.json

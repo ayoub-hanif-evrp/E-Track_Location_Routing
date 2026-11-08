@@ -1,0 +1,10 @@
+{
+  "point_id": "marrakech_mid",
+  "lat": 31.6295,
+  "lon": -7.9811,
+  "date": "2025-07-15",
+  "T_mean_c": 35.791666666666664,
+  "wind_speed_mean_mps": 2.0925,
+  "wind_dir_mean_deg": 220.83333333333334,
+  "pressure_mean_hpa": 965.125
+}

@@ -1,0 +1,18 @@
+{
+  "hot_date": "2025-07-15",
+  "cool_date": "2025-01-15",
+  "points": {
+    "casablanca_end": {
+      "lat": 33.5731,
+      "lon": -7.5898
+    },
+    "marrakech_mid": {
+      "lat": 31.6295,
+      "lon": -7.9811
+    },
+    "agadir_end": {
+      "lat": 30.4278,
+      "lon": -9.5981
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "point_id": "casablanca_end",
+  "lat": 33.5731,
+  "lon": -7.5898,
+  "date": "2025-01-15",
+  "T_mean_c": 11.904166666666667,
+  "wind_speed_mean_mps": 3.0700000000000003,
+  "wind_dir_mean_deg": 58.833333333333336,
+  "pressure_mean_hpa": 1018.3041666666667
+}

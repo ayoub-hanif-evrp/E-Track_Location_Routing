@@ -1,0 +1,21 @@
+{
+  "attribution": "Copernicus DEM DOI 10.5270/ESA-c5d3d65; AWS Open Data copernicus-dem-30m / 90m",
+  "note": "DEM is a DSM (terrain/surface), not pavement elevation.",
+  "routes": {
+    "casablanca_to_agadir": {
+      "profile": "data/processed/energy/elevation_profile_casablanca_to_agadir.json",
+      "source": "copdem_glo30",
+      "n_samples": 2785,
+      "z_min": 0.0,
+      "z_max": 1245.5679931640625
+    },
+    "agadir_to_casablanca": {
+      "profile": "data/processed/energy/elevation_profile_agadir_to_casablanca.json",
+      "source": "copdem_glo30",
+      "n_samples": 2786,
+      "z_min": 0.0,
+      "z_max": 1246.2400146484374
+    }
+  },
+  "blockers": []
+}

@@ -37,6 +37,15 @@ reports/pilot_corridor_report.html
 # Keep the small static PNG in git for review
 !reports/pilot_corridor_overview.png
 
+# Large weather / DEM caches (regenerate via scripts/fetch_corridor_*.py)
+data/raw/weather/**
+!data/raw/weather/.gitkeep
+data/raw/dem/**
+!data/raw/dem/.gitkeep
+# Keep small processed energy metadata / profiles if present; large tifs stay under raw/
+data/raw/dem/**/*.tif
+data/raw/dem/**/*.partial
+
 # Local caches
 *.tmp
 *.log
