@@ -91,6 +91,43 @@ def _mean(xs: list[float]) -> float:
     return sum(xs) / len(xs) if xs else float("nan")
 
 
+def circular_mean_deg(angles_deg: list[float]) -> float:
+    """Circular mean of compass angles in degrees (handles 0°/360° wrap)."""
+    if not angles_deg:
+        return float("nan")
+    sx = sum(math.sin(math.radians(a)) for a in angles_deg)
+    sy = sum(math.cos(math.radians(a)) for a in angles_deg)
+    return (math.degrees(math.atan2(sx, sy)) + 360.0) % 360.0
+
+
+def vector_mean_wind(
+    speeds_mps: list[float],
+    dirs_from_deg: list[float],
+) -> tuple[float, float]:
+    """
+    Mean wind via vector components of the FROM-direction meteorological convention.
+
+    Returns (mean_speed_mps, mean_from_dir_deg).
+    Limitation: this is still a daily aggregate, not a time-resolved wind field.
+    """
+    n = min(len(speeds_mps), len(dirs_from_deg))
+    if n == 0:
+        return float("nan"), float("nan")
+    # Wind TO vector = opposite of FROM
+    ux = 0.0
+    uy = 0.0
+    for i in range(n):
+        to_deg = (dirs_from_deg[i] + 180.0) % 360.0
+        ux += speeds_mps[i] * math.sin(math.radians(to_deg))
+        uy += speeds_mps[i] * math.cos(math.radians(to_deg))
+    ux /= n
+    uy /= n
+    mean_speed = math.hypot(ux, uy)
+    mean_to = (math.degrees(math.atan2(ux, uy)) + 360.0) % 360.0
+    mean_from = (mean_to + 180.0) % 360.0
+    return mean_speed, mean_from
+
+
 def fetch_point_day(
     lat: float,
     lon: float,
@@ -117,14 +154,15 @@ def fetch_point_day(
     wspd = [float(x) for x in hourly["wind_speed_10m"] if x is not None]
     wdir = [float(x) for x in hourly["wind_direction_10m"] if x is not None]
     pres = [float(x) for x in hourly.get("surface_pressure", []) if x is not None]
+    wind_speed, wind_dir = vector_mean_wind(wspd, wdir)
     return WeatherPointDay(
         point_id=point_id,
         lat=lat,
         lon=lon,
         date=date,
         T_mean_c=_mean(temps),
-        wind_speed_mean_mps=_mean(wspd),
-        wind_dir_mean_deg=_mean(wdir),
+        wind_speed_mean_mps=wind_speed,
+        wind_dir_mean_deg=wind_dir,
         pressure_mean_hpa=_mean(pres) if pres else None,
     )
 

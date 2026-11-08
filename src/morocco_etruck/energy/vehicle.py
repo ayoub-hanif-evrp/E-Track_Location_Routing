@@ -86,3 +86,33 @@ def mass_from_gcm(gcm_kg: float) -> float:
     if gcm_kg <= 0:
         raise ValueError(f"gcm_kg must be positive, got {gcm_kg}")
     return float(gcm_kg)
+
+
+def empty_combination_kg(vehicle: VehicleParams) -> float:
+    """Assumed empty tractor + trailer curb mass (research assumption for trailer curb)."""
+    return vehicle.unladen_tractor_kg + vehicle.unladen_trailer_kg
+
+
+def cargo_payload_kg(gcm_kg: float, vehicle: VehicleParams) -> float:
+    """Cargo payload = GCM − empty combination (may be validated via validate_gcm)."""
+    return float(gcm_kg) - empty_combination_kg(vehicle)
+
+
+def validate_gcm(gcm_kg: float, vehicle: VehicleParams) -> None:
+    """
+    Ensure gross combination mass is within physical research bounds.
+
+    GCM must be ≥ assumed empty tractor+trailer and ≤ manufacturer GCM limit.
+    """
+    gcm = mass_from_gcm(gcm_kg)
+    empty = empty_combination_kg(vehicle)
+    if gcm + 1e-6 < empty:
+        raise ValueError(
+            f"GCM {gcm} kg is below assumed empty combination {empty} kg "
+            f"(tractor {vehicle.unladen_tractor_kg} + trailer {vehicle.unladen_trailer_kg})"
+        )
+    if gcm > vehicle.gcm_limit_kg + 1e-6:
+        raise ValueError(
+            f"GCM {gcm} kg exceeds technically permissible combination "
+            f"{vehicle.gcm_limit_kg} kg"
+        )

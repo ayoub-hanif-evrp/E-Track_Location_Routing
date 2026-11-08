@@ -20,14 +20,15 @@ Eventually determine which Moroccan motorway service areas should receive truck-
 - Shortest-distance baseline paths Casablanca ↔ Agadir on **separate directed A3 carriageway components**.
 - Access audit: provisional topological matches only (see open issue below).
 
-**Task 02 — physics-based energy model (no optimization)**
+**Task 02 / 02B — physics-based energy model (no optimization)**
 
 - Longitudinal traction + aux + approximate refrigeration energy for an **eActros 600** refrigerated combination.
-- Constant cruise **80 km/h** (OSM `maxspeed` not used as travel speed).
-- Terrain: AWS open **COP-DEM GLO-30** along baselines (flat-road baseline always retained).
-- Weather: **Open-Meteo** historical cache for two fixed 2025 days (hot/cool).
-- Refrigeration configs **A** (tractor battery) / **B** (independent trailer pack).
-- Pilot CSV + figures; methodology and validation reports.
+- Constant cruise **80 km/h** (OSM `maxspeed` not used as travel speed); peak-motor exceedances flagged (no silent power clip).
+- Path-wise SOC feasibility (min SOC / first violation); invalid DEM → indeterminate mission status.
+- Terrain: AWS open **COP-DEM GLO-30** with bounds-aware sampling + quality gates (flat-road baseline always retained).
+- Weather: **Open-Meteo** historical cache; vector-mean daily wind.
+- Refrigeration configs **A** (tractor battery) / **B** (independent trailer pack); GCM labels (not “payload”).
+- Pilot CSV + figures; methodology, validation, and Task 02B audit/diagnostics reports.
 - **Not claimed:** calibrated TRU reproduction, OEM coast-down parameters, empirical trip validation, or charger-feasible routing.
 
 ## Requirements
@@ -100,6 +101,8 @@ Outputs:
 - `reports/figures/elevation_cumulative_energy.png`
 - `reports/energy_model_methodology.md`
 - `reports/task02_energy_validation.md`
+- `reports/task02b_physics_audit.md`
+- `reports/task02b_dem_diagnostics.md`
 - `data/processed/energy/elevation_profile_*.json` (when DEM succeeds)
 
 Weather/DEM raw caches under `data/raw/weather/` and `data/raw/dem/` are **gitignored**. CI uses `tests/fixtures/weather/`.

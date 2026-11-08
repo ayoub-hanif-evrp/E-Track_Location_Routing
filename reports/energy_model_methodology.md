@@ -46,12 +46,12 @@ F_\mathrm{trac}=F_\mathrm{roll}+F_\mathrm{aero}+F_\mathrm{grade}.
 
 ## 3. Traction power and energy
 
-Wheel power \(P_w=F_\mathrm{trac}\,v\) (W). Battery traction power:
+Wheel power \(P_w=F_\mathrm{trac}\,v\) (W). Manufacturer continuous/peak ratings (400/600 kW) are **motor output** limits.
 
-- If \(P_w>0\): \(P_\mathrm{batt,trac}=P_w/\eta_\mathrm{prop}\)
-- If \(P_w<0\): \(P_\mathrm{batt,trac}=\eta_\mathrm{regen}\,P_w\), with magnitude capped by \(\min(P_\mathrm{regen,peak},\;\text{friction-brake remainder})\) and SOC/usable-capacity headroom
+- If \(P_w>0\): required battery power \(P_\mathrm{batt}=P_w/\eta_\mathrm{prop}\) (**not** silently capped). Fixed-speed feasibility requires \(P_w\le P_\mathrm{peak,motor}\); continuous exceedances are flagged separately.
+- If \(P_w<0\): \(P_\mathrm{batt}=\eta_\mathrm{regen}\,P_w\), capped by peak regen power and SOC headroom; rejected regen is tracked.
 
-Efficiencies \(\eta_\mathrm{prop}\), \(\eta_\mathrm{regen}\) are **assumed**. Segment duration \(\mathrm{d}t=L/v\). Segment energy \(E=\int P\,\mathrm{d}t\) (J → kWh).
+Efficiencies \(\eta_\mathrm{prop}\), \(\eta_\mathrm{regen}\) are **assumed**. Segment duration \(\mathrm{d}t=L/v\). Segment energy \(E=\int P\,\mathrm{d}t\) (J → kWh). Distances use WGS84 **geodesic** metres (Task 01 convention).
 
 **Auxiliaries:** constant \(P_\mathrm{aux}\) (W), research parameter (YAML range 1–4 kW).
 
@@ -80,7 +80,7 @@ Inspired by cold-chain heat-load structure; **not** a calibrated reproduction of
 \mathrm{SOC}_{k+1}=\mathrm{clip}\!\left(\mathrm{SOC}_k-\frac{\Delta E}{E_\mathrm{use}},\;\mathrm{SOC}_\min,\;\mathrm{SOC}_\max\right)
 \]
 
-Defaults: \(\mathrm{SOC}_0=1.0\), \(\mathrm{SOC}_\min=0.10\) (**assumed** operating floor, labeled). Mission feasible if final SOC stays ≥ \(\mathrm{SOC}_\min\) after all tractor deductions (and trailer pack for config B when applicable).
+Defaults: \(\mathrm{SOC}_0=1.0\), \(\mathrm{SOC}_\min=0.10\) (**assumed** operating floor, labeled). Feasibility is audited **segment-by-segment** (minimum SOC, first violation). Later regen cannot erase an earlier floor violation. Invalid DEM inputs yield **indeterminate** mission status rather than a boolean. See Task 02B: `reports/task02b_physics_audit.md`.
 
 ---
 

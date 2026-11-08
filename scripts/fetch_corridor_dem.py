@@ -16,12 +16,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from morocco_etruck.energy.terrain import (  # noqa: E402
+    assess_terrain_quality,
     copdem_https_url,
     densify_linestring,
     flat_profile,
     profile_from_elevations,
     save_profile,
 )
+from morocco_etruck.road_network import geodesic_length_m  # noqa: E402
 
 
 def _needed_tiles(pts: list[tuple[float, float]]) -> set[tuple[int, int]]:
@@ -69,15 +71,24 @@ def sample_route(
     *,
     source: str,
     step_m: float,
-) -> tuple:
+):
     pts = densify_linestring(geom, step_m=step_m)
     try:
         from morocco_etruck.energy.terrain import sample_elevations_rasterio
 
-        elevs = sample_elevations_rasterio(pts, tile_paths)
-        profile = profile_from_elevations(pts, elevs, source=source, smooth_window=5)
+        elevs, valid = sample_elevations_rasterio(pts, tile_paths)
+        n_valid = sum(1 for v in valid if v)
+        print(f"  sampled valid={n_valid}/{len(pts)} source={source}")
+        profile = profile_from_elevations(
+            pts,
+            elevs,
+            source=source,
+            smooth_window=5,
+            valid_mask=valid,
+            meta={"n_valid": n_valid, "n_samples": len(pts)},
+        )
         return profile, pts
-    except Exception as e:  # noqa: BLE001 — record blocker honestly
+    except Exception as e:  # noqa: BLE001
         print(f"  rasterio sampling failed: {e}")
         return flat_profile(geom, step_m=step_m), pts
 
@@ -106,13 +117,15 @@ def main() -> int:
         print(f"Missing {args.geojson}; run Task 01 baseline build first.")
         return 1
 
-    import json as _json
-
-    gj = _json.loads(args.geojson.read_text(encoding="utf-8"))
+    gj = json.loads(args.geojson.read_text(encoding="utf-8"))
     session = requests.Session()
     meta: dict = {
         "attribution": "Copernicus DEM DOI 10.5270/ESA-c5d3d65; AWS Open Data copernicus-dem-30m / 90m",
         "note": "DEM is a DSM (terrain/surface), not pavement elevation.",
+        "task02b_fix": (
+            "Out-of-bounds raster samples must not be accepted as elevation 0; "
+            "masked/bounds-aware sampling only."
+        ),
         "routes": {},
         "blockers": [],
     }
@@ -127,19 +140,21 @@ def main() -> int:
     for feat in gj["features"]:
         route = feat["properties"]["route"]
         geom = shape(feat["geometry"])
+        route_len = geodesic_length_m([(c[0], c[1]) for c in geom.coords])
         pts = densify_linestring(geom, step_m=args.step_m)
         tiles = _needed_tiles(pts)
-        print(f"Route {route}: {len(pts)} samples, {len(tiles)} candidate tiles")
+        print(f"Route {route}: {len(pts)} samples, {len(tiles)} candidate tiles, geodesic_km={route_len/1000:.3f}")
 
         tile_paths: list[Path] = []
         source = "flat"
         if rasterio_ok:
-            # Try GLO-30 then GLO-90
             for res, label in (("30", "copdem_glo30"), ("90", "copdem_glo90")):
                 tile_paths = []
                 ok_all = True
                 for lat_i, lon_i in sorted(tiles):
-                    path = download_tile(lat_i, lon_i, args.raw_dir / f"glo{res}", res=res, session=session)
+                    path = download_tile(
+                        lat_i, lon_i, args.raw_dir / f"glo{res}", res=res, session=session
+                    )
                     if path is None:
                         ok_all = False
                         break
@@ -153,25 +168,51 @@ def main() -> int:
         if source == "flat" or not tile_paths:
             profile = flat_profile(geom, step_m=args.step_m)
             coords = densify_linestring(geom, step_m=args.step_m)
-            if "flat-road fallback" not in str(meta["blockers"]):
-                meta["blockers"].append(
-                    f"{route}: using labeled flat-road baseline (DEM unavailable or incomplete)"
-                )
+            meta["blockers"].append(
+                f"{route}: using labeled flat-road baseline (DEM unavailable or incomplete)"
+            )
         else:
             profile, coords = sample_route(geom, tile_paths, source=source, step_m=args.step_m)
-            if profile.source == "flat":
-                meta["blockers"].append(f"{route}: sampling failed → flat")
+
+        quality = assess_terrain_quality(profile)
+        profile.meta["quality"] = {
+            "status": quality.status,
+            "max_abs_grade": quality.max_abs_grade,
+            "n_missing": quality.n_missing,
+            "missing_frac": quality.missing_frac,
+            "n_grade_violations": quality.n_grade_violations,
+            "first_grade_violation_km": quality.first_grade_violation_km,
+            "notes": quality.notes,
+        }
+        profile.meta["route_geodesic_m"] = route_len
+        profile.meta["profile_end_m"] = profile.distances_m[-1] if profile.distances_m else None
 
         out_path = args.out_dir / f"elevation_profile_{route}.json"
+        # TerrainSample is frozen — rebuild with updated meta
+        from morocco_etruck.energy.terrain import TerrainSample
+
+        profile = TerrainSample(
+            distances_m=profile.distances_m,
+            elevations_m=profile.elevations_m,
+            source=profile.source,
+            meta=profile.meta,
+            valid_mask=profile.valid_mask,
+        )
         save_profile(out_path, profile, coords=coords)
         meta["routes"][route] = {
             "profile": str(out_path.relative_to(ROOT)).replace("\\", "/"),
             "source": profile.source,
             "n_samples": len(profile.distances_m),
-            "z_min": min(profile.elevations_m) if profile.elevations_m else None,
-            "z_max": max(profile.elevations_m) if profile.elevations_m else None,
+            "z_min": min((z for z in profile.elevations_m if math.isfinite(z)), default=None),
+            "z_max": max((z for z in profile.elevations_m if math.isfinite(z)), default=None),
+            "quality_status": quality.status,
+            "max_abs_grade": quality.max_abs_grade,
+            "route_geodesic_m": route_len,
+            "profile_end_m": profile.distances_m[-1] if profile.distances_m else None,
         }
-        print(f"  wrote {out_path} source={profile.source}")
+        if quality.status == "invalid":
+            meta["blockers"].append(f"{route}: terrain quality INVALID — {quality.notes}")
+        print(f"  wrote {out_path} source={profile.source} quality={quality.status} max_grade={quality.max_abs_grade:.2%}")
 
     meta_path = args.out_dir / "dem_sampling_meta.json"
     args.out_dir.mkdir(parents=True, exist_ok=True)

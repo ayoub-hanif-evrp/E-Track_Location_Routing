@@ -1,20 +1,29 @@
 {
   "attribution": "Copernicus DEM DOI 10.5270/ESA-c5d3d65; AWS Open Data copernicus-dem-30m / 90m",
   "note": "DEM is a DSM (terrain/surface), not pavement elevation.",
+  "task02b_fix": "Out-of-bounds raster samples must not be accepted as elevation 0; masked/bounds-aware sampling only.",
   "routes": {
     "casablanca_to_agadir": {
       "profile": "data/processed/energy/elevation_profile_casablanca_to_agadir.json",
       "source": "copdem_glo30",
-      "n_samples": 2785,
-      "z_min": 0.0,
-      "z_max": 1245.5679931640625
+      "n_samples": 2781,
+      "z_min": 141.3677978515625,
+      "z_max": 1311.5231201171875,
+      "quality_status": "valid",
+      "max_abs_grade": 0.1395009626230056,
+      "route_geodesic_m": 417000.3892629537,
+      "profile_end_m": 416891.4725430976
     },
     "agadir_to_casablanca": {
       "profile": "data/processed/energy/elevation_profile_agadir_to_casablanca.json",
       "source": "copdem_glo30",
-      "n_samples": 2786,
-      "z_min": 0.0,
-      "z_max": 1246.2400146484374
+      "n_samples": 2782,
+      "z_min": 141.40924580891928,
+      "z_max": 1309.889892578125,
+      "quality_status": "valid",
+      "max_abs_grade": 0.11461690221864386,
+      "route_geodesic_m": 417112.8311766245,
+      "profile_end_m": 416995.32792175666
     }
   },
   "blockers": []

@@ -1,4 +1,4 @@
-# Task 02 pilot experiment matrix (Problem A corridor energy; no charger optimization)
+# Task 02/02B pilot experiment matrix (Problem A corridor energy; no charger optimization)
 
 vehicle_config: configs/vehicles/eactros_600.yaml
 refrigeration_config: configs/energy/refrigeration_approx.yaml
@@ -7,26 +7,25 @@ baseline_json: results/baseline_routes.json
 
 cruise_kmh: 80.0
 
+# Gross combination mass (GCM) scenarios — NOT cargo payload alone.
+# cargo_payload_kg = gcm_kg − (unladen_tractor + unladen_trailer assumptions)
 gcm_scenarios:
   light:
     gcm_kg: 25000.0
-    label: light_25t
-    note: "Pilot light combination mass (GCM)"
+    label: gcm_light_25t
+    note: "Pilot light gross combination mass (GCM), not cargo payload"
   heavy:
     gcm_kg: 40000.0
-    label: heavy_40t
-    note: "Matches maker published range-test towing-weight condition order (~40 t)"
+    label: gcm_heavy_40t
+    note: "GCM matching maker published range-test towing-weight condition order (~40 t)"
 
 directions:
   - casablanca_to_agadir
   - agadir_to_casablanca
 
-# Weather day IDs resolved after Open-Meteo retrieval (see data/raw/weather/selection.json)
-# Fixtures under tests/fixtures/weather/ used for CI / offline
 weather_days:
   hot:
     label: hot_day
-    # Prefer selection.json override when present
     default_date: "2025-07-15"
   cool:
     label: cool_day

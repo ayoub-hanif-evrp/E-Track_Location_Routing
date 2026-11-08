@@ -21,17 +21,33 @@ class SegmentForces:
 class SegmentTractionEnergy:
     forces: SegmentForces
     P_wheel_w: float
+    """Required wheel power at the commanded speed (uncapped)."""
+    P_batt_required_w: float
+    """Battery traction power required to deliver P_wheel through eta_prop (discharge >0)."""
     P_batt_trac_w: float
+    """Battery power used for energy accounting (regen may be capped; propulsion NOT silently capped)."""
     E_batt_trac_j: float
     dt_s: float
-    regen_capped: bool
+    power_feasible_peak: bool
+    """False if required wheel power exceeds manufacturer peak motor rating at this speed."""
+    power_feasible_continuous: bool
+    """False if required wheel power exceeds continuous motor rating (informational / soft)."""
+    regen_capped_power: bool
+    """True if ideal regen charge power exceeded peak regen capability."""
+    regen_rejected_soc: bool
+    """True if regen was zeroed because SOC has no headroom."""
+    E_regen_ideal_j: float
+    """Ideal regen energy into battery before caps (≤0 means charge magnitude as negative energy)."""
+    E_regen_accepted_j: float
+    """Regen energy actually accepted after power/SOC caps (≤0)."""
 
 
 def grade_angle_rad(dz_m: float, length_m: float) -> float:
     """Grade angle from elevation change over path length."""
     if length_m <= 0:
         raise ValueError("length_m must be positive for grade_angle_rad")
-    # Clamp sin argument for numerical safety on noisy DEM
+    if not math.isfinite(dz_m):
+        raise ValueError("dz_m must be finite for grade_angle_rad")
     ratio = max(-1.0, min(1.0, dz_m / length_m))
     return math.asin(ratio)
 
@@ -62,7 +78,9 @@ def compute_forces(
         raise ValueError("Crr must be positive")
     g = vehicle.gravity_m_s2
     F_roll = vehicle.Crr * mass_kg * g * math.cos(theta_rad)
-    F_aero = 0.5 * rho_kg_m3 * vehicle.CdA_m2 * (v_air_mps**2) * math.copysign(1.0, v_air_mps if v_air_mps != 0 else 1.0)
+    F_aero = 0.5 * rho_kg_m3 * vehicle.CdA_m2 * (v_air_mps**2) * math.copysign(
+        1.0, v_air_mps if v_air_mps != 0 else 1.0
+    )
     if abs(v_air_mps) < 1e-12:
         F_aero = 0.0
     F_grade = mass_kg * g * math.sin(theta_rad)
@@ -77,40 +95,45 @@ def compute_forces(
     )
 
 
-def battery_traction_power_w(
+def map_wheel_to_battery_power(
     P_wheel_w: float,
     vehicle: VehicleParams,
     *,
     soc: float,
-    usable_j: float | None = None,
-) -> tuple[float, bool]:
+) -> tuple[float, float, bool, bool, bool, bool]:
     """
-    Map wheel power to battery traction power with regen efficiency and caps.
+    Map required wheel power to battery power without silently capping propulsion energy.
 
-    Returns (P_batt_trac_w, regen_capped).
-    Negative battery power means regen charge into the pack.
+    Manufacturer continuous/peak ratings (400/600 kW) are treated as **motor output**
+    (wheel-side capability), not battery DC input. Propulsion feasibility is therefore
+    checked on P_wheel against those limits. Battery discharge power is P_wheel/eta_prop
+    and is **not** clipped for energy accounting.
+
+    Returns:
+        P_batt_required_w,
+        P_batt_used_w (regen may be capped; propulsion equals required),
+        power_feasible_peak,
+        power_feasible_continuous,
+        regen_capped_power,
+        regen_rejected_soc,
     """
-    usable = usable_j if usable_j is not None else vehicle.usable_j
     if P_wheel_w >= 0:
-        # Discharge through propulsion chain; cap by peak power
-        p = P_wheel_w / vehicle.eta_prop
-        return min(p, vehicle.peak_power_w), False
+        p_batt = P_wheel_w / vehicle.eta_prop
+        peak_ok = P_wheel_w <= vehicle.peak_power_w + 1e-6
+        cont_ok = P_wheel_w <= vehicle.continuous_power_w + 1e-6
+        return p_batt, p_batt, peak_ok, cont_ok, False, False
 
-    # Regenerative braking: P_wheel < 0
-    p_regen_ideal = vehicle.eta_regen * P_wheel_w  # more negative = more charge
-    # Cap magnitude by peak regen power
+    # Regenerative braking: P_wheel < 0 → battery charge (negative battery power)
+    p_regen_ideal = vehicle.eta_regen * P_wheel_w
     max_charge_w = vehicle.peak_regen_power_w
     p_capped = max(p_regen_ideal, -max_charge_w)
-    regen_capped = p_capped > p_regen_ideal + 1e-9  # less negative than ideal
+    regen_capped = p_capped > p_regen_ideal + 1e-9
 
-    # SOC headroom: cannot charge above soc_max
     headroom_frac = max(0.0, vehicle.soc_max - soc)
     if headroom_frac <= 0:
-        return 0.0, True
-    # Instantaneous power still limited by peak; energy headroom applied at integration time
-    # Keep power cap only here; energy clip in simulator.
-    _ = usable  # usable capacity available for callers
-    return p_capped, regen_capped
+        return p_regen_ideal, 0.0, True, True, regen_capped, True
+
+    return p_regen_ideal, p_capped, True, True, regen_capped, False
 
 
 def segment_traction_energy(
@@ -144,13 +167,48 @@ def segment_traction_energy(
         accel_mps2=accel_mps2,
     )
     P_wheel = forces.F_trac_n * v_mps
-    P_batt, capped = battery_traction_power_w(P_wheel, vehicle, soc=soc)
+    (
+        p_batt_req,
+        p_batt_used,
+        peak_ok,
+        cont_ok,
+        regen_cap,
+        regen_soc,
+    ) = map_wheel_to_battery_power(P_wheel, vehicle, soc=soc)
+
     dt = length_m / v_mps
+    e_used = p_batt_used * dt
+    e_ideal_regen = min(0.0, p_batt_req * dt)  # only meaningful for regen (≤0)
+    e_accepted_regen = min(0.0, e_used)
+
     return SegmentTractionEnergy(
         forces=forces,
         P_wheel_w=P_wheel,
-        P_batt_trac_w=P_batt,
-        E_batt_trac_j=P_batt * dt,
+        P_batt_required_w=p_batt_req,
+        P_batt_trac_w=p_batt_used,
+        E_batt_trac_j=e_used,
         dt_s=dt,
-        regen_capped=capped,
+        power_feasible_peak=peak_ok,
+        power_feasible_continuous=cont_ok,
+        regen_capped_power=regen_cap,
+        regen_rejected_soc=regen_soc,
+        E_regen_ideal_j=e_ideal_regen,
+        E_regen_accepted_j=e_accepted_regen,
     )
+
+
+# Backwards-compatible alias used by older tests (regen path only semantics changed).
+def battery_traction_power_w(
+    P_wheel_w: float,
+    vehicle: VehicleParams,
+    *,
+    soc: float,
+    usable_j: float | None = None,
+) -> tuple[float, bool]:
+    """Legacy helper: returns (P_batt_used_w, regen_or_propulsion_issue_flag)."""
+    _ = usable_j
+    _req, used, peak_ok, _cont, regen_cap, regen_soc = map_wheel_to_battery_power(
+        P_wheel_w, vehicle, soc=soc
+    )
+    flagged = (not peak_ok) or regen_cap or regen_soc
+    return used, flagged
