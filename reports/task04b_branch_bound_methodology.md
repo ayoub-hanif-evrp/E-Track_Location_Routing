@@ -12,7 +12,7 @@ Planning period = **one year**. `CRF × CAPEX` is an annualized illustrative inf
 
 1. **Terrain fingerprint** — `terrain_sample_hash` digests the full `distances_m`, `elevations_m`, `valid_mask`, and `source` (no head/tail truncation). `DRIVE_TABLE_CACHE_VERSION = 04b.1`.
 2. **Global certification** — `CERTIFIED_OPTIMAL` only if every budget-feasible competitor is resolved (or bound-dominated). Unresolved competitors ⇒ `INCUMBENT_UNPROVED`. Also: `NO_FEASIBLE`, `LIMIT_REACHED`.
-3. **Serviceability taxonomy** — full direction-compatible install probe per mission: `serviceable` | `peak_motor` | `unserved_all_candidates` | `limit_reached` | `replay_invalid`. Structural reporting uses **`peak_motor` only**.
+3. **Serviceability taxonomy** — full direction-compatible install probe per mission: `serviceable` | `peak_motor` | `unserved_all_candidates` | `limit_reached` | `replay_invalid`. Structural reporting uses **`peak_motor` only**. The **serviceable denominator** (`weight_serviceable` / coverage_serviceable) counts only missions classified `serviceable` (not merely non-`peak_motor`).
 
 ## Node state
 

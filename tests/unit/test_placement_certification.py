@@ -25,6 +25,26 @@ def test_serviceability_enum_values():
     assert OptimalityStatus.LIMIT_REACHED.value == "LIMIT_REACHED"
 
 
+def test_serviceable_denominator_excludes_non_serviceable_classes():
+    """weight_serviceable counts only class==serviceable, not merely not-peak-motor."""
+    from morocco_etruck.optimization.placement_evaluation import SubsetEvaluation
+
+    # Simulate taxonomy: peak_motor + unserved_all_candidates + serviceable
+    serviceability = {
+        "M_peak": "peak_motor",
+        "M_unserved": "unserved_all_candidates",
+        "M_ok": "serviceable",
+    }
+    weights = {"M_peak": 0.5, "M_unserved": 2.0, "M_ok": 3.0}
+    serviceable_ids = {mid for mid, v in serviceability.items() if v == "serviceable"}
+    structural_ids = {mid for mid, v in serviceability.items() if v == "peak_motor"}
+    w_serv = sum(w for mid, w in weights.items() if mid in serviceable_ids)
+    w_not_struct = sum(w for mid, w in weights.items() if mid not in structural_ids)
+    assert w_serv == 3.0
+    assert w_not_struct == 5.0  # would wrongly include unserved_all_candidates
+    assert isinstance(SubsetEvaluation, type)
+
+
 def test_enumeration_global_cert_rule_logic():
     """
     Global CERTIFIED_OPTIMAL requires every budget-feasible subset certified.

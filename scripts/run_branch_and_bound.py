@@ -136,10 +136,8 @@ def run_morocco_comparison(args) -> pd.DataFrame:
                         cov_ok = abs(bb_cov - ref_cov) < 1e-9
                         cost_ok = abs(bb_sec - ref_sec) < 1e-6
                         # Equal alternate optima: same cov+cost, possibly different sites
-                        alt_ok = cov_ok and cost_ok
-                        match = (sites_ok and cov_ok and cost_ok) or alt_ok
-                        if alt_ok and not sites_ok:
-                            match = True  # documented alternate optima at equal objective
+                        alternate_optima = bool(cov_ok and cost_ok and not sites_ok)
+                        match = bool((sites_ok and cov_ok and cost_ok) or alternate_optima)
                     rows.append(
                         {
                             "demand_scenario": demand,
@@ -156,6 +154,7 @@ def run_morocco_comparison(args) -> pd.DataFrame:
                             "enum_status": ref_status,
                             "match": match,
                             "sites_equal": sites_ok,
+                            "alternate_optima": alternate_optima if len(ref) == 1 else False,
                             "coverage_equal": cov_ok,
                             "secondary_equal": cost_ok,
                             "nodes_visited": bb.stats.nodes_visited,

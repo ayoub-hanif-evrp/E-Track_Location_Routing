@@ -134,6 +134,7 @@ def run_enumeration(
         ).items()
     }
     structural_ids = {mid for mid, v in serviceability.items() if v == "peak_motor"}
+    serviceable_ids = {mid for mid, v in serviceability.items() if v == "serviceable"}
     # Keep detect_structural_missions available for callers; assert consistency
     _ = detect_structural_missions
 
@@ -165,6 +166,7 @@ def run_enumeration(
             price_mode=price_mode,
             morocco_cfg=morocco_cfg,
             memo=memo,
+            serviceable_ids=serviceable_ids,
         )
         evals.append(ev)
 

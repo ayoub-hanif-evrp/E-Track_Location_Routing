@@ -275,6 +275,7 @@ def prepare_placement_context(
         ).items()
     }
     structural_ids = {mid for mid, v in serviceability.items() if v == "peak_motor"}
+    serviceable_ids = {mid for mid, v in serviceability.items() if v == "serviceable"}
     if memo is None:
         sample = next(iter(prepared.values()))[1]
         memo = PlacementMemo(
@@ -291,6 +292,7 @@ def prepare_placement_context(
         "prepared": prepared,
         "serviceability": serviceability,
         "structural_ids": structural_ids,
+        "serviceable_ids": serviceable_ids,
         "memo": memo,
     }
 
@@ -318,6 +320,9 @@ def run_branch_and_bound(
     prepared = context["prepared"]
     serviceability = context["serviceability"]
     structural_ids = context["structural_ids"]
+    serviceable_ids = context.get("serviceable_ids") or {
+        mid for mid, v in serviceability.items() if v == "serviceable"
+    }
     memo = context["memo"] if memo is None else memo
     capex = cfg.capex_scenarios[capex_name]
     bud = next(b for b in cfg.budgets if b["name"] == budget_name)
@@ -338,6 +343,7 @@ def run_branch_and_bound(
             price_mode=price_mode,
             morocco_cfg=morocco_cfg,
             memo=memo,
+            serviceable_ids=serviceable_ids,
         )
 
     site_ids = [s.id for s in cfg.sites]

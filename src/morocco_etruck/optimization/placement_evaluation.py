@@ -469,13 +469,24 @@ def evaluate_subset(
     price_mode: str,
     morocco_cfg: dict[str, Any],
     memo: PlacementMemo | None = None,
+    serviceable_ids: set[str] | None = None,
 ) -> SubsetEvaluation:
+    """
+    Evaluate one install set.
+
+    Serviceable denominator = missions classified ``serviceable`` under the
+    full-candidate probe (not merely ``not peak_motor``). Structural reporting
+    remains ``peak_motor`` only via ``structural_ids``.
+    """
+    if serviceable_ids is None:
+        # Backward-compatible fallback: treat non-structural as serviceable
+        serviceable_ids = {m.id for m in missions if m.id not in structural_ids}
     rows: list[MissionSolveResult] = []
     certified = True
     cov = 0.0
     cov_serv = 0.0
     w_tot = sum(m.weight for m in missions)
-    w_serv = sum(m.weight for m in missions if m.id not in structural_ids)
+    w_serv = sum(m.weight for m in missions if m.id in serviceable_ids)
     var = 0.0
     for m in missions:
         ctx, tmpl = prepared[m.id]
@@ -495,16 +506,12 @@ def evaluate_subset(
         rows.append(r)
         if r.uncertified:
             certified = False
-        if r.served and m.id not in structural_ids:
+        if r.served:
             cov += m.weight
-            cov_serv += m.weight
-            if r.objective_cents is not None:
-                var += m.weight * r.objective_cents * cfg.cents_to_currency
-        elif r.served and m.id in structural_ids:
-            # Should not happen if structural detection is correct
-            cov += m.weight
-            if r.objective_cents is not None:
-                var += m.weight * r.objective_cents * cfg.cents_to_currency
+            if m.id in serviceable_ids:
+                cov_serv += m.weight
+                if r.objective_cents is not None:
+                    var += m.weight * r.objective_cents * cfg.cents_to_currency
 
     infra_c = sum(capex[s] for s in installed)
     infra_a = annualized_infra_cost(installed, capex, cfg.crf)
