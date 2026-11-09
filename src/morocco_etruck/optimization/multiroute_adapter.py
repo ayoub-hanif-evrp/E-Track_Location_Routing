@@ -14,6 +14,8 @@ import yaml
 from morocco_etruck.energy.refrigeration import load_refrigeration
 from morocco_etruck.energy.vehicle import load_vehicle
 from morocco_etruck.optimization.multiroute_charging import (
+    ChargerSelectionResult,
+    GroundedCharger,
     reject_artificial_midpoint_keys,
     select_grounded_chargers_on_union,
     split_arcs_at_charger_nodes,
@@ -188,6 +190,90 @@ def build_legacy_path_set_instance(
 build_od_routing_instance = build_legacy_path_set_instance
 
 
+def _station_specs_for_od(cfg: MultiroutePilotConfig, od_id: str) -> list[dict[str, Any]]:
+    specs = list((cfg.raw.get("grounded_chargers") or {}).get(od_id) or [])
+    if not specs:
+        specs = list((cfg.raw.get("grounded_chargers") or {}).get("default") or [])
+    return specs
+
+
+def resolve_od_chargers(
+    *,
+    cfg: MultiroutePilotConfig,
+    G,
+    arcs: list[DecisionArc],
+    nodes: dict[str, Any],
+    od_id: str,
+) -> tuple[ChargerSelectionResult, list[str]]:
+    """Direction-correct ADM resolution for one OD (no graph mutation)."""
+    notes: list[str] = []
+    specs = _station_specs_for_od(cfg, od_id)
+    reject_artificial_midpoint_keys([str(s.get("key", "")) for s in specs])
+    if not specs:
+        return ChargerSelectionResult(), ["no_charger_specs_for_od"]
+    union_nodes: set[int] = set()
+    for a in arcs:
+        union_nodes.update(int(x) for x in a.path_nodes)
+    sites = pd.read_csv(cfg.candidate_sites_csv)
+    allow_snap = bool((cfg.raw.get("charger") or {}).get("allow_proximity_snap", False))
+    max_snap = float((cfg.raw.get("charger") or {}).get("max_snap_m", 2500.0))
+    selection = select_grounded_chargers_on_union(
+        sites,
+        union_osm_nodes=union_nodes,
+        decision_nodes=nodes,
+        station_specs=specs,
+        G=G,
+        max_snap_m=max_snap,
+        allow_proximity_snap=allow_snap,
+    )
+    notes.append(
+        "verified="
+        + ",".join(sorted(c.key for c in selection.verified))
+        + ";hypothetical="
+        + ",".join(sorted(c.key for c in selection.hypothetical))
+        + ";unresolved="
+        + ",".join(
+            f"{c.key}:{c.reason}" for c in selection.unresolved
+        )
+    )
+    return selection, notes
+
+
+def clone_physics_instance_for_subset(
+    template: RoutingInstance,
+    *,
+    active_stations: set[str],
+    name: str | None = None,
+) -> RoutingInstance:
+    """Reuse fixed DRIVE tables/graph; only active charging actions change."""
+    return RoutingInstance(
+        name=name or template.name,
+        nodes=list(template.nodes),
+        arcs=list(template.arcs),
+        origin=template.origin,
+        destination=template.destination,
+        deadline_steps=template.deadline_steps,
+        E_truck_cap=template.E_truck_cap,
+        E_truck_min=template.E_truck_min,
+        E_truck_init=template.E_truck_init,
+        E_trailer_cap=template.E_trailer_cap,
+        E_trailer_min=template.E_trailer_min,
+        E_trailer_init=template.E_trailer_init,
+        stations=dict(template.stations),
+        active_stations=set(active_stations),
+        power_source=template.power_source,
+        refrigeration_on=template.refrigeration_on,
+        aux_kwh_per_step=template.aux_kwh_per_step,
+        tru_kwh_per_step=template.tru_kwh_per_step,
+        aux_w=template.aux_w,
+        tru_mean_w=template.tru_mean_w,
+        wait_max_steps=template.wait_max_steps,
+        time_step_min=template.time_step_min,
+        energy_quantum_kwh=template.energy_quantum_kwh,
+        notes=template.notes,
+    )
+
+
 def build_physics_od_instance(
     *,
     cfg: MultiroutePilotConfig,
@@ -202,9 +288,17 @@ def build_physics_od_instance(
     with_chargers: bool = False,
     energy_quantum_kwh: int | None = None,
     terrain_mode: str | None = None,
+    attach_candidate_chargers: bool | None = None,
+    active_station_keys: set[str] | None = None,
 ) -> tuple[RoutingInstance, MultirouteMissionContext, list[str]]:
     """
-    Scientific Task 05B builder: OD-induced path-union decision arcs + DRIVE tables.
+    Scientific Task 05B/05C builder: OD path-union + DRIVE tables.
+
+    Architecture (Task 05C):
+      - Resolve all direction-compatible attachable candidates once.
+      - Split macros once at those OSM nodes (fixed physical graph).
+      - ``with_chargers`` / ``active_station_keys`` only toggle charging actions.
+      - DRIVE tables are never rebuilt when activating/deactivating sites.
     """
     dec = load_decision_graph(cfg.decision_graph_path)
     G = load_graph_from_csv(cfg.nodes_csv, cfg.edges_csv)
@@ -218,7 +312,6 @@ def build_physics_od_instance(
             key=lambda r: -float(r.get("jaccard_distance_vs_shortest") or 0.0),
         )
         rows_for_od = (short[:1] + rest)[:max_alts]
-        # Keep other ODs' rows out; induce uses only matching od_id
         path_rows = [r for r in path_rows if str(r.get("od_id")) != od_id] + rows_for_od
     arcs, origin, dest, nodes = contract_od_path_union(
         G,
@@ -228,66 +321,58 @@ def build_physics_od_instance(
         origin_name="O",
         dest_name="D",
     )
-    _ = dec  # audited global graph retained for reporting / legacy helpers
 
+    # Always attach eligible candidates when charger specs exist (fixed graph).
+    # attach_candidate_chargers=False disables split (legacy diagnostic only).
+    do_attach = True if attach_candidate_chargers is None else bool(attach_candidate_chargers)
     station_notes: list[str] = []
     stations: dict[str, StationData] = {}
-    active: set[str] = set()
-    if with_chargers:
-        specs = list((cfg.raw.get("grounded_chargers") or {}).get(od_id) or [])
-        # Default southbound ADM set when OD not listed
-        if not specs:
-            specs = list((cfg.raw.get("grounded_chargers") or {}).get("default") or [])
-        reject_artificial_midpoint_keys([str(s.get("key", "")) for s in specs])
-        union_nodes: set[int] = set()
-        for a in arcs:
-            union_nodes.update(int(x) for x in a.path_nodes)
-        sites = pd.read_csv(cfg.candidate_sites_csv)
-        chargers = select_grounded_chargers_on_union(
-            sites,
-            union_osm_nodes=union_nodes,
-            decision_nodes=nodes,
-            station_specs=specs,
-            G=G,
+    selection = ChargerSelectionResult()
+    if do_attach and _station_specs_for_od(cfg, od_id):
+        selection, sel_notes = resolve_od_chargers(
+            cfg=cfg, G=G, arcs=arcs, nodes=nodes, od_id=od_id
         )
-        if not chargers:
-            station_notes.append("no_grounded_charger_on_union")
+        station_notes.extend(sel_notes)
+        attachable: list[GroundedCharger] = selection.attachable
+        if not attachable:
+            station_notes.append("no_topology_verified_charger_on_union")
         else:
             ch = cfg.raw.get("charger") or {}
             stations = to_station_data(
-                chargers,
+                attachable,
                 power_kw=float(ch.get("power_kw", 350.0)),
                 eta=float(ch.get("eta", 0.95)),
                 price_cents=int(ch.get("price_uniform_cents", 20)),
             )
-            # Align StationData.node with decision labels after split
             arcs, nodes, _alias = split_arcs_at_charger_nodes(
-                arcs, chargers=chargers, decision_nodes=nodes
+                arcs, chargers=attachable, decision_nodes=nodes, G=G
             )
-            for c in chargers:
-                stations[c.key] = StationData(
-                    node=c.key,
-                    power_kw=float(ch.get("power_kw", 350.0)),
-                    eta=float(ch.get("eta", 0.95)),
-                    price_cents_per_grid_kwh=int(ch.get("price_uniform_cents", 20)),
-                    compatible=True,
-                    official_name=c.official_name,
-                    hypothetical_access=True,
-                    hgv_status=c.hgv_status,
-                    osm_id=c.osm_id,
-                    snap_distance_m=c.snap_distance_m,
-                )
+            for c in attachable:
                 nodes[c.key] = c.osm_node_id
-            active = set(stations.keys())
-            station_notes.append(f"grounded_chargers={sorted(active)}")
+            station_notes.append(
+                "fixed_graph_chargers=" + ",".join(sorted(stations.keys()))
+            )
+
+    if active_station_keys is not None:
+        active = set(active_station_keys) & set(stations.keys())
+    elif with_chargers:
+        # Activate topology-verified sites only (hypothetical remain inactive unless listed)
+        active = {c.key for c in selection.verified}
+        if not active and selection.hypothetical:
+            # Explicit hypothetical-only portfolio: activate only if snap mode enabled
+            active = {c.key for c in selection.hypothetical}
+        station_notes.append(f"active_chargers={sorted(active)}")
+    else:
+        active = set()
+        station_notes.append("active_chargers=[]")
 
     vehicle = load_vehicle(cfg.vehicle_yaml)
     fridge = load_refrigeration(cfg.fridge_yaml)
-    weather = load_weather_for_multiroute(
+    weather, weather_assumed = load_weather_for_multiroute(
         root=root, morocco_pilot_yaml=cfg.morocco_pilot_yaml, weather_id=weather_id
     )
     q = int(energy_quantum_kwh if energy_quantum_kwh is not None else cfg.energy_quantum_kwh)
-    # Snap energies onto quantum grid
+
     def _floor_q(x: int) -> int:
         return (x // q) * q
 
@@ -331,6 +416,9 @@ def build_physics_od_instance(
         decision_nodes=nodes,
         wait_max_steps=int(cfg.raw.get("wait_max_steps", 0)),
     )
+    if weather_assumed:
+        ctx.weather_assumed = True
+        ctx.notes.append("weather_assumed_synthetic_placeholder")
     return inst, ctx, station_notes
 
 

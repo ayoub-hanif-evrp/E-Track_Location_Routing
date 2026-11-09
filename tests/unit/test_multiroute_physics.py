@@ -336,7 +336,8 @@ def test_split_arcs_inserts_charger_node():
             lon=0,
             snap_distance_m=0,
             hgv_status="unknown",
-            travel_direction="",
+            travel_direction="Casablanca→Agadir",
+            access_class="topology_verified",
         )
     ]
     new_arcs, nodes, _ = split_arcs_at_charger_nodes(
@@ -345,6 +346,7 @@ def test_split_arcs_inserts_charger_node():
     assert any(a.u == "O" and a.v == "settat" for a in new_arcs)
     assert any(a.u == "settat" and a.v == "D" for a in new_arcs)
     assert nodes["settat"] == 2
+    assert all(a.parent_arc_id == arc.arc_id for a in new_arcs)
 
 
 def test_induce_od_from_regenerated_decision_graph():

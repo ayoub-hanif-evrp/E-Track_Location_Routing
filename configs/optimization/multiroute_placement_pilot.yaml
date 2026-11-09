@@ -1,0 +1,110 @@
+# Task 05C — Joint multi-route B&B–MRLS placement (small directional portfolio)
+# Exactness only over the finite candidate set + verified OD path unions.
+# CAPEX/tariffs are RESEARCH SCENARIO PARAMETERS, not Moroccan market prices.
+
+multiroute_pilot_config: configs/optimization/multiroute_pilot.yaml
+
+disclaimer: >
+  Joint multi-route charger placement on Casa–Marrakech–Agadir path unions with
+  physics DRIVE tables. Direction-specific ADM facilities only (topology-verified
+  attach). Fixed graph across install subsets. Not certified HGV access. Not
+  optimality over the full Moroccan network. Continuous replay required for served
+  missions. Lexicographic coverage-then-cost objective unchanged from Task 04B.
+
+# One install decision per physical directional OSM facility (shared across ODs)
+sites:
+  - id: y_settat_ca
+    direction: casablanca_to_agadir
+    station_key: settat_ca
+    label: Settat_Casa_to_Agadir_127661106
+  - id: y_benguerir_ca
+    direction: casablanca_to_agadir
+    station_key: benguerir_ca
+    label: Benguerir_Casa_to_Agadir_127661099
+  - id: y_amskroud_ca
+    direction: casablanca_to_agadir
+    station_key: amskroud_ca
+    label: Amskroud_Casa_to_Agadir_1530179371
+
+capex_scenarios:
+  equal:
+    note: "Equal illustrative CAPEX per directional site"
+    site_capex:
+      y_settat_ca: 100.0
+      y_benguerir_ca: 100.0
+      y_amskroud_ca: 100.0
+
+annualization:
+  interest_rate: 0.08
+  lifetime_years: 15
+
+cents_to_currency: 0.01
+
+budgets:
+  - name: B0
+    max_capex: 0.0
+  - name: B1
+    max_capex: 100.0
+  - name: B2
+    max_capex: 200.0
+  - name: Ball
+    max_capex: null
+
+price_modes:
+  - uniform
+
+demand_scenarios:
+  default:
+    note: "Small multi-route portfolio (flat terrain; cool weather fixtures)"
+    missions:
+      - id: M_casa_marrakech_low
+        od_id: casa_marrakech
+        weight: 2.0
+        E_truck_init: 200
+        refrigeration_on: false
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+      - id: M_casa_agadir_low
+        od_id: casa_agadir
+        weight: 2.0
+        E_truck_init: 200
+        refrigeration_on: false
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+      - id: M_marrakech_agadir_low
+        od_id: marrakech_agadir
+        weight: 1.5
+        E_truck_init: 200
+        refrigeration_on: false
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+      - id: M_casa_marrakech_refrig
+        od_id: casa_marrakech
+        weight: 1.0
+        E_truck_init: 300
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+
+baselines:
+  none: []
+  settat_only:
+    - y_settat_ca
+  settat_benguerir:
+    - y_settat_ca
+    - y_benguerir_ca
+
+solver:
+  max_seconds: 90.0
+  max_expansions: 800000
+  node_limit: null
+  time_limit_sec: null
+
+outputs:
+  enumeration_csv: results/multiroute_placement_enumeration.csv
+  branch_bound_csv: results/multiroute_placement_branch_bound.csv
+  table_cache_dir: data/processed/multiroute/drive_tables

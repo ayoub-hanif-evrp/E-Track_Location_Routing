@@ -8,7 +8,7 @@ PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible r
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–05B)
+## Current scope (Tasks 01–05C)
 
 **Task 01 / 01B / 01C — geographic foundation**
 
@@ -70,7 +70,15 @@ Eventually determine which Moroccan motorway service areas should receive truck-
 - OD-local path-union MRLS with Task 02B/03B DRIVE tables (not artificial `O→R_i→D`).
 - Grounded ADM hypothetical chargers only; continuous replay of OSM-edge journeys.
 - Pilot ODs: Casa→Marrakech, Casa→Agadir, Marrakech→Agadir.
-- **Not claimed:** full-network optimality, certified HGV access, DEM when unavailable (flat documented), or joint placement B&B (Task 05C).
+- **Not claimed:** full-network optimality, certified HGV access, or joint placement (see 05C).
+
+**Task 05C — Corrected station coupling + joint B&B–MRLS**
+
+- Direction-specific ADM attach (`travel_direction` + OSM id); no wrong-carriageway proximity snap.
+- Fixed path-union graph across install subsets (activate/deactivate only); DEM parent-slice after splits.
+- Continuous-replay certification (deadline, SOC floors, DEM completeness).
+- Joint placement: exhaustive enum vs existing B&B on a small multi-route portfolio.
+- **Not claimed:** certified HGV access, nationwide optimality, or new metaheuristics.
 
 ## Requirements
 
@@ -280,11 +288,31 @@ Outputs:
 - `reports/task05b_route_choice_validation.md`
 - `reports/figures/multiroute_physics_paths.png`
 
-## Not yet implemented (stop after Task 05B)
+## Task 05C — joint multi-route placement
 
-- Re-couple placement B&B to physics multi-route MRLS (Task 05C)
+```bash
+pytest -q tests/unit/test_multiroute_station_direction.py \
+         tests/unit/test_multiroute_station_monotonicity.py \
+         tests/unit/test_multiroute_placement.py \
+         tests/unit/test_multiroute_physics.py
+python scripts/run_multiroute_experiments.py
+python scripts/run_multiroute_placement.py
+```
+
+Outputs:
+
+- `results/multiroute_physics_experiments.csv` (corrected 05B pilot)
+- `results/multiroute_placement_enumeration.csv`
+- `results/multiroute_placement_branch_bound.csv`
+- `reports/task05c_station_attachment_audit.md`
+- `reports/task05c_joint_multiroute_validation.md`
+- `reports/task05c_comparative_results.md`
+
+## Not yet implemented (stop after Task 05C)
+
 - Nationwide search
 - ALNS, GA, Gurobi, OR-Tools, etc.
 - Redesign of Task 01C access classifiers
+- Paper writing / sensitivity campaigns beyond the 05C checkpoint
 
-**Stop after Task 05B** until the researcher reviews.
+**Stop after Task 05C** until the researcher reviews.

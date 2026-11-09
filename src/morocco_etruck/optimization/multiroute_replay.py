@@ -1,4 +1,4 @@
-"""Continuous-physics replay for path-union multiroute MRLS (Task 05B)."""
+"""Continuous-physics replay for path-union multiroute MRLS (Task 05B/05C)."""
 
 from __future__ import annotations
 
@@ -32,8 +32,16 @@ def continuous_replay_multiroute(
     """
     Replay DRIVE/CHARGE/WAIT with Task 02B continuous physics on geometry-owned macros.
 
-    Macros are keyed by arc_id (required for parallel decision arcs). Missing arc_id
-    or missing physics inputs ⇒ not certified physically feasible.
+    Certification checks (Task 05C):
+      - directed road continuity via arc_id macros
+      - tractor / trailer SOC floors (drive + charge)
+      - max battery energy
+      - peak-motor feasibility (via simulate_drive_from_soc)
+      - charger availability / compatibility
+      - charging duration + stationary refrigeration energy
+      - delivery deadline
+      - DEM-mode: refuse silent flat substitution
+      - synthetic weather ⇒ not historical certification (weather_assumed)
     """
     usable = float(ctx.vehicle.usable_kwh)
     soc = inst.E_truck_init / usable
@@ -46,6 +54,7 @@ def continuous_replay_multiroute(
     arc_ids: list[str] = []
     length_m = 0.0
     charges: list[dict[str, Any]] = []
+    deadline_s = float(inst.deadline_steps) * ctx.time_step_min * 60.0
 
     def _fail(reason: str) -> tuple[ContinuousReplayReport, MultirouteReplayExtras]:
         return (
@@ -65,12 +74,18 @@ def continuous_replay_multiroute(
             MultirouteReplayExtras(osm_path, arc_ids, length_m, charges),
         )
 
+    if ctx.terrain_mode == "dem" and not ctx.dem_complete:
+        return _fail("dem_incomplete")
+    if ctx.weather_assumed:
+        return _fail("weather_assumed_not_historical")
+
+    last_v_nid: int | None = None
+
     for act in actions:
         typ = act.get("type")
         if typ == "DRIVE":
             aid = act.get("arc_id")
             if not aid:
-                # Fallback only if unique (u,v)
                 cands = [
                     m
                     for m in ctx.macros_by_arc_id.values()
@@ -84,9 +99,14 @@ def continuous_replay_multiroute(
                 macro = ctx.macros_by_arc_id.get(str(aid))
             if macro is None:
                 return _fail(f"missing_macro:{aid}")
-            if str(macro.meta.get("terrain_note") or "").startswith("dem_unavailable"):
-                # Flat fallback still has physics; allow replay but note was recorded in ctx
-                pass
+            tnote = str(macro.meta.get("terrain_note") or "")
+            if ctx.terrain_mode == "dem" and (
+                tnote.startswith("dem_unavailable") or macro.meta.get("dem_ok") is False
+            ):
+                return _fail(f"dem_unavailable:{aid}")
+            pn = [int(x) for x in macro.path_nodes]
+            if last_v_nid is not None and pn and int(pn[0]) != int(last_v_nid):
+                return _fail("directed_continuity_break")
             ok, dt, soc, trailer_soc, reason = simulate_drive_from_soc(
                 macro.micro_edges,
                 macro.terrain,
@@ -103,13 +123,22 @@ def continuous_replay_multiroute(
             min_soc = min(min_soc, soc)
             arc_ids.append(str(aid))
             length_m += float(macro.length_m)
-            pn = [int(x) for x in macro.path_nodes]
             if not osm_path:
                 osm_path.extend(pn)
             else:
                 osm_path.extend(pn[1:])
+            if pn:
+                last_v_nid = int(pn[-1])
             if not ok:
                 return _fail(reason or "drive_failed")
+            if soc < ctx.vehicle.soc_min - 1e-9:
+                return _fail("tractor_soc_floor_drive")
+            if trailer_soc is not None and trailer_soc < ctx.fridge.trailer_soc_min - 1e-9:
+                return _fail("trailer_soc_floor_drive")
+            if soc > ctx.vehicle.soc_max + 1e-9:
+                return _fail("tractor_soc_ceiling")
+            if t_s > deadline_s + 1e-9:
+                return _fail("deadline")
         elif typ == "CHARGE":
             node = act["node"]
             if node not in inst.active_stations:
@@ -149,8 +178,14 @@ def continuous_replay_multiroute(
             t_s += dt
             charges.append({"node": node, "delta_e_kwh": de, "dt_s": dt})
             min_soc = min(min_soc, soc)
+            if t_s > deadline_s + 1e-9:
+                return _fail("deadline")
             if soc < ctx.vehicle.soc_min - 1e-9:
                 return _fail("tractor_soc_floor_charge")
+            if trailer_soc is not None and trailer_soc < ctx.fridge.trailer_soc_min - 1e-9:
+                return _fail("trailer_soc_floor_charge")
+            if soc > ctx.vehicle.soc_max + 1e-9:
+                return _fail("tractor_soc_ceiling")
         elif typ == "WAIT":
             steps = int(act["steps"])
             dt = steps * ctx.time_step_min * 60.0
@@ -172,8 +207,17 @@ def continuous_replay_multiroute(
                     ) / ctx.fridge.trailer_usable_kwh
             t_s += dt
             min_soc = min(min_soc, soc)
+            if t_s > deadline_s + 1e-9:
+                return _fail("deadline")
+            if soc < ctx.vehicle.soc_min - 1e-9:
+                return _fail("tractor_soc_floor_wait")
+            if trailer_soc is not None and trailer_soc < ctx.fridge.trailer_soc_min - 1e-9:
+                return _fail("trailer_soc_floor_wait")
         else:
             return _fail(f"unknown_action:{typ}")
+
+    if t_s > deadline_s + 1e-9:
+        return _fail("deadline")
 
     E_cont = soc * usable
     El_cont = None if trailer_soc is None else trailer_soc * ctx.fridge.trailer_usable_kwh

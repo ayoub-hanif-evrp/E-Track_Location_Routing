@@ -39,6 +39,9 @@ class DecisionArc:
     hgv_access: str = "unknown"
     provenance_od_ids: list[str] = field(default_factory=list)
     arc_id: str = ""
+    # DEM inheritance after charger splits (Task 05C): window into parent profile
+    parent_arc_id: str = ""
+    macro_s0_m: float = 0.0
 
 
 @dataclass

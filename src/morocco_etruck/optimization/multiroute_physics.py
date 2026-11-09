@@ -49,6 +49,8 @@ class MultirouteMissionContext:
     time_step_min: int
     terrain_mode: str
     notes: list[str] = field(default_factory=list)
+    dem_complete: bool = True
+    weather_assumed: bool = False
 
 
 def _is_subsequence(sub: list[int], full: list[int]) -> bool:
@@ -220,17 +222,25 @@ def load_weather_for_multiroute(
     root: Path,
     morocco_pilot_yaml: Path,
     weather_id: str = "cool",
-) -> CorridorWeatherDay:
+) -> tuple[CorridorWeatherDay, bool]:
+    """
+    Returns (weather, assumed).
+
+    ``assumed=True`` when historical pilot fixtures are missing and a synthetic
+    placeholder is used — not valid for historical-weather certification.
+    """
     try:
         from morocco_etruck.optimization.morocco_adapter import load_weather
 
         cfg = yaml.safe_load(Path(morocco_pilot_yaml).read_text(encoding="utf-8"))
-        return load_weather(cfg, weather_id=weather_id, root=root)
+        return load_weather(cfg, weather_id=weather_id, root=root), False
     except Exception:
-        return _flat_weather_placeholder()
+        return _flat_weather_placeholder(), True
 
 
 def try_load_macro_dem(elevation_dir: Path, arc_id: str) -> TerrainSample | None:
+    if not arc_id:
+        return None
     path = elevation_dir / f"arc_{arc_id}.json"
     if not path.exists():
         return None
@@ -247,20 +257,42 @@ def build_macro_with_terrain(
     terrain_mode: str,
     elevation_dir: Path,
     road_cost_per_km: float,
-) -> tuple[MacroArcSpec, str]:
+) -> tuple[MacroArcSpec, str, bool]:
     """
-    Build geometry-owned macro. DEM only from per-arc profile; never A3 corridor slice.
+    Build geometry-owned macro.
+
+    DEM sources (never A3 corridor files):
+      1. per-child ``arc_{arc_id}.json`` if present
+      2. parent profile ``arc_{parent_arc_id}.json`` windowed at ``macro_s0_m``
+
+    In DEM mode, missing required terrain ⇒ ``dem_unavailable`` (not a silent
+    flat result labeled as DEM). Flat remains an explicit separate scenario.
     """
     mode = terrain_mode
     corridor = None
     note = "flat"
+    dem_ok = True
+    macro_s0 = 0.0
     if terrain_mode == "dem":
         corridor = try_load_macro_dem(elevation_dir, arc.arc_id)
-        if corridor is None:
-            mode = "flat"
-            note = "dem_unavailable_flat_fallback"
-        else:
+        if corridor is not None:
             note = "dem_per_arc"
+            macro_s0 = 0.0
+        elif arc.parent_arc_id:
+            corridor = try_load_macro_dem(elevation_dir, arc.parent_arc_id)
+            if corridor is not None:
+                note = "dem_parent_slice"
+                macro_s0 = float(arc.macro_s0_m)
+            else:
+                mode = "flat"
+                note = "dem_unavailable"
+                dem_ok = False
+                macro_s0 = 0.0
+        else:
+            mode = "flat"
+            note = "dem_unavailable"
+            dem_ok = False
+            macro_s0 = 0.0
     macro = build_macro_arc(
         G,
         u_name=arc.u,
@@ -268,14 +300,16 @@ def build_macro_with_terrain(
         path_nodes=arc.path_nodes,
         terrain_mode=mode,
         corridor_profile=corridor,
-        macro_s0_m=0.0,
+        macro_s0_m=macro_s0,
         road_cost_per_km=road_cost_per_km,
     )
     macro.meta["arc_id"] = arc.arc_id
+    macro.meta["parent_arc_id"] = arc.parent_arc_id
     macro.meta["terrain_note"] = note
+    macro.meta["dem_ok"] = dem_ok
     macro.meta["scenario_speed_kmh"] = arc.scenario_speed_kmh
     macro.meta["hgv_access"] = arc.hgv_access
-    return macro, note
+    return macro, note, dem_ok
 
 
 def drive_table_for_macro(
@@ -396,6 +430,10 @@ def build_path_union_routing_instance(
     macros: dict[str, MacroArcSpec] = {}
     notes: list[str] = []
     arc_data: list[ArcData] = []
+    dem_complete = True
+    weather_assumed = bool(getattr(weather, "date", "") == "synthetic") or str(
+        getattr(weather, "day_id", "")
+    ) in {"flat", "synthetic"}
     node_names = set(nodes.keys()) | {origin_n, dest_n}
     if stations:
         for sid, st in stations.items():
@@ -403,7 +441,7 @@ def build_path_union_routing_instance(
             node_names.add(st.node)
 
     for darc in arcs_in:
-        macro, tnote = build_macro_with_terrain(
+        macro, tnote, dem_ok = build_macro_with_terrain(
             G,
             darc,
             terrain_mode=terrain_mode,
@@ -411,6 +449,8 @@ def build_path_union_routing_instance(
             road_cost_per_km=road_cost_per_km,
         )
         notes.append(f"{darc.arc_id}:{tnote}")
+        if terrain_mode == "dem" and not dem_ok:
+            dem_complete = False
         table = drive_table_for_macro(
             macro,
             vehicle=vehicle,
@@ -480,6 +520,10 @@ def build_path_union_routing_instance(
             "claim_scope=path_union_of_verified_alternatives_only"
         ),
     )
+    if terrain_mode == "dem" and not dem_complete:
+        notes.append("dem_incomplete_scenario_indeterminate")
+    if weather_assumed:
+        notes.append("weather_assumed_synthetic_placeholder")
     ctx = MultirouteMissionContext(
         od_id=od_id,
         macros_by_arc_id=macros,
@@ -492,5 +536,7 @@ def build_path_union_routing_instance(
         time_step_min=time_step_min,
         terrain_mode=terrain_mode,
         notes=notes,
+        dem_complete=dem_complete if terrain_mode == "dem" else True,
+        weather_assumed=weather_assumed,
     )
     return inst, ctx

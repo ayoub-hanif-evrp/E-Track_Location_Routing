@@ -5,10 +5,12 @@ disclaimer: >
   Multi-route MRLS on a reduced decision graph built from verified OSM path
   alternatives (Casa–Marrakech–Agadir). Not optimality over the full Moroccan
   network. Scenario speeds are research defaults / OSM maxspeed when sane —
-  not observed HGV speeds. Chargers are geographically grounded ADM candidates
-  but remain hypothetical (HGV access not certified). HGV legality from OSM
-  tags is incomplete (unknown retained; explicit no filtered at build).
-  Discrete optimality ≠ continuous physics certification ≠ empirical validation.
+  not observed HGV speeds. Chargers are direction-specific ADM candidates with
+  topology-verified on-union attach only (no proximity snap in baseline);
+  remain hypothetical (HGV access not certified). Fixed graph across charger
+  activation subsets. HGV legality from OSM tags is incomplete (unknown
+  retained; explicit no filtered at build). Discrete optimality ≠ continuous
+  physics certification ≠ empirical validation.
 
 vehicle_config: configs/vehicles/eactros_600.yaml
 refrigeration_config: configs/energy/refrigeration_approx.yaml
@@ -45,31 +47,78 @@ charger:
   power_kw: 350.0
   eta: 0.95
   price_uniform_cents: 20
+  # Baseline scientific topology: never attach via geodesic proximity alone
+  allow_proximity_snap: false
+  max_snap_m: 2500.0
 
-# Geographically grounded ADM tokens (entrance_and_exit only). No R_i midpoints.
+# Direction-specific ADM facilities (entrance_and_exit + travel_direction + osm_id).
+# Keys are unique per physical directional site. No R_i midpoints. No proximity snap.
 grounded_chargers:
   default:
-    - key: settat
+    - key: settat_ca
       name_contains: SETTAT
-    - key: benguerir
+      travel_direction: "Casablanca→Agadir"
+      osm_id: "127661106"
+    - key: benguerir_ca
       name_contains: BENGUERIR
-    - key: amskroud
+      travel_direction: "Casablanca→Agadir"
+      osm_id: "127661099"
+    - key: amskroud_ca
       name_contains: AMSKROUD
+      travel_direction: "Casablanca→Agadir"
+      osm_id: "1530179371"
   casa_marrakech:
-    - key: settat
+    - key: settat_ca
       name_contains: SETTAT
-    - key: benguerir
+      travel_direction: "Casablanca→Agadir"
+      osm_id: "127661106"
+    - key: benguerir_ca
       name_contains: BENGUERIR
+      travel_direction: "Casablanca→Agadir"
+      osm_id: "127661099"
   casa_agadir:
-    - key: settat
+    - key: settat_ca
       name_contains: SETTAT
-    - key: benguerir
+      travel_direction: "Casablanca→Agadir"
+      osm_id: "127661106"
+    - key: benguerir_ca
       name_contains: BENGUERIR
-    - key: amskroud
+      travel_direction: "Casablanca→Agadir"
+      osm_id: "127661099"
+    - key: amskroud_ca
       name_contains: AMSKROUD
+      travel_direction: "Casablanca→Agadir"
+      osm_id: "1530179371"
   marrakech_agadir:
-    - key: amskroud
+    - key: amskroud_ca
       name_contains: AMSKROUD
+      travel_direction: "Casablanca→Agadir"
+      osm_id: "1530179371"
+  marrakech_casa:
+    - key: settat_ac
+      name_contains: SETTAT
+      travel_direction: "Agadir→Casablanca"
+      osm_id: "127661105"
+    - key: benguerir_ac
+      name_contains: BENGUERIR
+      travel_direction: "Agadir→Casablanca"
+      osm_id: "127661098"
+  agadir_casa:
+    - key: settat_ac
+      name_contains: SETTAT
+      travel_direction: "Agadir→Casablanca"
+      osm_id: "127661105"
+    - key: benguerir_ac
+      name_contains: BENGUERIR
+      travel_direction: "Agadir→Casablanca"
+      osm_id: "127661098"
+  agadir_marrakech:
+    - key: amskroud_ac
+      name_contains: AMSKROUD
+      travel_direction: "Agadir→Casablanca"
+      # No documented Agadir→Casablanca Amskroud entrance_and_exit in candidate_sites;
+      # listed for unresolved-audit coverage only.
+      osm_id: ""
 
 solver:
   max_seconds: 90.0
