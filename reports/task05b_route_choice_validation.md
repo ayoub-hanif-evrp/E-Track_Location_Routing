@@ -16,6 +16,8 @@
 10. Compact OD path-union contraction  
 11. Offline reproducible `arc_id`  
 12. MRLS = reference on small branching instance  
+13. Uphill synthetic macro exceeds peak motor power  
+14. Downhill regen depends on SOC headroom  
 
 ## Moroccan physics pilot (`results/multiroute_physics_experiments.csv`)
 
@@ -31,10 +33,11 @@ Portfolio: Casa→Marrakech, Casa→Agadir, Marrakech→Agadir. Flat terrain + T
 | marrakech_agadir full, no charger | OPTIMAL | yes | pass |
 | marrakech_agadir low (+/− charger) | INFEASIBLE | — | — |
 | casa_marrakech refrig / heavy GCM / q=5 | OPTIMAL | yes | pass |
+| casa_marrakech full + per-arc DEM | OPTIMAL | yes | pass |
 
 ### Interpretation (honest)
 
-- With a full battery on Casa–Marrakech / Marrakech–Agadir, physics MRLS selects the **shortest-distance** verified corridor under flat terrain (road cost ∝ length; grades not differentiating).  
+- With a full battery on Casa–Marrakech / Marrakech–Agadir, physics MRLS selects the **shortest-distance** verified corridor (road cost ∝ length). Per-arc COP-DEM on Casa–Marrakech does not change the discrete optimum vs flat in this pilot.  
 - **Casa–Marrakech low battery + Settat/Benguerir** restores feasibility on a **longer** reconstructed path (~258 km) — real routing–charging interaction without artificial midpoints.  
 - **Casa–Agadir** without chargers is energy-infeasible under the discrete DRIVE model even at 600 kWh init (long macros + SOC floors); grounded chargers restore a feasible shortest-corridor solution at low init.  
 - Marrakech–Agadir low-battery remains infeasible with only Amskroud on the union — reported honestly; no invented sites.  
@@ -47,7 +50,7 @@ Portfolio: Casa→Marrakech, Casa→Agadir, Marrakech→Agadir. Flat terrain + T
 ## Limitations
 
 - Exactness only over the OD path-union decision graph.  
-- Flat-terrain pilot (per-arc DEM optional; A3 profiles never reused).  
+- Per-arc COP-DEM sampled for pilot macros (29/29); A3 corridor profiles never reused.  
 - Scenario speeds / GCM are research parameters.  
 - HGV access mostly OSM-unknown; chargers hypothetical.  
 - Placement B&B re-coupling is Task **05C**.

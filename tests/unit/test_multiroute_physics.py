@@ -388,3 +388,77 @@ def test_contract_od_path_union_compact():
 
 def test_offline_reproducible_arc_id():
     assert make_arc_id([(10, 20)]) == make_arc_id([(10, 20)])
+
+
+def test_uphill_macro_exceeds_peak_motor():
+    """Steep synthetic climb at cruise + heavy GCM → peak motor violation."""
+    from morocco_etruck.energy.simulator import EdgeInput
+    from morocco_etruck.energy.terrain import TerrainSample
+    from morocco_etruck.optimization.arc_preprocessing import simulate_drive_from_soc
+
+    vehicle = load_vehicle(ROOT / "configs/vehicles/eactros_600.yaml")
+    fridge = load_refrigeration(ROOT / "configs/energy/refrigeration_approx.yaml")
+    weather = _toy_weather()
+    L = 800.0
+    # ~25% grade over 800 m — non-physical for highways but valid synthetic stress
+    terrain = TerrainSample(
+        distances_m=[0.0, L],
+        elevations_m=[0.0, 200.0],
+        source="synthetic",
+        meta={"purpose": "uphill_peak_motor_adversarial"},
+        valid_mask=[True, True],
+    )
+    geom = LineString([(-8.0, 32.0), (-7.99, 32.005)])
+    ok, _dt, _soc, _ts, reason = simulate_drive_from_soc(
+        [EdgeInput(geometry=geom, length_m=L)],
+        terrain,
+        soc0=1.0,
+        trailer_soc0=None,
+        vehicle=vehicle,
+        weather=weather,
+        fridge_cfg=fridge,
+        gcm_kg=40000.0,
+        refrigeration_on=False,
+        power_source="A",
+    )
+    assert ok is False
+    assert reason == "peak_motor_power_exceeded"
+
+
+def test_downhill_regen_depends_on_soc_headroom():
+    """Full SOC rejects regen; mid SOC accepts downhill recovery."""
+    from morocco_etruck.energy.simulator import EdgeInput
+    from morocco_etruck.energy.terrain import TerrainSample
+    from morocco_etruck.optimization.arc_preprocessing import simulate_drive_from_soc
+
+    vehicle = load_vehicle(ROOT / "configs/vehicles/eactros_600.yaml")
+    fridge = load_refrigeration(ROOT / "configs/energy/refrigeration_approx.yaml")
+    weather = _toy_weather()
+    L = 2000.0
+    terrain = TerrainSample(
+        distances_m=[0.0, L],
+        elevations_m=[200.0, 0.0],
+        source="synthetic",
+        meta={"purpose": "downhill_soc_regen_adversarial"},
+        valid_mask=[True, True],
+    )
+    geom = LineString([(-8.0, 32.0), (-7.98, 32.0)])
+    edges = [EdgeInput(geometry=geom, length_m=L)]
+    common = dict(
+        micro_edges=edges,
+        terrain=terrain,
+        trailer_soc0=None,
+        vehicle=vehicle,
+        weather=weather,
+        fridge_cfg=fridge,
+        gcm_kg=25000.0,
+        refrigeration_on=False,
+        power_source="A",
+    )
+    ok_full, _, soc_full, _, _ = simulate_drive_from_soc(soc0=1.0, **common)
+    ok_mid, _, soc_mid, _, _ = simulate_drive_from_soc(soc0=0.50, **common)
+    assert ok_full and ok_mid
+    # Mid-SOC must retain more energy relative to start (regen headroom)
+    delta_full = soc_full - 1.0
+    delta_mid = soc_mid - 0.50
+    assert delta_mid > delta_full + 1e-4

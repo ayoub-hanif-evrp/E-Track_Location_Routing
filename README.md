@@ -265,6 +265,7 @@ python scripts/build_multiroute_pilot.py --skip-download
 
 ```bash
 python scripts/regenerate_multiroute_decision_graph.py
+python scripts/fetch_multiroute_dem.py
 python scripts/run_multiroute_experiments.py
 pytest -q tests/unit/test_multiroute_physics.py tests/unit/test_route_choice.py
 ```
@@ -272,6 +273,7 @@ pytest -q tests/unit/test_multiroute_physics.py tests/unit/test_route_choice.py
 Outputs:
 
 - `data/processed/multiroute/decision_graph.json` (arc_id + osm_edge_pairs)
+- `data/processed/multiroute/elevation/arc_*.json` (per-macro COP-DEM)
 - `results/multiroute_physics_experiments.csv`
 - `reports/task05b_decision_graph_audit.md`
 - `reports/task05b_physics_integration.md`

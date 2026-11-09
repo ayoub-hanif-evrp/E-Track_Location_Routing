@@ -169,6 +169,19 @@ def _mission_rows(cfg) -> list[dict]:
             "energy_quantum_kwh": int(cfg.raw.get("energy_quantum_sensitivity_kwh", 1)),
         }
     )
+    # DEM mode when per-arc profiles exist (else physics layer falls back to flat)
+    rows.append(
+        {
+            "mission_id": f"{od0}_full_dem_nochg",
+            "od_id": od0,
+            "E_truck_init": int(cfg.raw.get("E_truck_init", 600)),
+            "with_chargers": False,
+            "refrigeration_on": False,
+            "terrain_mode": "dem",
+            "weather_id": "cool",
+            "gcm": "light",
+        }
+    )
     return rows
 
 

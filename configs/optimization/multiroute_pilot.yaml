@@ -31,7 +31,8 @@ E_truck_min: 60
 E_truck_init: 600
 
 physics:
-  terrain_mode: flat   # dem when per-arc COP-DEM profiles exist under elevation_dir
+  # Prefer per-arc COP-DEM when arc_{id}.json exists; else documented flat fallback
+  terrain_mode: dem
   elevation_dir: data/processed/multiroute/elevation
   drive_cache_dir: data/processed/multiroute/drive_tables
   gcm_kg: 25000.0      # light GCM research scenario

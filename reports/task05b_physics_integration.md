@@ -14,7 +14,11 @@ Task 05B scientific path:
 
 ## Terrain
 
-Default pilot mode: **flat** (documented). Per-arc DEM profiles may be placed under `data/processed/multiroute/elevation/arc_{arc_id}.json`. A3 corridor elevation profiles are **never** reused for trunk/primary macros. Missing DEM → flat fallback noted in context (not fabricated elevations).
+- Config `physics.terrain_mode: dem`.
+- Per-macro COP-DEM GLO-30 profiles under `data/processed/multiroute/elevation/arc_{arc_id}.json` (29/29 pilot macros sampled; meta in `dem_sampling_meta.json`).
+- Build/refresh: `python scripts/fetch_multiroute_dem.py`
+- A3 corridor `elevation_profile_{direction}.json` profiles are **never** reused for trunk/primary macros.
+- Missing/invalid DEM → documented flat fallback (not fabricated elevations).
 
 ## Discretization
 
