@@ -379,11 +379,20 @@ def build_physics_od_instance(
     def _ceil_q(x: int) -> int:
         return int(math.ceil(x / q) * q)
 
+    # Task 06A: never fabricate starting energy. Reject sub-minimum init.
+    if int(E_truck_init) < int(E_truck_min):
+        raise ValueError(
+            f"INVALID_INPUT: E_truck_init={E_truck_init} < E_truck_min={E_truck_min}"
+        )
     E_cap = _floor_q(E_truck_cap)
     E_min = _ceil_q(E_truck_min)
     E_init = min(E_cap, _floor_q(E_truck_init))
     if E_init < E_min:
-        E_init = E_min
+        # Valid physical start can become unusable only after conservative floor_q.
+        raise ValueError(
+            f"NUMERICAL_GRID_REJECT: floored E_init={E_init} < E_min={E_min} "
+            f"(declared init={E_truck_init}, quantum={q}); not increasing energy"
+        )
 
     inst, ctx = build_path_union_routing_instance(
         G=G,
@@ -415,6 +424,7 @@ def build_physics_od_instance(
         destination=dest,
         decision_nodes=nodes,
         wait_max_steps=int(cfg.raw.get("wait_max_steps", 0)),
+        speed_policy=cfg.speed_policy,
     )
     if weather_assumed:
         ctx.weather_assumed = True

@@ -1,13 +1,14 @@
-"""Fingerprinted DRIVE-table cache (Task 04A)."""
+"""Fingerprinted DRIVE-table cache (Task 04A / 06A)."""
 
 from __future__ import annotations
 
 import hashlib
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
-DRIVE_TABLE_CACHE_VERSION = "04b.1"
+DRIVE_TABLE_CACHE_VERSION = "06a.1"
+PREPROCESS_MODEL_VERSION = "06a.1_per_edge_speed"
 
 
 def _sha256_text(text: str) -> str:
@@ -21,6 +22,23 @@ def file_sha256(path: Path) -> str:
 def fingerprint_payload(parts: dict[str, Any]) -> str:
     blob = json.dumps(parts, sort_keys=True, default=str)
     return _sha256_text(blob)
+
+
+def speed_schedule_hash(speed_mps_list: Sequence[float | None]) -> str:
+    """Digest ordered micro-edge speeds (None → vehicle-cruise fallback at sim time)."""
+    return fingerprint_payload(
+        {
+            "speeds_mps": [
+                None if s is None else round(float(s), 6) for s in speed_mps_list
+            ]
+        }
+    )
+
+
+def speed_policy_digest(speed_policy: dict[str, Any] | None) -> str:
+    if not speed_policy:
+        return fingerprint_payload({"speed_policy": None})
+    return fingerprint_payload({"speed_policy": dict(speed_policy)})
 
 
 def build_drive_table_fingerprint(
@@ -44,10 +62,14 @@ def build_drive_table_fingerprint(
     E_truck_cap: int,
     E_trailer_min: int | None,
     E_trailer_cap: int | None,
+    speed_schedule: Sequence[float | None] | None = None,
+    speed_policy: dict[str, Any] | None = None,
+    preprocess_model_version: str = PREPROCESS_MODEL_VERSION,
 ) -> str:
     return fingerprint_payload(
         {
             "version": DRIVE_TABLE_CACHE_VERSION,
+            "preprocess_model_version": preprocess_model_version,
             "vehicle_sha": file_sha256(vehicle_yaml),
             "fridge_sha": file_sha256(fridge_yaml),
             "weather": weather_points,
@@ -64,6 +86,8 @@ def build_drive_table_fingerprint(
             "dt_min": int(time_step_min),
             "E_truck": [E_truck_min, E_truck_cap],
             "E_trailer": [E_trailer_min, E_trailer_cap],
+            "speed_schedule_hash": speed_schedule_hash(speed_schedule or []),
+            "speed_policy_digest": speed_policy_digest(speed_policy),
         }
     )
 
@@ -81,7 +105,9 @@ def terrain_sample_hash(
             "n": len(distances_m),
             "distances_m": [round(float(x), 6) for x in distances_m],
             "elevations_m": [
-                None if (isinstance(z, float) and z != z) else (round(float(z), 6) if z is not None else None)
+                None
+                if (isinstance(z, float) and z != z)
+                else (round(float(z), 6) if z is not None else None)
                 for z in elevations_m
             ],
             "valid_mask": list(valid_mask) if valid_mask is not None else None,

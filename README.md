@@ -8,7 +8,7 @@ PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible r
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–05C)
+## Current scope (Tasks 01–06A)
 
 **Task 01 / 01B / 01C — geographic foundation**
 
@@ -79,6 +79,13 @@ Eventually determine which Moroccan motorway service areas should receive truck-
 - Continuous-replay certification (deadline, SOC floors, DEM completeness).
 - Joint placement: exhaustive enum vs existing B&B on a small multi-route portfolio.
 - **Not claimed:** certified HGV access, nationwide optimality, or new metaheuristics.
+
+**Task 06A — Speed policy + energy-grid validation**
+
+- Per-OSM-hop research cruise speeds enter `apply_drive` (class defaults; OSM maxspeed not used as HGV cruise).
+- DRIVE-table fingerprint `06a.1` includes speed schedule; no silent `E_init` bump.
+- Grid sensitivity + discrete vs continuous feasibility audit; placement enum↔B&B revalidated.
+- **Not claimed:** observed truck speeds, empirical vehicle validation, or B&B speedup on the tiny site set.
 
 ## Requirements
 
@@ -308,11 +315,29 @@ Outputs:
 - `reports/task05c_joint_multiroute_validation.md`
 - `reports/task05c_comparative_results.md`
 
-## Not yet implemented (stop after Task 05C)
+## Task 06A — numerical validation
 
+```bash
+pytest -q tests/unit/test_multiroute_speed_and_grid.py tests/unit
+python scripts/run_multiroute_numerical_sensitivity.py
+python scripts/run_multiroute_experiments.py
+python scripts/run_multiroute_placement.py
+```
+
+Outputs:
+
+- `results/multiroute_numerical_sensitivity.csv`
+- `results/multiroute_numerical_sensitivity_osm_maxspeed.csv` (contrast)
+- `results/task06a_placement_comparison.csv`
+- `reports/task06a_speed_and_physics_audit.md`
+- `reports/task06a_discretization_validation.md`
+- `reports/task06a_corrected_placement_comparison.md`
+
+## Not yet implemented (stop after Task 06A)
+
+- Task 06B scientific comparative experiments / sensitivity campaigns
 - Nationwide search
 - ALNS, GA, Gurobi, OR-Tools, etc.
-- Redesign of Task 01C access classifiers
-- Paper writing / sensitivity campaigns beyond the 05C checkpoint
+- Paper writing
 
-**Stop after Task 05C** until the researcher reviews.
+**Stop after Task 06A** until the researcher reviews.

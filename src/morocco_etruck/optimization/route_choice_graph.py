@@ -323,12 +323,20 @@ def union_path_digraph(G: nx.Graph, paths: Iterable[Sequence[Any]]) -> nx.DiGrap
     return U
 
 
-def _scenario_speed_kmh(data: dict[str, Any], speed_policy: dict[str, Any]) -> float:
+def scenario_speed_kmh_for_edge(
+    data: dict[str, Any], speed_policy: dict[str, Any]
+) -> tuple[float, str]:
+    """
+    Assumed research cruise speed (km/h) for one OSM edge under speed_policy.
+
+    Not observed HGV speed and not a certified legal heavy-truck limit.
+    Returns (speed_kmh, source) where source is osm_maxspeed | class_default.
+    """
     defaults = speed_policy.get("class_defaults_kmh") or {}
     highway = str(data.get("highway") or "default")
     default_v = float(defaults.get(highway, defaults.get("default", 50)))
     if not speed_policy.get("use_osm_maxspeed", True):
-        return default_v
+        return default_v, "class_default"
     raw = data.get("maxspeed_kmh")
     try:
         v = float(raw) if raw not in (None, "") else None
@@ -337,8 +345,13 @@ def _scenario_speed_kmh(data: dict[str, Any], speed_policy: dict[str, Any]) -> f
     lo = float(speed_policy.get("maxspeed_sane_min_kmh", 30))
     hi = float(speed_policy.get("maxspeed_sane_max_kmh", 120))
     if v is not None and lo <= v <= hi:
-        return v
-    return default_v
+        return v, "osm_maxspeed"
+    return default_v, "class_default"
+
+
+def _scenario_speed_kmh(data: dict[str, Any], speed_policy: dict[str, Any]) -> float:
+    kmh, _src = scenario_speed_kmh_for_edge(data, speed_policy)
+    return kmh
 
 
 def contract_to_decision_graph(

@@ -289,6 +289,7 @@ def build_mission_context(
                 corridor_profile=corridor_prof,
                 macro_s0_m=s_at[i0],
                 road_cost_per_km=float(cfg.get("road_cost_per_km", 0.0)),
+                speed_policy=dict(cfg.get("speed_policy") or {}),
             )
         )
 
@@ -315,10 +316,26 @@ def build_mission_context(
 
 
 def _quantize_capacity(usable_kwh: float, quantum: int, soc_min: float, soc_init: float) -> tuple[int, int, int]:
+    """
+    Align capacity / floors to the energy quantum without fabricating SOC.
+
+    Raises if the declared initial SOC is below the minimum (INVALID_INPUT) or if
+    conservative floor quantization alone drops a valid start below emin
+    (NUMERICAL_GRID_REJECT).
+    """
+    if soc_init + 1e-15 < soc_min:
+        raise ValueError(
+            f"INVALID_INPUT: soc_init={soc_init} < soc_min={soc_min}"
+        )
     cap = int(math.floor(usable_kwh / quantum) * quantum)
     emin = int(math.ceil((soc_min * usable_kwh) / quantum) * quantum)
     einit = int(math.floor((soc_init * usable_kwh) / quantum) * quantum)
-    einit = min(cap, max(emin, einit))
+    einit = min(cap, einit)
+    if einit < emin:
+        raise ValueError(
+            f"NUMERICAL_GRID_REJECT: floored E_init={einit} < E_min={emin} "
+            f"(soc_init={soc_init}, quantum={quantum}); not increasing energy"
+        )
     return emin, einit, cap
 
 
@@ -413,6 +430,8 @@ def build_routing_instance(
             E_truck_cap=E_cap,
             E_trailer_min=El_min,
             E_trailer_cap=El_cap,
+            speed_schedule=[e.speed_mps for e in macro.micro_edges],
+            speed_policy=dict(ctx.cfg.get("speed_policy") or {}),
         )
         table = None
         cache_path = None

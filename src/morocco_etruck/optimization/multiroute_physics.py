@@ -257,6 +257,7 @@ def build_macro_with_terrain(
     terrain_mode: str,
     elevation_dir: Path,
     road_cost_per_km: float,
+    speed_policy: dict[str, Any] | None = None,
 ) -> tuple[MacroArcSpec, str, bool]:
     """
     Build geometry-owned macro.
@@ -302,11 +303,13 @@ def build_macro_with_terrain(
         corridor_profile=corridor,
         macro_s0_m=macro_s0,
         road_cost_per_km=road_cost_per_km,
+        speed_policy=speed_policy,
     )
     macro.meta["arc_id"] = arc.arc_id
     macro.meta["parent_arc_id"] = arc.parent_arc_id
     macro.meta["terrain_note"] = note
     macro.meta["dem_ok"] = dem_ok
+    # Reporting summary only — physics uses per-micro-edge speeds.
     macro.meta["scenario_speed_kmh"] = arc.scenario_speed_kmh
     macro.meta["hgv_access"] = arc.hgv_access
     return macro, note, dem_ok
@@ -330,6 +333,7 @@ def drive_table_for_macro(
     vehicle_yaml: Path,
     fridge_yaml: Path,
     cache_dir: Path | None,
+    speed_policy: dict[str, Any] | None = None,
 ) -> dict:
     th = terrain_sample_hash(
         list(macro.terrain.distances_m),
@@ -338,6 +342,9 @@ def drive_table_for_macro(
         list(macro.terrain.valid_mask) if macro.terrain.valid_mask is not None else None,
     )
     arc_id = str(macro.meta.get("arc_id") or make_arc_id(macro.osm_edge_pairs))
+    speed_sched = [
+        e.speed_mps for e in macro.micro_edges
+    ] or list(macro.meta.get("speed_schedule_mps") or [])
     fp = build_drive_table_fingerprint(
         vehicle_yaml=vehicle_yaml,
         fridge_yaml=fridge_yaml,
@@ -358,6 +365,8 @@ def drive_table_for_macro(
         E_truck_cap=E_truck_cap,
         E_trailer_min=E_trailer_min,
         E_trailer_cap=E_trailer_cap,
+        speed_schedule=speed_sched,
+        speed_policy=speed_policy,
     )
     if cache_dir is not None:
         cpath = cache_dir / f"{arc_id}.json"
@@ -419,6 +428,7 @@ def build_path_union_routing_instance(
     decision_nodes: dict[str, Any] | None = None,
     wait_max_steps: int = 0,
     name: str | None = None,
+    speed_policy: dict[str, Any] | None = None,
 ) -> tuple[RoutingInstance, MultirouteMissionContext]:
     if decision_arcs is None:
         arcs_in, origin_n, dest_n, nodes = induce_od_decision_arcs(dec, path_rows, od_id)
@@ -447,10 +457,13 @@ def build_path_union_routing_instance(
             terrain_mode=terrain_mode,
             elevation_dir=elevation_dir,
             road_cost_per_km=road_cost_per_km,
+            speed_policy=speed_policy,
         )
         notes.append(f"{darc.arc_id}:{tnote}")
         if terrain_mode == "dem" and not dem_ok:
             dem_complete = False
+        if int(macro.meta.get("speed_unset_edges") or 0) > 0:
+            notes.append(f"{darc.arc_id}:speed_fallback_vehicle_cruise")
         table = drive_table_for_macro(
             macro,
             vehicle=vehicle,
@@ -468,6 +481,7 @@ def build_path_union_routing_instance(
             vehicle_yaml=vehicle_yaml,
             fridge_yaml=fridge_yaml,
             cache_dir=cache_dir,
+            speed_policy=speed_policy,
         )
         macros[darc.arc_id] = macro
         node_names.add(darc.u)
@@ -479,9 +493,7 @@ def build_path_union_routing_instance(
                 dt_steps=1,
                 dE_truck_kwh=0,
                 dE_trailer_kwh=0,
-                road_cost=max(1, int(round(macro.length_m / 1000.0 * max(road_cost_per_km, 0.0))))
-                if road_cost_per_km > 0
-                else max(1, int(round(macro.length_m / 1000.0))),
+                road_cost=int(macro.road_cost),
                 power_ok=True,
                 drive_table=table,
                 arc_id=darc.arc_id,

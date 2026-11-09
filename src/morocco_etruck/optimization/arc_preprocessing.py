@@ -84,35 +84,83 @@ def _merge_lines(geoms: Sequence[LineString]) -> LineString:
     return LineString(coords)
 
 
+def _hop_scenario_speed(
+    G,
+    u: Any,
+    v: Any,
+    *,
+    speed_policy: dict[str, Any] | None,
+) -> tuple[float | None, str, str]:
+    """Return (speed_mps, highway, speed_source) for one directed OSM hop."""
+    if not speed_policy:
+        return None, "", ""
+    from morocco_etruck.optimization.route_choice_graph import scenario_speed_kmh_for_edge
+    from morocco_etruck.road_network import _best_edge_data
+
+    data = _best_edge_data(G, u, v) if G is not None and G.has_edge(u, v) else {}
+    highway = str(data.get("highway") or "")
+    kmh, source = scenario_speed_kmh_for_edge(data, speed_policy)
+    return float(kmh) / 3.6, highway, source
+
+
 def build_micro_edges_from_path(
     G,
     path: Sequence[Any],
     *,
     max_edge_m: float = 2000.0,
+    speed_policy: dict[str, Any] | None = None,
 ) -> tuple[LineString, float, list[EdgeInput], list[tuple[Any, Any]]]:
     """
     Build micro-segment EdgeInputs owned by a macro-arc (OSM edges, optionally split).
 
     Each micro-edge has its own geometry; DEM sampling must be edge-local / macro-local,
     never a single baseline s_cursor reused across unrelated edges.
+    Densified subsegments inherit the parent OSM-hop scenario speed.
     """
     hops = _edge_lines_along_path(G, path)
     pairs = [(u, v) for u, v, _g, _L in hops]
     micro: list[EdgeInput] = []
-    for _u, _v, geom, length in hops:
+    for u, v, geom, length in hops:
+        speed_mps, highway, speed_source = _hop_scenario_speed(
+            G, u, v, speed_policy=speed_policy
+        )
         if length <= max_edge_m:
-            micro.append(EdgeInput(geometry=geom, length_m=length))
+            micro.append(
+                EdgeInput(
+                    geometry=geom,
+                    length_m=length,
+                    speed_mps=speed_mps,
+                    highway=highway,
+                    speed_source=speed_source,
+                )
+            )
             continue
         # Split long OSM edges into ~max_edge_m chunks along the edge geometry
         pts = densify_linestring(geom, step_m=max_edge_m)
         if len(pts) < 2:
-            micro.append(EdgeInput(geometry=geom, length_m=length))
+            micro.append(
+                EdgeInput(
+                    geometry=geom,
+                    length_m=length,
+                    speed_mps=speed_mps,
+                    highway=highway,
+                    speed_source=speed_source,
+                )
+            )
             continue
         for i in range(len(pts) - 1):
             sub = LineString([pts[i], pts[i + 1]])
             Lm = geodesic_length_m([pts[i], pts[i + 1]])
             if Lm > 0:
-                micro.append(EdgeInput(geometry=sub, length_m=Lm))
+                micro.append(
+                    EdgeInput(
+                        geometry=sub,
+                        length_m=Lm,
+                        speed_mps=speed_mps,
+                        highway=highway,
+                        speed_source=speed_source,
+                    )
+                )
     merged = _merge_lines([h[2] for h in hops])
     total = sum(e.length_m for e in micro)
     return merged, total, micro, pairs
@@ -160,6 +208,47 @@ def terrain_for_macro_arc(
     return prof, q.status
 
 
+def allocate_road_cost_units(
+    length_m: float,
+    *,
+    road_cost_per_km: float,
+) -> int:
+    """
+    Nonnegative illustrative road-cost integer for one macro (currency units ≈ km × rate).
+
+    No per-macro ``max(1, …)`` floor — that inflated totals under charger splits (Task 06A).
+    Distinguishes research accounting units from observed Moroccan tolls/prices.
+    """
+    if road_cost_per_km <= 0 or length_m <= 0:
+        return 0
+    return max(0, int(round(road_cost_per_km * (length_m / 1000.0))))
+
+
+def allocate_path_road_costs(
+    lengths_m: Sequence[float],
+    *,
+    road_cost_per_km: float,
+) -> list[int]:
+    """Largest-remainder allocation so child macros sum to the unsplit path total."""
+    n = len(lengths_m)
+    if n == 0:
+        return []
+    if road_cost_per_km <= 0:
+        return [0] * n
+    total_km = sum(float(L) for L in lengths_m) / 1000.0
+    total = max(0, int(round(total_km * road_cost_per_km)))
+    if total_km <= 0:
+        return [0] * n
+    raw = [total * (float(L) / 1000.0) / total_km for L in lengths_m]
+    floors = [int(math.floor(x)) for x in raw]
+    rem = total - sum(floors)
+    order = sorted(range(n), key=lambda i: (raw[i] - floors[i], -i), reverse=True)
+    out = floors[:]
+    for i in order[: max(0, rem)]:
+        out[i] += 1
+    return out
+
+
 def build_macro_arc(
     G,
     *,
@@ -171,9 +260,10 @@ def build_macro_arc(
     macro_s0_m: float,
     road_cost_per_km: float = 0.0,
     max_edge_m: float = 2000.0,
+    speed_policy: dict[str, Any] | None = None,
 ) -> MacroArcSpec:
     geom, length_m, micro, pairs = build_micro_edges_from_path(
-        G, path_nodes, max_edge_m=max_edge_m
+        G, path_nodes, max_edge_m=max_edge_m, speed_policy=speed_policy
     )
     terrain, tq = terrain_for_macro_arc(
         geom,
@@ -181,7 +271,8 @@ def build_macro_arc(
         corridor_profile=corridor_profile,
         macro_s0_m=macro_s0_m,
     )
-    road_cost = int(round(road_cost_per_km * (length_m / 1000.0)))
+    road_cost = allocate_road_cost_units(length_m, road_cost_per_km=road_cost_per_km)
+    speed_fallback = sum(1 for e in micro if e.speed_mps is None)
     return MacroArcSpec(
         u=u_name,
         v=v_name,
@@ -193,7 +284,15 @@ def build_macro_arc(
         terrain=terrain,
         terrain_quality_status=tq,
         road_cost=road_cost,
-        meta={"terrain_mode": terrain_mode, "macro_s0_m": macro_s0_m},
+        meta={
+            "terrain_mode": terrain_mode,
+            "macro_s0_m": macro_s0_m,
+            "road_cost_unit": "illustrative_currency",
+            "speed_unset_edges": speed_fallback,
+            "speed_schedule_mps": [
+                None if e.speed_mps is None else round(float(e.speed_mps), 6) for e in micro
+            ],
+        },
     )
 
 
@@ -242,6 +341,7 @@ def simulate_drive_from_soc(
             power_source=power_source,  # type: ignore[arg-type]
             terrain=terrain,
             s_cursor_m=s_cursor,
+            speed_mps=edge.speed_mps,
         )
         dt_total += r.dt_s
         s_cursor += edge.length_m

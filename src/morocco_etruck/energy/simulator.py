@@ -36,10 +36,14 @@ J_PER_KWH = 3.6e6
 
 @dataclass
 class EdgeInput:
-    """One evaluation edge with geometry and geodesic length_m."""
+    """One evaluation edge with geometry, geodesic length, and optional cruise speed."""
 
     geometry: LineString
     length_m: float
+    # Assumed research cruise speed for this micro-segment (not observed HGV speed).
+    speed_mps: float | None = None
+    highway: str = ""
+    speed_source: str = ""  # e.g. osm_maxspeed | class_default | vehicle_cruise
 
 
 @dataclass

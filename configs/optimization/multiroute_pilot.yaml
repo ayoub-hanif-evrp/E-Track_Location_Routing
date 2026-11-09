@@ -129,8 +129,13 @@ outputs:
   experiments_csv: results/multiroute_physics_experiments.csv
   figures_dir: reports/figures
 
+# Assumed research HGV cruise by road class (Task 06A).
+# Not observed truck speeds. Posted OSM maxspeed is NOT used as cruise: many
+# Moroccan motorway tags are 120 km/h, which overstates HGV cruise and aero load.
+# Set use_osm_maxspeed true only for sensitivity experiments that explicitly
+# document the assumption.
 speed_policy:
-  use_osm_maxspeed: true
+  use_osm_maxspeed: false
   maxspeed_sane_min_kmh: 30
   maxspeed_sane_max_kmh: 120
   class_defaults_kmh:
