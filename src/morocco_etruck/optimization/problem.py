@@ -27,6 +27,7 @@ class ArcData:
 
     Synthetic cases use fixed dE_*/dt_steps.
     Morocco macros set drive_table and ignore fixed dE for energy (dt_steps unused).
+    Parallel macros that share endpoints are distinguished by arc_id.
     """
 
     u: str
@@ -38,6 +39,7 @@ class ArcData:
     power_ok: bool = True
     # key: (E_truck_start, E_trailer_start) — trailer None for config A
     drive_table: dict[tuple[int, int | None], DriveTableEntry] | None = None
+    arc_id: str | None = None
 
 
 @dataclass(frozen=True)

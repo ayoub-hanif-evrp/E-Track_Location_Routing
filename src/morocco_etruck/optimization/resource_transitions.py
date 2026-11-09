@@ -125,6 +125,16 @@ def apply_drive(inst: RoutingInstance, lab: Label, arc: ArcData, new_id: int) ->
         reason = _check_floors(inst, entry.E_end_truck, entry.E_end_trailer)
         if reason:
             return TransitionResult(False, reason=reason)
+        action = {
+            "type": "DRIVE",
+            "u": arc.u,
+            "v": arc.v,
+            "road_cost": arc.road_cost,
+            "dt_steps": entry.dt_steps,
+            "table": True,
+        }
+        if arc.arc_id is not None:
+            action["arc_id"] = arc.arc_id
         return TransitionResult(
             True,
             Label(
@@ -134,14 +144,7 @@ def apply_drive(inst: RoutingInstance, lab: Label, arc: ArcData, new_id: int) ->
                 E_trailer=entry.E_end_trailer,
                 cost=lab.cost + arc.road_cost,
                 pred_id=lab.label_id,
-                action={
-                    "type": "DRIVE",
-                    "u": arc.u,
-                    "v": arc.v,
-                    "road_cost": arc.road_cost,
-                    "dt_steps": entry.dt_steps,
-                    "table": True,
-                },
+                action=action,
                 label_id=new_id,
                 can_charge=True,
             ),
@@ -165,6 +168,9 @@ def apply_drive(inst: RoutingInstance, lab: Label, arc: ArcData, new_id: int) ->
     if reason:
         return TransitionResult(False, reason=reason)
     cost2 = lab.cost + arc.road_cost
+    action = {"type": "DRIVE", "u": arc.u, "v": arc.v, "road_cost": arc.road_cost}
+    if arc.arc_id is not None:
+        action["arc_id"] = arc.arc_id
     return TransitionResult(
         True,
         Label(
@@ -174,7 +180,7 @@ def apply_drive(inst: RoutingInstance, lab: Label, arc: ArcData, new_id: int) ->
             E_trailer=E_tl,
             cost=cost2,
             pred_id=lab.label_id,
-            action={"type": "DRIVE", "u": arc.u, "v": arc.v, "road_cost": arc.road_cost},
+            action=action,
             label_id=new_id,
             can_charge=True,
         ),

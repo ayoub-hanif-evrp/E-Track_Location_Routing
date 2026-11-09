@@ -1,35 +1,82 @@
-# Task 05A — Multi-route Moroccan MRLS pilot (separate from A3 Task 03B/04)
-# Exactness only over the selected path-union decision graph.
+# Task 05B — Physics-validated multi-route Moroccan MRLS (path-union)
+# Exactness only over the directed union of verified OD path alternatives.
 
 disclaimer: >
   Multi-route MRLS on a reduced decision graph built from verified OSM path
   alternatives (Casa–Marrakech–Agadir). Not optimality over the full Moroccan
   network. Scenario speeds are research defaults / OSM maxspeed when sane —
-  not observed HGV speeds. Chargers remain hypothetical. HGV legality from OSM
+  not observed HGV speeds. Chargers are geographically grounded ADM candidates
+  but remain hypothetical (HGV access not certified). HGV legality from OSM
   tags is incomplete (unknown retained; explicit no filtered at build).
+  Discrete optimality ≠ continuous physics certification ≠ empirical validation.
 
 vehicle_config: configs/vehicles/eactros_600.yaml
 refrigeration_config: configs/energy/refrigeration_approx.yaml
 corridor_config: configs/multiroute_corridor.yaml
+morocco_pilot_config: configs/optimization/morocco_pilot.yaml
+candidate_sites_csv: data/processed/candidate_sites.csv
 
 time_step_min: 5
-energy_quantum_kwh: 1
+# Coarser grid for path-union tractability; sensitivity uses 5 kWh on one mission
+energy_quantum_kwh: 10
+energy_quantum_sensitivity_kwh: 5
 deadline_steps: 240
-# Illustrative mean consumption for discrete arc quantization on decision macros
-# (research scenario rate — not a calibrated Moroccan HGV measurement)
+wait_max_steps: 0
+
+# Legacy path-set benchmark only (not used for scientific 05B rows)
 consumption_kwh_per_km: 1.0
 
 E_truck_cap: 600
 E_truck_min: 60
 E_truck_init: 600
 
+physics:
+  terrain_mode: flat   # dem when per-arc COP-DEM profiles exist under elevation_dir
+  elevation_dir: data/processed/multiroute/elevation
+  drive_cache_dir: data/processed/multiroute/drive_tables
+  gcm_kg: 25000.0      # light GCM research scenario
+  gcm_heavy_kg: 40000.0
+  road_cost_per_km: 1.0
+  # Tractability: induce union from shortest + up to N-1 most diverse alternatives
+  max_alternatives_for_union: 2
+
+charger:
+  power_kw: 350.0
+  eta: 0.95
+  price_uniform_cents: 20
+
+# Geographically grounded ADM tokens (entrance_and_exit only). No R_i midpoints.
+grounded_chargers:
+  default:
+    - key: settat
+      name_contains: SETTAT
+    - key: benguerir
+      name_contains: BENGUERIR
+    - key: amskroud
+      name_contains: AMSKROUD
+  casa_marrakech:
+    - key: settat
+      name_contains: SETTAT
+    - key: benguerir
+      name_contains: BENGUERIR
+  casa_agadir:
+    - key: settat
+      name_contains: SETTAT
+    - key: benguerir
+      name_contains: BENGUERIR
+    - key: amskroud
+      name_contains: AMSKROUD
+  marrakech_agadir:
+    - key: amskroud
+      name_contains: AMSKROUD
+
 solver:
-  max_seconds: 60.0
-  max_expansions: 500000
+  max_seconds: 90.0
+  max_expansions: 800000
 
 outputs:
   processed_dir: data/processed/multiroute
-  experiments_csv: results/multiroute_experiments.csv
+  experiments_csv: results/multiroute_physics_experiments.csv
   figures_dir: reports/figures
 
 speed_policy:
@@ -41,6 +88,12 @@ speed_policy:
     trunk: 70
     primary: 60
     default: 50
+
+# Scientific pilot portfolio (Stage 6)
+pilot_od_pairs:
+  - casa_marrakech
+  - casa_agadir
+  - marrakech_agadir
 
 od_pairs:
   - id: casa_agadir

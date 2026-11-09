@@ -1,6 +1,6 @@
 {
   "built_at_utc": "2026-11-09T20:15:16.604194+00:00",
-  "task": "05A",
+  "task": "05B",
   "config": "configs/multiroute_corridor.yaml",
   "osm": {
     "url": "https://download.geofabrik.de/africa/morocco-261106.osm.pbf",
@@ -77,16 +77,11 @@
   "od_notes": [
     "Exact MRLS optimality is only over this selected path-union decision graph.",
     "Stations/chargers remain hypothetical unless independently verified.",
-    "casa_agadir: 4 routes",
-    "agadir_casa: 4 routes",
-    "casa_marrakech: 4 routes",
-    "marrakech_casa: 4 routes",
-    "marrakech_agadir: 4 routes",
-    "agadir_marrakech: 4 routes"
+    "Decision nodes are canonicalized to one label per OSM id (Task 05B)."
   ],
   "n_path_records": 24,
-  "n_decision_nodes": 173,
-  "n_decision_arcs": 251,
+  "n_decision_nodes": 162,
+  "n_decision_arcs": 241,
   "attribution": {
     "osm": "\u00a9 OpenStreetMap contributors",
     "license": "ODbL",
@@ -100,5 +95,6 @@
     "unique_directed_uv_pairs": 100499,
     "note": "parallel_uv_collisions_if_digraph counts additional edges that share the same (u,v) and would overwrite attributes in nx.DiGraph; MultiDiGraph preserves them."
   },
-  "sha256_national_pbf": "e26e8b7010cf78259469f166292b351de48609b3b1f420dd469f0d49f7d05a00"
+  "sha256_national_pbf": "e26e8b7010cf78259469f166292b351de48609b3b1f420dd469f0d49f7d05a00",
+  "n_arc_length_failures": 0
 }

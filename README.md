@@ -8,7 +8,7 @@ PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible r
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–05A)
+## Current scope (Tasks 01–05B)
 
 **Task 01 / 01B / 01C — geographic foundation**
 
@@ -58,13 +58,19 @@ Eventually determine which Moroccan motorway service areas should receive truck-
 - Matches all **32** Task 04A scenario optima; synthetic 12-site pruning demo.
 - **Not claimed:** market prices, nationwide LRP, or metaheuristics/MIP solvers.
 
-**Task 05A — Multi-route Moroccan freight benchmark**
+**Task 05A — Multi-route Moroccan freight discovery**
 
-- Stage-1 B&B safeguards (config validation, replay uncertified, secondary prune test, richer memo fingerprint).
-- Separate expanded OSM graph (motorway/trunk/primary) under `data/processed/multiroute/` — does not overwrite A3 pilot CSVs.
-- Verified path alternatives for Casa↔Marrakech↔Agadir; MRLS exact over the selected path set.
-- Synthetic branching route-choice tests vs independent reference; Moroccan experiments + map.
-- **Not claimed:** full-network optimality, certified HGV access, or joint placement on multi-route graphs (Task 05B).
+- Stage-1 B&B safeguards; separate expanded OSM graph under `data/processed/multiroute/`.
+- Verified path alternatives for Casa↔Marrakech↔Agadir (discovery milestone).
+- **Not claimed:** physics-integrated multi-route optimality (see 05B).
+
+**Task 05B — Physics-validated multi-route MRLS**
+
+- Audited path-union decision graph (`arc_id`, canonical aliases, length checks).
+- OD-local path-union MRLS with Task 02B/03B DRIVE tables (not artificial `O→R_i→D`).
+- Grounded ADM hypothetical chargers only; continuous replay of OSM-edge journeys.
+- Pilot ODs: Casa→Marrakech, Casa→Agadir, Marrakech→Agadir.
+- **Not claimed:** full-network optimality, certified HGV access, DEM when unavailable (flat documented), or joint placement B&B (Task 05C).
 
 ## Requirements
 
@@ -249,27 +255,34 @@ Outputs:
 - `reports/task04b_algorithm_validation.md`
 - `configs/optimization/branch_bound_benchmarks.yaml` (synthetic prune demo)
 
-## Task 05A — multi-route benchmark
+## Task 05A — multi-route discovery
 
 ```bash
 python scripts/build_multiroute_pilot.py --skip-download
+```
+
+## Task 05B — physics-validated multi-route MRLS
+
+```bash
+python scripts/regenerate_multiroute_decision_graph.py
 python scripts/run_multiroute_experiments.py
-pytest -q tests/unit/test_route_choice.py tests/unit/test_placement_config_validation.py tests/unit/test_placement_replay_certification.py
+pytest -q tests/unit/test_multiroute_physics.py tests/unit/test_route_choice.py
 ```
 
 Outputs:
 
-- `data/processed/multiroute/` (nodes/edges, path alternatives, decision graph, HGV audit)
-- `results/multiroute_experiments.csv`
-- `reports/task05a_multiroute_network_audit.md`
-- `reports/task05a_route_choice_validation.md`
-- `reports/figures/multiroute_path_alternatives.png`
+- `data/processed/multiroute/decision_graph.json` (arc_id + osm_edge_pairs)
+- `results/multiroute_physics_experiments.csv`
+- `reports/task05b_decision_graph_audit.md`
+- `reports/task05b_physics_integration.md`
+- `reports/task05b_route_choice_validation.md`
+- `reports/figures/multiroute_physics_paths.png`
 
-## Not yet implemented (stop after Task 05A)
+## Not yet implemented (stop after Task 05B)
 
-- Re-couple placement B&B to multi-route choice (Task 05B)
+- Re-couple placement B&B to physics multi-route MRLS (Task 05C)
 - Nationwide search
 - ALNS, GA, Gurobi, OR-Tools, etc.
 - Redesign of Task 01C access classifiers
 
-**Stop after Task 05A** until the researcher reviews.
+**Stop after Task 05B** until the researcher reviews.

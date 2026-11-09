@@ -24,8 +24,11 @@ from morocco_etruck.data_sources import (  # noqa: E402
 )
 from morocco_etruck.optimization.route_choice_graph import (  # noqa: E402
     build_route_choice_for_ods,
+    classify_path_diversity,
     snap_anchors,
     snap_od_pair,
+    union_path_digraph,
+    verify_arc_length,
 )
 from morocco_etruck.road_network import (  # noqa: E402
     build_multidigraph_from_directed_edges,
@@ -181,9 +184,27 @@ def main() -> int:
         h = str(d.get("highway") or "")
         class_counts[h] = class_counts.get(h, 0) + 1
 
+    diversity = classify_path_diversity(rcg.path_records)
+    pd.DataFrame(diversity).to_csv(out_dir / "path_diversity_audit.csv", index=False)
+
+    union = union_path_digraph(G, [r.node_path for r in rcg.path_records])
+    length_failures = []
+    for a in rcg.arcs:
+        ok, summed, declared = verify_arc_length(union, a)
+        if not ok:
+            length_failures.append(
+                {
+                    "arc_id": a.arc_id,
+                    "u": a.u,
+                    "v": a.v,
+                    "declared_length_m": declared,
+                    "summed_osm_length_m": summed,
+                }
+            )
+
     audit = {
         "built_at_utc": datetime.now(timezone.utc).isoformat(),
-        "task": "05A",
+        "task": "05B",
         "config": str(config_path.relative_to(root)).replace("\\", "/"),
         "osm": osm_meta,
         "extract": extract_info,
@@ -200,6 +221,7 @@ def main() -> int:
         "n_path_records": len(rcg.path_records),
         "n_decision_nodes": len(rcg.decision_nodes),
         "n_decision_arcs": len(rcg.arcs),
+        "n_arc_length_failures": len(length_failures),
         "attribution": {
             "osm": "© OpenStreetMap contributors",
             "license": "ODbL",
@@ -210,12 +232,17 @@ def main() -> int:
     }
     (out_dir / "build_manifest.json").write_text(json.dumps(audit, indent=2), encoding="utf-8")
     pd.DataFrame(rejected).to_csv(out_dir / "hgv_audit.csv", index=False)
+    if length_failures:
+        pd.DataFrame(length_failures).to_csv(out_dir / "arc_length_failures.csv", index=False)
 
-    # Persist decision graph summary
+    # Persist decision graph (Task 05B: arc_id + osm_edge_pairs + OD terminals)
     dec = {
         "decision_nodes": {k: int(v) for k, v in rcg.decision_nodes.items()},
+        "alias_to_canonical": dict(rcg.alias_to_canonical),
+        "od_terminals": dict(rcg.od_terminals),
         "arcs": [
             {
+                "arc_id": a.arc_id,
                 "u": a.u,
                 "v": a.v,
                 "length_m": a.length_m,
@@ -223,11 +250,13 @@ def main() -> int:
                 "highway_classes": a.highway_classes,
                 "hgv_access": a.hgv_access,
                 "n_osm_edges": len(a.osm_edge_pairs),
+                "osm_edge_pairs": [[int(u), int(v)] for u, v in a.osm_edge_pairs],
                 "path_nodes": [int(x) for x in a.path_nodes],
             }
             for a in rcg.arcs
         ],
         "notes": rcg.notes,
+        "claim_scope": "path_union_of_verified_alternatives_only",
     }
     (out_dir / "decision_graph.json").write_text(json.dumps(dec, indent=2), encoding="utf-8")
 

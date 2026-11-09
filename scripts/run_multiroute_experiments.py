@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Task 05A — Multi-route Moroccan MRLS experiments on the decision graph."""
+"""Task 05B — Physics-validated path-union multiroute MRLS experiments."""
 
 from __future__ import annotations
 
@@ -17,12 +17,12 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from morocco_etruck.optimization.label_setting import SolverStatus, solve_mrls  # noqa: E402
 from morocco_etruck.optimization.multiroute_adapter import (  # noqa: E402
-    build_od_routing_instance,
+    build_physics_od_instance,
     load_decision_graph,
     load_multiroute_pilot_config,
 )
-from morocco_etruck.optimization.problem import StationData  # noqa: E402
-from morocco_etruck.optimization.reference_solver import solve_reference  # noqa: E402
+from morocco_etruck.optimization.multiroute_physics import induce_od_decision_arcs  # noqa: E402
+from morocco_etruck.optimization.multiroute_replay import continuous_replay_multiroute  # noqa: E402
 from morocco_etruck.optimization.replay import replay_solution  # noqa: E402
 from morocco_etruck.road_network import load_graph_from_csv  # noqa: E402
 
@@ -37,7 +37,7 @@ def _shortest_row(path_df: pd.DataFrame, od_id: str) -> pd.Series | None:
     return short.iloc[0]
 
 
-def _write_map(path_df: pd.DataFrame, G, out_png: Path, out_geo: Path) -> None:
+def _write_map(path_df: pd.DataFrame, G, chargers_xy, out_png: Path, out_geo: Path) -> None:
     features = []
     fig, ax = plt.subplots(figsize=(9, 10))
     colors = ["#1f4e79", "#c45c26", "#2a9d8f", "#6d597a", "#e9c46a", "#264653"]
@@ -66,7 +66,16 @@ def _write_map(path_df: pd.DataFrame, G, out_png: Path, out_geo: Path) -> None:
                     "geometry": {"type": "LineString", "coordinates": list(zip(xs, ys))},
                 }
             )
-    ax.set_title("Task 05A multi-route path alternatives (OSM; not HGV-certified)")
+    for c in chargers_xy:
+        ax.scatter([c["lon"]], [c["lat"]], c="red", s=40, zorder=5, marker="^")
+        features.append(
+            {
+                "type": "Feature",
+                "properties": {"charger": c["key"], "hypothetical": True},
+                "geometry": {"type": "Point", "coordinates": [c["lon"], c["lat"]]},
+            }
+        )
+    ax.set_title("Task 05B path-union alternatives + grounded hypothetical chargers")
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
     ax.set_aspect("equal", adjustable="datalim")
@@ -76,6 +85,91 @@ def _write_map(path_df: pd.DataFrame, G, out_png: Path, out_geo: Path) -> None:
     fig.savefig(out_png, dpi=140)
     plt.close(fig)
     out_geo.write_text(json.dumps({"type": "FeatureCollection", "features": features}, indent=2), encoding="utf-8")
+
+
+def _mission_rows(cfg) -> list[dict]:
+    """Limited reproducible portfolio for Stage 6."""
+    ods = list(cfg.raw.get("pilot_od_pairs") or ["casa_marrakech", "casa_agadir", "marrakech_agadir"])
+    rows = []
+    for od in ods:
+        rows.append(
+            {
+                "mission_id": f"{od}_full_flat_nochg",
+                "od_id": od,
+                "E_truck_init": int(cfg.raw.get("E_truck_init", 600)),
+                "with_chargers": False,
+                "refrigeration_on": False,
+                "terrain_mode": "flat",
+                "weather_id": "cool",
+                "gcm": "light",
+            }
+        )
+        rows.append(
+            {
+                "mission_id": f"{od}_low_flat_nochg",
+                "od_id": od,
+                "E_truck_init": 200,
+                "with_chargers": False,
+                "refrigeration_on": False,
+                "terrain_mode": "flat",
+                "weather_id": "cool",
+                "gcm": "light",
+            }
+        )
+        rows.append(
+            {
+                "mission_id": f"{od}_low_flat_chg",
+                "od_id": od,
+                "E_truck_init": 200,
+                "with_chargers": True,
+                "refrigeration_on": False,
+                "terrain_mode": "flat",
+                "weather_id": "cool",
+                "gcm": "light",
+            }
+        )
+    # Refrigeration contrast on one OD
+    od0 = ods[0]
+    rows.append(
+        {
+            "mission_id": f"{od0}_full_flat_refrig",
+            "od_id": od0,
+            "E_truck_init": int(cfg.raw.get("E_truck_init", 600)),
+            "with_chargers": False,
+            "refrigeration_on": True,
+            "terrain_mode": "flat",
+            "weather_id": "cool",
+            "gcm": "light",
+        }
+    )
+    # Heavy GCM on one OD
+    rows.append(
+        {
+            "mission_id": f"{od0}_full_flat_heavy",
+            "od_id": od0,
+            "E_truck_init": int(cfg.raw.get("E_truck_init", 600)),
+            "with_chargers": False,
+            "refrigeration_on": False,
+            "terrain_mode": "flat",
+            "weather_id": "cool",
+            "gcm": "heavy",
+        }
+    )
+    # Grid sensitivity on smallest OD
+    rows.append(
+        {
+            "mission_id": f"{od0}_full_flat_q1",
+            "od_id": od0,
+            "E_truck_init": int(cfg.raw.get("E_truck_init", 600)),
+            "with_chargers": False,
+            "refrigeration_on": False,
+            "terrain_mode": "flat",
+            "weather_id": "cool",
+            "gcm": "light",
+            "energy_quantum_kwh": int(cfg.raw.get("energy_quantum_sensitivity_kwh", 1)),
+        }
+    )
+    return rows
 
 
 def main() -> int:
@@ -94,121 +188,192 @@ def main() -> int:
     print("Loading multiroute graph for map…", flush=True)
     G = load_graph_from_csv(cfg.nodes_csv, cfg.edges_csv)
     fig_dir = ROOT / cfg.raw.get("outputs", {}).get("figures_dir", "reports/figures")
+
+    # Collect charger coords for map (best-effort from candidate sites)
+    sites = pd.read_csv(cfg.candidate_sites_csv)
+    chargers_xy = []
+    for token in ("SETTAT", "BENGUERIR", "AMSKROUD"):
+        hits = sites[
+            sites["official_name"].astype(str).str.upper().str.contains(token, regex=False)
+            & (sites["directed_access_status"].astype(str) == "entrance_and_exit")
+        ]
+        if not hits.empty:
+            r = hits.iloc[0]
+            chargers_xy.append(
+                {"key": token.lower(), "lon": float(r["lon"]), "lat": float(r["lat"])}
+            )
+    pilot_ods = list(cfg.raw.get("pilot_od_pairs") or [])
+    map_df = path_df[path_df["od_id"].isin(pilot_ods)] if pilot_ods else path_df
     _write_map(
-        path_df,
+        map_df,
         G,
-        fig_dir / "multiroute_path_alternatives.png",
-        fig_dir / "multiroute_path_alternatives.geojson",
+        chargers_xy,
+        fig_dir / "multiroute_physics_paths.png",
+        fig_dir / "multiroute_physics_paths.geojson",
     )
 
     rows = []
-    for od in cfg.raw.get("od_pairs") or []:
-        od_id = str(od["id"])
-        origin = f"{od_id}__o"
-        dest = f"{od_id}__d"
-        if origin not in dec.get("decision_nodes", {}) or dest not in dec.get("decision_nodes", {}):
-            # Fallback: city-level names
-            print(f"Skip {od_id}: terminals missing in decision graph", flush=True)
-            continue
-
+    for mission in _mission_rows(cfg):
+        od_id = mission["od_id"]
         short = _shortest_row(path_df, od_id)
         n_alts = int((path_df["od_id"] == od_id).sum())
+        gcm_kg = float(
+            cfg.raw.get("physics", {}).get("gcm_heavy_kg", 40000.0)
+            if mission.get("gcm") == "heavy"
+            else cfg.gcm_kg
+        )
+        # Temporarily override gcm on cfg copy
+        cfg.gcm_kg = gcm_kg
 
-        for mode, e_init, with_charger in (
-            ("full_battery", int(cfg.raw.get("E_truck_init", 600)), False),
-            ("low_battery", 200, False),
-            ("low_battery_hyp_charger", 200, True),
-        ):
-            stations = None
-            active: set[str] = set()
-            if with_charger:
-                # Hypothetical charger on first route mid-node (not verified HGV access)
-                mid = f"R0_{od_id}"
-                stations = {
-                    mid: StationData(
-                        node=mid,
-                        power_kw=350.0,
-                        eta=0.95,
-                        price_cents_per_grid_kwh=20,
-                        compatible=True,
-                        hypothetical_access=True,
-                    )
-                }
-                active = {mid}
-            t_prep = time.perf_counter()
-            inst = build_od_routing_instance(
+        t_prep = time.perf_counter()
+        try:
+            inst, ctx, station_notes = build_physics_od_instance(
                 cfg=cfg,
+                root=ROOT,
                 od_id=od_id,
-                origin_name=origin,
-                dest_name=dest,
                 path_rows=path_rows,
-                E_truck_init=e_init,
+                E_truck_init=int(mission["E_truck_init"]),
                 E_truck_cap=int(cfg.raw.get("E_truck_cap", 600)),
                 E_truck_min=int(cfg.raw.get("E_truck_min", 60)),
-                active_stations=active,
-                stations=stations,
+                refrigeration_on=bool(mission["refrigeration_on"]),
+                weather_id=str(mission.get("weather_id", "cool")),
+                with_chargers=bool(mission["with_chargers"]),
+                energy_quantum_kwh=mission.get("energy_quantum_kwh"),
+                terrain_mode=str(mission.get("terrain_mode") or cfg.terrain_mode),
             )
+        except Exception as exc:  # noqa: BLE001 — report mission failure honestly
             prep_s = time.perf_counter() - t_prep
-
-            t0 = time.perf_counter()
-            result = solve_mrls(
-                inst,
-                use_dominance=True,
-                max_seconds=float(cfg.raw.get("solver", {}).get("max_seconds", 60)),
-                max_expansions=int(cfg.raw.get("solver", {}).get("max_expansions", 500000)),
-            )
-            solve_s = time.perf_counter() - t0
-
-            disc_ok = False
-            if result.status == SolverStatus.OPTIMAL:
-                rep = replay_solution(inst, result.actions, expected_cost=result.objective)
-                disc_ok = bool(rep.ok)
-
-            ref_status = ""
-            ref_match = ""
-            if len(inst.arcs) <= 12 and inst.E_truck_cap <= 200:
-                ref = solve_reference(inst, max_states=5_000_000)
-                ref_status = ref.status.value if hasattr(ref.status, "value") else str(ref.status)
-                ref_match = str(result.status == ref.status and result.objective == ref.objective)
-
-            chose_shortest = ""
-            if result.status == SolverStatus.OPTIMAL and short is not None and result.path_nodes:
-                # Path index encoded as R{i}_od
-                mid = result.path_nodes[1] if len(result.path_nodes) >= 3 else ""
-                if mid.startswith("R0_"):
-                    chose_shortest = "true"
-                elif mid.startswith("R"):
-                    chose_shortest = "false"
-
             rows.append(
                 {
                     "od_id": od_id,
-                    "mode": mode,
-                    "E_truck_init": e_init,
-                    "n_path_alternatives": n_alts,
-                    "shortest_length_m": None if short is None else float(short["length_m"]),
-                    "n_route_arcs": len(inst.arcs),
-                    "n_nodes": len(inst.nodes),
-                    "mrls_status": result.status.value,
-                    "mrls_objective": result.objective,
-                    "mrls_path": "->".join(result.path_nodes),
-                    "chose_shortest_distance_route": chose_shortest,
-                    "discrete_replay_ok": disc_ok,
+                    "mission_id": mission["mission_id"],
+                    "mrls_status": "BUILD_ERROR",
+                    "error": str(exc),
                     "prep_sec": prep_s,
-                    "solve_sec": solve_s,
-                    "ref_status": ref_status,
-                    "ref_match": ref_match,
-                    "hgv_uncertainty": "unknown_tags_retained_explicit_no_filtered",
-                    "claim_scope": "selected_verified_path_set_only",
+                    "claim_scope": "path_union_of_verified_alternatives_only",
                 }
             )
-            print(
-                f"{od_id}/{mode}: alts={n_alts} status={result.status.value} "
-                f"obj={result.objective} shortest_route={chose_shortest} t={solve_s:.2f}s",
-                flush=True,
-            )
+            print(f"{mission['mission_id']}: BUILD_ERROR {exc}", flush=True)
+            continue
+        prep_s = time.perf_counter() - t_prep
 
-    out = ROOT / cfg.raw.get("outputs", {}).get("experiments_csv", "results/multiroute_experiments.csv")
+        t0 = time.perf_counter()
+        result = solve_mrls(
+            inst,
+            use_dominance=True,
+            max_seconds=float(cfg.raw.get("solver", {}).get("max_seconds", 90)),
+            max_expansions=int(cfg.raw.get("solver", {}).get("max_expansions", 800000)),
+        )
+        solve_s = time.perf_counter() - t0
+
+        disc_ok = False
+        cont_ok = False
+        cont_reason = ""
+        osm_path = []
+        arc_ids = []
+        length_m = None
+        duration_s = None
+        charge_events = []
+        min_soc = None
+        final_soc_kwh = None
+        truck_energy_est = None
+        chose_shortest = ""
+
+        if result.status == SolverStatus.OPTIMAL:
+            rep = replay_solution(inst, result.actions, expected_cost=result.objective)
+            disc_ok = bool(rep.ok)
+            crep, extras = continuous_replay_multiroute(
+                ctx,
+                inst,
+                result.actions,
+                discrete_cost=result.objective,
+                discrete_t=result.final_label.t if result.final_label else None,
+                discrete_E_truck=result.final_label.E_truck if result.final_label else None,
+            )
+            cont_ok = bool(crep.ok)
+            cont_reason = crep.reason or ""
+            osm_path = extras.osm_node_path
+            arc_ids = extras.arc_ids
+            length_m = extras.length_m
+            duration_s = crep.continuous_duration_s
+            charge_events = extras.charge_events
+            min_soc = crep.min_soc
+            final_soc_kwh = crep.continuous_E_truck_kwh
+            if result.final_label is not None:
+                truck_energy_est = float(inst.E_truck_init - result.final_label.E_truck)
+            if short is not None and length_m is not None:
+                # Compare reconstructed length to shortest alternative length
+                ratio = float(length_m) / max(float(short["length_m"]), 1.0)
+                chose_shortest = "true" if ratio <= 1.02 else "false"
+
+        # Flat shortest-distance reference length on path set
+        short_len = None if short is None else float(short["length_m"])
+
+        # Induced graph size
+        try:
+            ind_arcs, _, _, _ = induce_od_decision_arcs(dec, path_rows, od_id)
+            n_ind = len(ind_arcs)
+        except Exception:
+            n_ind = len(inst.arcs)
+
+        power_ok = True
+        if result.status == SolverStatus.OPTIMAL:
+            for act in result.actions:
+                if act.get("type") == "DRIVE" and act.get("table") and act.get("reason"):
+                    power_ok = False
+
+        rows.append(
+            {
+                "od_id": od_id,
+                "mission_id": mission["mission_id"],
+                "E_truck_init": mission["E_truck_init"],
+                "n_path_alternatives": n_alts,
+                "shortest_length_m": short_len,
+                "n_decision_arcs": len(inst.arcs),
+                "n_induced_arcs_pre_split": n_ind,
+                "n_nodes": len(inst.nodes),
+                "selected_path_nodes": "->".join(result.path_nodes),
+                "selected_osm_node_path_json": json.dumps(osm_path),
+                "selected_arc_ids_json": json.dumps(arc_ids),
+                "road_distance_m": length_m,
+                "travel_duration_s": duration_s,
+                "truck_energy_kwh_est": truck_energy_est,
+                "refrigeration_on": mission["refrigeration_on"],
+                "charge_events_json": json.dumps(charge_events),
+                "final_E_truck_kwh": final_soc_kwh,
+                "min_soc": min_soc,
+                "trailer_soc": "",
+                "motor_power_feasible": power_ok,
+                "mrls_status": result.status.value,
+                "mrls_objective": result.objective,
+                "chose_shortest_distance_route": chose_shortest,
+                "discrete_replay_ok": disc_ok,
+                "continuous_replay_ok": cont_ok,
+                "continuous_replay_reason": cont_reason,
+                "energy_quantum_kwh": inst.energy_quantum_kwh,
+                "terrain_mode": mission.get("terrain_mode"),
+                "gcm_kg": gcm_kg,
+                "with_chargers": mission["with_chargers"],
+                "station_notes": ";".join(station_notes),
+                "prep_sec": prep_s,
+                "solve_sec": solve_s,
+                "hgv_uncertainty": "unknown_tags_retained_explicit_no_filtered",
+                "claim_scope": "path_union_of_verified_alternatives_only",
+                "labels_expanded": getattr(result.stats, "expanded", None)
+                if result.stats
+                else None,
+            }
+        )
+        print(
+            f"{mission['mission_id']}: status={result.status.value} obj={result.objective} "
+            f"shortest={chose_shortest} cont_replay={cont_ok} "
+            f"prep={prep_s:.1f}s solve={solve_s:.2f}s arcs={len(inst.arcs)}",
+            flush=True,
+        )
+
+    out = ROOT / cfg.raw.get("outputs", {}).get(
+        "experiments_csv", "results/multiroute_physics_experiments.csv"
+    )
     out.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(rows).to_csv(out, index=False)
     print(f"Wrote {out} ({len(rows)} rows)", flush=True)

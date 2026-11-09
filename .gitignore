@@ -52,6 +52,8 @@ data/raw/dem/**/*.partial
 
 # Regenerable Morocco DRIVE tables (rebuild via scripts/run_morocco_routing.py)
 data/processed/optimization/drive_tables/
+data/processed/multiroute/drive_tables/
+data/processed/multiroute/elevation/
 
 # Local caches
 *.tmp
