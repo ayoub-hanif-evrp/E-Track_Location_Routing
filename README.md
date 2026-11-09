@@ -8,7 +8,7 @@ PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible r
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–04B)
+## Current scope (Tasks 01–05A)
 
 **Task 01 / 01B / 01C — geographic foundation**
 
@@ -57,6 +57,14 @@ Eventually determine which Moroccan motorway service areas should receive truck-
 - Install/exclude B&B with proved budget, coverage UB, and secondary LB pruning; MRLS memoization.
 - Matches all **32** Task 04A scenario optima; synthetic 12-site pruning demo.
 - **Not claimed:** market prices, nationwide LRP, or metaheuristics/MIP solvers.
+
+**Task 05A — Multi-route Moroccan freight benchmark**
+
+- Stage-1 B&B safeguards (config validation, replay uncertified, secondary prune test, richer memo fingerprint).
+- Separate expanded OSM graph (motorway/trunk/primary) under `data/processed/multiroute/` — does not overwrite A3 pilot CSVs.
+- Verified path alternatives for Casa↔Marrakech↔Agadir; MRLS exact over the selected path set.
+- Synthetic branching route-choice tests vs independent reference; Moroccan experiments + map.
+- **Not claimed:** full-network optimality, certified HGV access, or joint placement on multi-route graphs (Task 05B).
 
 ## Requirements
 
@@ -241,10 +249,27 @@ Outputs:
 - `reports/task04b_algorithm_validation.md`
 - `configs/optimization/branch_bound_benchmarks.yaml` (synthetic prune demo)
 
-## Not yet implemented (stop after Task 04B)
+## Task 05A — multi-route benchmark
 
-- Nationwide search / multi-path LRP
+```bash
+python scripts/build_multiroute_pilot.py --skip-download
+python scripts/run_multiroute_experiments.py
+pytest -q tests/unit/test_route_choice.py tests/unit/test_placement_config_validation.py tests/unit/test_placement_replay_certification.py
+```
+
+Outputs:
+
+- `data/processed/multiroute/` (nodes/edges, path alternatives, decision graph, HGV audit)
+- `results/multiroute_experiments.csv`
+- `reports/task05a_multiroute_network_audit.md`
+- `reports/task05a_route_choice_validation.md`
+- `reports/figures/multiroute_path_alternatives.png`
+
+## Not yet implemented (stop after Task 05A)
+
+- Re-couple placement B&B to multi-route choice (Task 05B)
+- Nationwide search
 - ALNS, GA, Gurobi, OR-Tools, etc.
 - Redesign of Task 01C access classifiers
 
-**Stop after Task 04B** until the researcher reviews.
+**Stop after Task 05A** until the researcher reviews.

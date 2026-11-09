@@ -325,13 +325,16 @@ def evaluate_mission_on_subset(
         cont_ok = cont.ok
         cont_reason = cont.reason
     served = bool(disc.ok and cont_ok)
+    # OPTIMAL + failed discrete/continuous replay is unresolved for certification:
+    # must not justify coverage/secondary B&B prunes (undercounted coverage).
+    replay_uncert = not served
     return _store(
         MissionSolveResult(
             mission_id=mission.id,
             status=result.status.value,
             served=served,
             structural=is_struct,
-            uncertified=False,
+            uncertified=replay_uncert,
             objective_cents=result.objective,
             charge_kwh=_charge_total(result.actions),
             charges=_charge_nodes(result.actions),
@@ -339,7 +342,7 @@ def evaluate_mission_on_subset(
             continuous_replay_ok=cont_ok,
             discrete_replay_ok=disc.ok,
             active_stations=",".join(sorted(active)),
-            reason=None if served else (cont_reason or disc.reason),
+            reason=None if served else (cont_reason or disc.reason or "replay_invalid"),
         )
     )
 

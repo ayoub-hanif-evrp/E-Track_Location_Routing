@@ -11,7 +11,7 @@ from morocco_etruck.optimization.morocco_adapter import load_pilot_config
 from morocco_etruck.optimization.drive_table_cache import DRIVE_TABLE_CACHE_VERSION
 from morocco_etruck.optimization.placement_cache import (
     PlacementMemo,
-    default_energy_fingerprint,
+    portfolio_energy_fingerprint,
 )
 from morocco_etruck.optimization.placement_certification import OptimalityStatus
 from morocco_etruck.optimization.placement_evaluation import (
@@ -144,11 +144,15 @@ def run_enumeration(
         subsets = subsets[: max_subsets]
 
     sample_inst = next(iter(prepared.values()))[1]
+    root_path = root
     memo = PlacementMemo(
-        energy_model_fingerprint=default_energy_fingerprint(
+        energy_model_fingerprint=portfolio_energy_fingerprint(
+            missions,
             version=DRIVE_TABLE_CACHE_VERSION,
             q=sample_inst.energy_quantum_kwh,
             time_step_min=sample_inst.time_step_min,
+            vehicle_yaml=root_path / morocco_cfg["vehicle_config"],
+            fridge_yaml=root_path / morocco_cfg["refrigeration_config"],
         )
     )
 

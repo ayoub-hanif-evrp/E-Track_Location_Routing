@@ -18,7 +18,7 @@ from morocco_etruck.optimization.placement_bounds import (
 )
 from morocco_etruck.optimization.placement_cache import (
     PlacementMemo,
-    default_energy_fingerprint,
+    portfolio_energy_fingerprint,
 )
 from morocco_etruck.optimization.placement_certification import OptimalityStatus
 from morocco_etruck.optimization.placement_evaluation import (
@@ -107,6 +107,7 @@ def run_branch_and_bound_core(
     memo: PlacementMemo | None = None,
     node_limit: int | None = None,
     time_limit_sec: float | None = None,
+    install_first: bool = True,
 ) -> BranchAndBoundResult:
     """
     Best-bound / DFS B&B over install/exclude decisions.
@@ -114,6 +115,8 @@ def run_branch_and_bound_core(
     Uses proved budget, coverage UB, and secondary LB pruning. Uncertified
     bounds never prune. Search terminates CERTIFIED_OPTIMAL only if every open
     node is resolved / pruned by proved bounds and no LIMIT_REACHED remains.
+
+    ``install_first`` is a search heuristic only (child stack order).
     """
     t0 = time.perf_counter()
     stats = BranchAndBoundStats()
@@ -212,9 +215,13 @@ def run_branch_and_bound_core(
             depth=N.depth + 1,
             last_branch=(s, "exclude"),
         )
-        # DFS: push exclude then install so install is explored first
-        open_nodes.append(child_exclude)
-        open_nodes.append(child_install)
+        # DFS child order is a heuristic only
+        if install_first:
+            open_nodes.append(child_exclude)
+            open_nodes.append(child_install)
+        else:
+            open_nodes.append(child_install)
+            open_nodes.append(child_exclude)
 
     stats.runtime_sec = time.perf_counter() - t0
     if memo is not None:
@@ -279,10 +286,13 @@ def prepare_placement_context(
     if memo is None:
         sample = next(iter(prepared.values()))[1]
         memo = PlacementMemo(
-            energy_model_fingerprint=default_energy_fingerprint(
+            energy_model_fingerprint=portfolio_energy_fingerprint(
+                missions,
                 version=DRIVE_TABLE_CACHE_VERSION,
                 q=sample.energy_quantum_kwh,
                 time_step_min=sample.time_step_min,
+                vehicle_yaml=root / morocco_cfg["vehicle_config"],
+                fridge_yaml=root / morocco_cfg["refrigeration_config"],
             )
         )
     return {

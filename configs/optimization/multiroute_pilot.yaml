@@ -1,0 +1,51 @@
+# Task 05A — Multi-route Moroccan MRLS pilot (separate from A3 Task 03B/04)
+# Exactness only over the selected path-union decision graph.
+
+disclaimer: >
+  Multi-route MRLS on a reduced decision graph built from verified OSM path
+  alternatives (Casa–Marrakech–Agadir). Not optimality over the full Moroccan
+  network. Scenario speeds are research defaults / OSM maxspeed when sane —
+  not observed HGV speeds. Chargers remain hypothetical. HGV legality from OSM
+  tags is incomplete (unknown retained; explicit no filtered at build).
+
+vehicle_config: configs/vehicles/eactros_600.yaml
+refrigeration_config: configs/energy/refrigeration_approx.yaml
+corridor_config: configs/multiroute_corridor.yaml
+
+time_step_min: 5
+energy_quantum_kwh: 1
+deadline_steps: 240
+# Illustrative mean consumption for discrete arc quantization on decision macros
+# (research scenario rate — not a calibrated Moroccan HGV measurement)
+consumption_kwh_per_km: 1.0
+
+E_truck_cap: 600
+E_truck_min: 60
+E_truck_init: 600
+
+solver:
+  max_seconds: 60.0
+  max_expansions: 500000
+
+outputs:
+  processed_dir: data/processed/multiroute
+  experiments_csv: results/multiroute_experiments.csv
+  figures_dir: reports/figures
+
+speed_policy:
+  use_osm_maxspeed: true
+  maxspeed_sane_min_kmh: 30
+  maxspeed_sane_max_kmh: 120
+  class_defaults_kmh:
+    motorway: 80
+    trunk: 70
+    primary: 60
+    default: 50
+
+od_pairs:
+  - id: casa_agadir
+  - id: agadir_casa
+  - id: casa_marrakech
+  - id: marrakech_casa
+  - id: marrakech_agadir
+  - id: agadir_marrakech

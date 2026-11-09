@@ -1,0 +1,184 @@
+# Task 05A — synthetic branching route-choice instances (not Moroccan traffic)
+# Exact on 1 kWh / 5 min grid; validated vs independent reference solver.
+
+instances:
+  # Short path energy-infeasible; longer path feasible (ref: Task 03A D-like)
+  - name: R1_short_infeasible_long_ok
+    notes: "Short O-D high energy; long O-M-D feasible. Shortest distance is not optimal."
+    nodes: [O, M, D]
+    origin: O
+    destination: D
+    deadline_steps: 40
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    active_stations: []
+    stations: []
+    arcs:
+      - {u: O, v: D, dt_steps: 2, dE_truck_kwh: 80, road_cost: 5, power_ok: true}
+      - {u: O, v: M, dt_steps: 3, dE_truck_kwh: 20, road_cost: 12, power_ok: true}
+      - {u: M, v: D, dt_steps: 3, dE_truck_kwh: 20, road_cost: 12, power_ok: true}
+    expected:
+      status: OPTIMAL
+      path: [O, M, D]
+      objective: 24
+
+  # Both paths feasible; short lower road cost but higher energy charge need later
+  - name: R2_short_ok_but_long_cheaper_energy
+    notes: "Both feasible without charge; short has higher road_cost than long? Actually short cheaper road."
+    nodes: [O, A, B, D]
+    origin: O
+    destination: D
+    deadline_steps: 50
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 100
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    active_stations: []
+    stations: []
+    arcs:
+      - {u: O, v: A, dt_steps: 2, dE_truck_kwh: 10, road_cost: 30, power_ok: true}
+      - {u: A, v: D, dt_steps: 2, dE_truck_kwh: 10, road_cost: 30, power_ok: true}
+      - {u: O, v: B, dt_steps: 3, dE_truck_kwh: 5, road_cost: 10, power_ok: true}
+      - {u: B, v: D, dt_steps: 3, dE_truck_kwh: 5, road_cost: 10, power_ok: true}
+    expected:
+      status: OPTIMAL
+      path: [O, B, D]
+      objective: 20
+
+  # Charger on short path makes short feasible/optimal
+  - name: R3_charger_enables_short
+    notes: "Without S: short infeasible, long OK. With S active: short+charge optimal."
+    nodes: [O, S, D, M]
+    origin: O
+    destination: D
+    deadline_steps: 60
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 1, compatible: true}
+    active_stations: [S]
+    arcs:
+      - {u: O, v: S, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: O, v: M, dt_steps: 4, dE_truck_kwh: 20, road_cost: 40, power_ok: true}
+      - {u: M, v: D, dt_steps: 4, dE_truck_kwh: 20, road_cost: 40, power_ok: true}
+    expected:
+      status: OPTIMAL
+      path: [O, S, D]
+      charge_total_kwh: 40
+
+  - name: R3b_no_charger_forces_long
+    notes: "Same graph as R3 with S inactive → long path."
+    nodes: [O, S, D, M]
+    origin: O
+    destination: D
+    deadline_steps: 60
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 50
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    stations:
+      - {node: S, power_kw: 60, eta: 1.0, price_cents_per_grid_kwh: 1, compatible: true}
+    active_stations: []
+    arcs:
+      - {u: O, v: S, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: S, v: D, dt_steps: 2, dE_truck_kwh: 40, road_cost: 5, power_ok: true}
+      - {u: O, v: M, dt_steps: 4, dE_truck_kwh: 20, road_cost: 40, power_ok: true}
+      - {u: M, v: D, dt_steps: 4, dE_truck_kwh: 20, road_cost: 40, power_ok: true}
+    expected:
+      status: OPTIMAL
+      path: [O, M, D]
+      objective: 80
+
+  # Reverse-direction restriction: arc D->O only, cannot use reverse
+  - name: R4_oneway_respected
+    notes: "Only O->D forward arcs; reverse arcs absent."
+    nodes: [O, D]
+    origin: O
+    destination: D
+    deadline_steps: 20
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 100
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    active_stations: []
+    stations: []
+    arcs:
+      - {u: O, v: D, dt_steps: 2, dE_truck_kwh: 5, road_cost: 10, power_ok: true}
+    expected:
+      status: OPTIMAL
+      path: [O, D]
+
+  - name: R4b_reverse_origin_infeasible
+    notes: "Start at D with only O->D arc → infeasible."
+    nodes: [O, D]
+    origin: D
+    destination: O
+    deadline_steps: 20
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 100
+    power_source: A
+    refrigeration_on: false
+    wait_max_steps: 0
+    active_stations: []
+    stations: []
+    arcs:
+      - {u: O, v: D, dt_steps: 2, dE_truck_kwh: 5, road_cost: 10, power_ok: true}
+    expected:
+      status: INFEASIBLE
+
+  # Refrigeration changes feasibility
+  - name: R5_refrig_off_ok
+    notes: "Borderline energy; refrig off feasible."
+    nodes: [O, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 55
+    power_source: A
+    refrigeration_on: false
+    tru_kwh_per_step: 0
+    wait_max_steps: 0
+    active_stations: []
+    stations: []
+    arcs:
+      - {u: O, v: D, dt_steps: 4, dE_truck_kwh: 40, road_cost: 10, power_ok: true}
+    expected:
+      status: OPTIMAL
+
+  - name: R5b_refrig_on_infeasible
+    notes: "Refrigeration-elevated traction/TRU load modeled as higher discrete dE (synthetic)."
+    nodes: [O, D]
+    origin: O
+    destination: D
+    deadline_steps: 30
+    E_truck_cap: 100
+    E_truck_min: 10
+    E_truck_init: 55
+    power_source: A
+    refrigeration_on: true
+    tru_kwh_per_step: 5
+    wait_max_steps: 0
+    active_stations: []
+    stations: []
+    arcs:
+      - {u: O, v: D, dt_steps: 4, dE_truck_kwh: 50, road_cost: 10, power_ok: true}
+    expected:
+      status: INFEASIBLE

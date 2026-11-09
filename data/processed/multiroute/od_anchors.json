@@ -1,0 +1,34 @@
+{
+  "city_anchors": {
+    "casablanca": 1546253716,
+    "marrakech": 6820243611,
+    "agadir": 3227750604,
+    "settat": 6888450861
+  },
+  "od_snaps": {
+    "casa_agadir": {
+      "origin": 1546253716,
+      "destination": 1873981509
+    },
+    "agadir_casa": {
+      "origin": 3227750604,
+      "destination": 1546253716
+    },
+    "casa_marrakech": {
+      "origin": 1546253716,
+      "destination": 6820243611
+    },
+    "marrakech_casa": {
+      "origin": 6820243611,
+      "destination": 1546253716
+    },
+    "marrakech_agadir": {
+      "origin": 6820243611,
+      "destination": 1873981509
+    },
+    "agadir_marrakech": {
+      "origin": 3227750604,
+      "destination": 6820243611
+    }
+  }
+}

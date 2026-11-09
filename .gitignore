@@ -31,6 +31,10 @@ data/raw/**/*.partial
 # Large regenerable graph exports (rebuild via scripts/build_pilot.py)
 data/processed/pilot_network.graphml
 data/processed/pilot_network.geojson
+data/processed/multiroute/pilot_network.graphml
+data/processed/multiroute/pilot_network.geojson
+data/processed/multiroute/road_nodes.csv
+data/processed/multiroute/road_edges.csv
 results/baseline_routes.geojson
 reports/pilot_corridor_report.html
 

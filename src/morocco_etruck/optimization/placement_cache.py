@@ -1,9 +1,16 @@
-"""MRLS memoization for placement enumeration and B&B (Task 04B)."""
+"""MRLS memoization for placement enumeration and B&B (Task 04B/05A)."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Hashable
+
+from morocco_etruck.optimization.drive_table_cache import (
+    DRIVE_TABLE_CACHE_VERSION,
+    file_sha256,
+    fingerprint_payload,
+)
 
 
 CacheKey = tuple[Hashable, ...]
@@ -79,5 +86,109 @@ class PlacementMemo:
         }
 
 
-def default_energy_fingerprint(*, version: str, q: int, time_step_min: int) -> str:
-    return f"{version}|q={int(q)}|dt={int(time_step_min)}"
+def build_mission_energy_fingerprint(
+    *,
+    vehicle_yaml: Path | None = None,
+    fridge_yaml: Path | None = None,
+    version: str = DRIVE_TABLE_CACHE_VERSION,
+    q: int,
+    time_step_min: int,
+    gcm: str = "",
+    terrain_mode: str = "",
+    weather_id: str = "",
+    refrigeration: str = "",
+    power_source: str = "",
+    direction: str = "",
+    terrain_hash: str = "",
+    extra: dict[str, Any] | None = None,
+) -> str:
+    """
+    Fingerprint physical + scenario inputs for MRLS memo invalidation.
+
+    Must change when vehicle/fridge, grid, GCM, terrain, weather, refrigeration,
+    power source, direction, or terrain profile hash change.
+    """
+    parts: dict[str, Any] = {
+        "version": version,
+        "q": int(q),
+        "dt": int(time_step_min),
+        "gcm": gcm,
+        "terrain_mode": terrain_mode,
+        "weather_id": weather_id,
+        "refrigeration": refrigeration,
+        "power_source": power_source,
+        "direction": direction,
+        "terrain_hash": terrain_hash,
+    }
+    if vehicle_yaml is not None and Path(vehicle_yaml).exists():
+        parts["vehicle_sha"] = file_sha256(Path(vehicle_yaml))
+    if fridge_yaml is not None and Path(fridge_yaml).exists():
+        parts["fridge_sha"] = file_sha256(Path(fridge_yaml))
+    if extra:
+        parts["extra"] = extra
+    return fingerprint_payload(parts)
+
+
+def default_energy_fingerprint(
+    *,
+    version: str,
+    q: int,
+    time_step_min: int,
+    vehicle_yaml: Path | None = None,
+    fridge_yaml: Path | None = None,
+    gcm: str = "",
+    terrain_mode: str = "",
+    weather_id: str = "",
+    refrigeration: str = "",
+    power_source: str = "",
+    direction: str = "",
+    terrain_hash: str = "",
+) -> str:
+    """Backward-compatible wrapper; prefer full mission fields when available."""
+    return build_mission_energy_fingerprint(
+        vehicle_yaml=vehicle_yaml,
+        fridge_yaml=fridge_yaml,
+        version=version,
+        q=q,
+        time_step_min=time_step_min,
+        gcm=gcm,
+        terrain_mode=terrain_mode,
+        weather_id=weather_id,
+        refrigeration=refrigeration,
+        power_source=power_source,
+        direction=direction,
+        terrain_hash=terrain_hash,
+    )
+
+
+def portfolio_energy_fingerprint(
+    missions: list[Any],
+    *,
+    version: str,
+    q: int,
+    time_step_min: int,
+    vehicle_yaml: Path | None = None,
+    fridge_yaml: Path | None = None,
+) -> str:
+    """Aggregate fingerprint over a mission portfolio (shared memo scope)."""
+    mission_parts = [
+        {
+            "id": m.id,
+            "gcm": m.gcm,
+            "terrain": m.terrain,
+            "weather": m.weather,
+            "refrigeration": m.refrigeration,
+            "power_source": m.power_source,
+            "direction": m.direction,
+            "weight": float(m.weight),
+        }
+        for m in missions
+    ]
+    return build_mission_energy_fingerprint(
+        vehicle_yaml=vehicle_yaml,
+        fridge_yaml=fridge_yaml,
+        version=version,
+        q=q,
+        time_step_min=time_step_min,
+        extra={"missions": mission_parts},
+    )

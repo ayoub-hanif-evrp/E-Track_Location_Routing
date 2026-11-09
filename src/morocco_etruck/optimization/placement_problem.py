@@ -1,4 +1,4 @@
-"""Joint charger-placement problem definitions (Task 04A)."""
+"""Joint charger-placement problem definitions (Task 04A/05A)."""
 
 from __future__ import annotations
 
@@ -7,6 +7,10 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+
+
+class PlacementConfigError(ValueError):
+    """Invalid placement configuration (B&B bound assumptions violated)."""
 
 
 @dataclass(frozen=True)
@@ -52,10 +56,74 @@ def capital_recovery_factor(interest_rate: float, lifetime_years: int) -> float:
     r = float(interest_rate)
     n = int(lifetime_years)
     if n <= 0:
-        raise ValueError("lifetime_years must be > 0")
+        raise PlacementConfigError("lifetime_years must be > 0")
+    if r < -1e-15:
+        raise PlacementConfigError("interest_rate must be >= 0 for illustrative CRF")
     if abs(r) < 1e-15:
         return 1.0 / n
     return r * (1.0 + r) ** n / ((1.0 + r) ** n - 1.0)
+
+
+def validate_placement_config(cfg: PlacementConfig) -> None:
+    """
+    Enforce assumptions required by B&B coverage/secondary bounds and lex objective.
+
+    Nonnegative site costs, strictly positive mission weights, unique IDs, valid
+    budgets, and consistent CAPEX/baseline site references. Annualized CAPEX
+    (CRF × CAPEX) and weighted operating cost (Σ w · C_var) share the same
+    illustrative currency units via cents_to_currency.
+    """
+    site_ids = [s.id for s in cfg.sites]
+    if len(site_ids) != len(set(site_ids)):
+        raise PlacementConfigError("duplicate site ids")
+    site_set = set(site_ids)
+
+    if cfg.cents_to_currency <= 0:
+        raise PlacementConfigError("cents_to_currency must be > 0 (currency unit scale)")
+    if cfg.crf < 0:
+        raise PlacementConfigError("CRF must be nonnegative")
+
+    for sc_name, capex in cfg.capex_scenarios.items():
+        for sid, cost in capex.items():
+            if sid not in site_set:
+                raise PlacementConfigError(
+                    f"capex scenario {sc_name!r}: unknown site id {sid!r}"
+                )
+            if float(cost) < 0:
+                raise PlacementConfigError(
+                    f"capex scenario {sc_name!r}: site {sid!r} has negative CAPEX"
+                )
+        missing = site_set - set(capex)
+        if missing:
+            raise PlacementConfigError(
+                f"capex scenario {sc_name!r}: missing sites {sorted(missing)}"
+            )
+
+    for dname, missions in cfg.demand_scenarios.items():
+        mids = [m.id for m in missions]
+        if len(mids) != len(set(mids)):
+            raise PlacementConfigError(f"demand scenario {dname!r}: duplicate mission ids")
+        for m in missions:
+            if float(m.weight) <= 0:
+                raise PlacementConfigError(
+                    f"demand scenario {dname!r}: mission {m.id!r} weight must be > 0"
+                )
+
+    for bud in cfg.budgets:
+        if "name" not in bud:
+            raise PlacementConfigError("budget missing name")
+        max_c = bud.get("max_capex")
+        if max_c is not None and float(max_c) < 0:
+            raise PlacementConfigError(
+                f"budget {bud['name']!r}: max_capex must be >= 0 or null"
+            )
+
+    for bname, bl_sites in cfg.baselines.items():
+        for sid in bl_sites:
+            if sid not in site_set:
+                raise PlacementConfigError(
+                    f"baseline {bname!r}: unknown site id {sid!r}"
+                )
 
 
 def load_placement_config(path: str | Path, *, root: Path | None = None) -> PlacementConfig:
@@ -97,7 +165,7 @@ def load_placement_config(path: str | Path, *, root: Path | None = None) -> Plac
         ]
     morocco = raw["morocco_pilot_config"]
     morocco_path = Path(morocco) if Path(morocco).is_absolute() else root / morocco
-    return PlacementConfig(
+    cfg = PlacementConfig(
         raw=raw,
         sites=sites,
         morocco_pilot_path=morocco_path,
@@ -113,6 +181,8 @@ def load_placement_config(path: str | Path, *, root: Path | None = None) -> Plac
         outputs=dict(raw.get("outputs", {})),
         disclaimer=str(raw.get("disclaimer", "")),
     )
+    validate_placement_config(cfg)
+    return cfg
 
 
 def subset_capex(site_ids: set[str], capex: dict[str, float]) -> float:

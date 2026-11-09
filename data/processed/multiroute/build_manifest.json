@@ -1,0 +1,104 @@
+{
+  "built_at_utc": "2026-11-09T20:15:16.604194+00:00",
+  "task": "05A",
+  "config": "configs/multiroute_corridor.yaml",
+  "osm": {
+    "url": "https://download.geofabrik.de/africa/morocco-261106.osm.pbf",
+    "filename": "morocco-261106.osm.pbf",
+    "snapshot_label": "morocco-261106",
+    "data_timestamp_hint": "2026-11-07",
+    "downloaded": false,
+    "md5_expected": null,
+    "md5_actual": null,
+    "md5_ok": null,
+    "path": "data/raw/morocco-261106.osm.pbf",
+    "sha256": "e26e8b7010cf78259469f166292b351de48609b3b1f420dd469f0d49f7d05a00"
+  },
+  "extract": {
+    "bbox": [
+      -9.6,
+      30.25,
+      -7.4,
+      33.7
+    ],
+    "output": "data/raw/multiroute_casa_marrakech_agadir.osm.pbf",
+    "tool": "pyrosm-python-bbox-filter",
+    "marker": "data/raw/multiroute_casa_marrakech_agadir.osm.bbox.json",
+    "source_pbf_for_filter": "data/raw/morocco-261106.osm.pbf"
+  },
+  "bbox": {
+    "west": -9.6,
+    "south": 30.25,
+    "east": -7.4,
+    "north": 33.7,
+    "description": "Buffered Casa\u2013Marrakech\u2013Agadir multi-route pilot"
+  },
+  "highway_classes": [
+    "motorway",
+    "motorway_link",
+    "trunk",
+    "trunk_link",
+    "primary",
+    "primary_link"
+  ],
+  "n_nodes": 98693,
+  "n_edges": 100261,
+  "n_isolates_removed": 232,
+  "hgv_access_counts": {
+    "unknown": 100261
+  },
+  "highway_class_counts": {
+    "primary": 49620,
+    "motorway_link": 5643,
+    "motorway": 17624,
+    "trunk": 21571,
+    "trunk_link": 3491,
+    "primary_link": 2312
+  },
+  "n_hgv_no_rejected": 238,
+  "anchors": {
+    "casablanca": 1546253716,
+    "marrakech": 6820243611,
+    "agadir": 3227750604,
+    "settat": 6888450861,
+    "casa_agadir__o": 1546253716,
+    "casa_agadir__d": 1873981509,
+    "agadir_casa__o": 3227750604,
+    "agadir_casa__d": 1546253716,
+    "casa_marrakech__o": 1546253716,
+    "casa_marrakech__d": 6820243611,
+    "marrakech_casa__o": 6820243611,
+    "marrakech_casa__d": 1546253716,
+    "marrakech_agadir__o": 6820243611,
+    "marrakech_agadir__d": 1873981509,
+    "agadir_marrakech__o": 3227750604,
+    "agadir_marrakech__d": 6820243611
+  },
+  "od_notes": [
+    "Exact MRLS optimality is only over this selected path-union decision graph.",
+    "Stations/chargers remain hypothetical unless independently verified.",
+    "casa_agadir: 4 routes",
+    "agadir_casa: 4 routes",
+    "casa_marrakech: 4 routes",
+    "marrakech_casa: 4 routes",
+    "marrakech_agadir: 4 routes",
+    "agadir_marrakech: 4 routes"
+  ],
+  "n_path_records": 24,
+  "n_decision_nodes": 173,
+  "n_decision_arcs": 251,
+  "attribution": {
+    "osm": "\u00a9 OpenStreetMap contributors",
+    "license": "ODbL",
+    "geofabrik_snapshot": "morocco-261106"
+  },
+  "graph_audit": {
+    "assume_pyrosm_pre_expanded": true,
+    "n_nodes": 98925,
+    "n_edges_multidigraph": 100499,
+    "parallel_uv_collisions_if_digraph": 0,
+    "unique_directed_uv_pairs": 100499,
+    "note": "parallel_uv_collisions_if_digraph counts additional edges that share the same (u,v) and would overwrite attributes in nx.DiGraph; MultiDiGraph preserves them."
+  },
+  "sha256_national_pbf": "e26e8b7010cf78259469f166292b351de48609b3b1f420dd469f0d49f7d05a00"
+}

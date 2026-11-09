@@ -1,0 +1,102 @@
+# Task 05A — Multi-route Moroccan corridor (separate from A3 Task 01 pilot)
+# Does NOT overwrite data/processed/road_*.csv
+
+crs:
+  storage_epsg: 4326
+  length_method: geodesic_metres
+
+bbox:
+  # Includes Casablanca–Marrakech–Agadir triangle (same envelope as A3 pilot + Marrakech)
+  west: -9.60
+  south: 30.25
+  east: -7.40
+  north: 33.70
+  description: "Buffered Casa–Marrakech–Agadir multi-route pilot"
+
+osm:
+  download_url: "https://download.geofabrik.de/africa/morocco-261106.osm.pbf"
+  md5_url: "https://download.geofabrik.de/africa/morocco-261106.osm.pbf.md5"
+  filename: "morocco-261106.osm.pbf"
+  snapshot_label: "morocco-261106"
+  data_timestamp_hint: "2026-11-07"
+  highway_classes:
+    - motorway
+    - motorway_link
+    - trunk
+    - trunk_link
+    - primary
+    - primary_link
+  # secondary only if an alternative requires it (off by default)
+  include_secondary: false
+  filter_hgv_no: true
+
+anchors:
+  casablanca:
+    lon: -7.62
+    lat: 33.45
+    label: "Casablanca_access_search"
+  marrakech:
+    lon: -8.01
+    lat: 31.63
+    label: "Marrakech_access_search"
+  agadir:
+    lon: -9.35
+    lat: 30.45
+    label: "Agadir_access_search"
+  settat:
+    lon: -7.62
+    lat: 33.00
+    label: "Settat_optional_access_search"
+  search_radius_m: 25000
+
+path_discovery:
+  max_alternatives: 4
+  # Accept alternative if edge Jaccard distance vs shortest >= this
+  min_jaccard_distance: 0.25
+  # Or length at least this fraction longer
+  min_length_ratio: 1.05
+  penalty_factor: 3.0
+  max_penalty_rounds: 8
+
+speed_policy:
+  # Scenario cruise (km/h) — NOT observed HGV speeds
+  use_osm_maxspeed: true
+  maxspeed_sane_min_kmh: 30
+  maxspeed_sane_max_kmh: 120
+  class_defaults_kmh:
+    motorway: 80
+    motorway_link: 60
+    trunk: 70
+    trunk_link: 50
+    primary: 60
+    primary_link: 50
+    secondary: 50
+    secondary_link: 40
+    default: 50
+
+paths:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed/multiroute"
+  metadata_dir: "data/processed/multiroute"
+  reports_dir: "reports"
+  results_dir: "results"
+
+od_pairs:
+  - id: casa_agadir
+    origin: casablanca
+    destination: agadir
+  - id: agadir_casa
+    origin: agadir
+    destination: casablanca
+  - id: casa_marrakech
+    origin: casablanca
+    destination: marrakech
+  - id: marrakech_casa
+    origin: marrakech
+    destination: casablanca
+  - id: marrakech_agadir
+    origin: marrakech
+    destination: agadir
+  - id: agadir_marrakech
+    origin: agadir
+    destination: marrakech

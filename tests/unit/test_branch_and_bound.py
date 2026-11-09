@@ -154,28 +154,48 @@ def test_coverage_prune_fires():
 
 
 def test_secondary_prune_with_expensive_committed():
+    """
+    Hand case forcing a proved secondary-cost prune under exclude-first DFS:
+
+    Sites X (expensive, CAPEX 500) then Y (cheap, CAPEX 100), equal coverage 1.
+    Exclude-first explores {Y} first → incumbent secondary = 11.
+    Then node installed={X}, undecided={Y}: UB cov=1, LB = 0.1*500+1 = 51 > 11
+    ⇒ prune_secondary > 0. Optimum remains {Y}.
+    """
     crf = 0.1
-    capex = {"A": 100.0, "X": 500.0}
-    # A alone: cov 1, secondary = 10 + 1
-    # X alone: cov 1, secondary = 50 + 1 — worse
-    # AX: cov 1, higher cost
+    capex = {"X": 500.0, "Y": 100.0}
     table = {
         frozenset(): _ev(set(), cov=0.0, var=0.0, capex_map=capex, crf=crf),
-        frozenset({"A"}): _ev({"A"}, cov=1.0, var=1.0, capex_map=capex, crf=crf),
+        frozenset({"Y"}): _ev({"Y"}, cov=1.0, var=1.0, capex_map=capex, crf=crf),
         frozenset({"X"}): _ev({"X"}, cov=1.0, var=1.0, capex_map=capex, crf=crf),
-        frozenset({"A", "X"}): _ev({"A", "X"}, cov=1.0, var=1.0, capex_map=capex, crf=crf),
+        frozenset({"X", "Y"}): _ev({"X", "Y"}, cov=1.0, var=1.0, capex_map=capex, crf=crf),
     }
     res = run_branch_and_bound_core(
-        site_ids=["A", "X"],
+        site_ids=["X", "Y"],
         capex=capex,
         max_capex=None,
         crf=crf,
         evaluate_fn=_table_evaluator(table),
+        install_first=False,
     )
+    assert res.optimality_status == OptimalityStatus.CERTIFIED_OPTIMAL
     assert res.incumbent is not None
-    assert res.incumbent.site_ids == frozenset({"A"})
-    # Secondary prune should eliminate the expensive branch once A is incumbent
-    assert res.stats.prune_secondary + res.stats.prune_coverage >= 0
+    assert res.incumbent.site_ids == frozenset({"Y"})
+    assert res.stats.prune_secondary > 0
+
+    from morocco_etruck.optimization.placement_problem import LexScore
+    from morocco_etruck.optimization.site_enumeration import all_subsets
+
+    best = None
+    for subset in all_subsets(["X", "Y"]):
+        ev = table[frozenset(subset)]
+        if best is None or LexScore.from_parts(
+            ev.coverage_serviceable, ev.secondary_cost
+        ) < LexScore.from_parts(best.coverage_serviceable, best.secondary_cost):
+            best = ev
+    assert best is not None
+    assert best.site_ids == res.incumbent.site_ids
+    assert abs(best.secondary_cost - res.incumbent.secondary_cost) < 1e-9
 
 
 def test_limit_reached_cannot_false_prove():
