@@ -11,6 +11,7 @@ from typing import Any
 import pandas as pd
 import yaml
 
+from morocco_etruck.energy.battery_bounds import derive_discrete_energy_bounds
 from morocco_etruck.energy.refrigeration import load_refrigeration
 from morocco_etruck.energy.vehicle import load_vehicle
 from morocco_etruck.optimization.multiroute_charging import (
@@ -288,9 +289,9 @@ def build_physics_od_instance(
     root: Path,
     od_id: str,
     path_rows: list[dict[str, Any]],
-    E_truck_init: int,
-    E_truck_cap: int,
-    E_truck_min: int,
+    E_truck_init: int | None = None,
+    E_truck_cap: int | None = None,
+    E_truck_min: int | None = None,
     refrigeration_on: bool = False,
     weather_id: str = "cool",
     with_chargers: bool = False,
@@ -302,6 +303,8 @@ def build_physics_od_instance(
     terminal_price_cents_per_grid_kwh: int | None = None,
     terminal_eta: float | None = None,
     terminal_target_truck_kwh: int | None = None,
+    road_cost_per_km: float | None = None,
+    vehicle_yaml: Path | None = None,
 ) -> tuple[RoutingInstance, MultirouteMissionContext, list[str]]:
     """
     Scientific Task 05B/05C builder: OD path-union + DRIVE tables.
@@ -350,6 +353,7 @@ def build_physics_od_instance(
             station_notes.append("no_topology_verified_charger_on_union")
         else:
             ch = cfg.raw.get("charger") or {}
+            # vehicle loaded below; temporary charger power — capped after load
             stations = to_station_data(
                 attachable,
                 power_kw=float(ch.get("power_kw", 350.0)),
@@ -378,33 +382,66 @@ def build_physics_od_instance(
         active = set()
         station_notes.append("active_chargers=[]")
 
-    vehicle = load_vehicle(cfg.vehicle_yaml)
+    v_yaml = Path(vehicle_yaml) if vehicle_yaml is not None else cfg.vehicle_yaml
+    if not v_yaml.is_absolute():
+        v_yaml = root / v_yaml
+    vehicle = load_vehicle(v_yaml)
     fridge = load_refrigeration(cfg.fridge_yaml)
     weather, weather_assumed = load_weather_for_multiroute(
         root=root, morocco_pilot_yaml=cfg.morocco_pilot_yaml, weather_id=weather_id
     )
     q = int(energy_quantum_kwh if energy_quantum_kwh is not None else cfg.energy_quantum_kwh)
 
-    def _floor_q(x: int) -> int:
-        return (x // q) * q
-
-    def _ceil_q(x: int) -> int:
-        return int(math.ceil(x / q) * q)
-
-    # Task 06A: never fabricate starting energy. Reject sub-minimum init.
-    if int(E_truck_init) < int(E_truck_min):
-        raise ValueError(
-            f"INVALID_INPUT: E_truck_init={E_truck_init} < E_truck_min={E_truck_min}"
+    derive = bool(cfg.raw.get("derive_energy_from_vehicle", True))
+    if derive or E_truck_cap is None or E_truck_min is None or E_truck_init is None:
+        E_min, E_init, E_cap, e_notes = derive_discrete_energy_bounds(
+            vehicle,
+            energy_quantum_kwh=q,
+            E_truck_init_kwh=None if E_truck_init is None else float(E_truck_init),
         )
-    E_cap = _floor_q(E_truck_cap)
-    E_min = _ceil_q(E_truck_min)
-    E_init = min(E_cap, _floor_q(E_truck_init))
-    if E_init < E_min:
-        # Valid physical start can become unusable only after conservative floor_q.
-        raise ValueError(
-            f"NUMERICAL_GRID_REJECT: floored E_init={E_init} < E_min={E_min} "
-            f"(declared init={E_truck_init}, quantum={q}); not increasing energy"
-        )
+        station_notes.append("energy_from_vehicle=" + ";".join(f"{k}:{v}" for k, v in e_notes.items()))
+    else:
+        def _floor_q(x: int) -> int:
+            return (x // q) * q
+
+        def _ceil_q(x: int) -> int:
+            return int(math.ceil(x / q) * q)
+
+        if int(E_truck_init) < int(E_truck_min):
+            raise ValueError(
+                f"INVALID_INPUT: E_truck_init={E_truck_init} < E_truck_min={E_truck_min}"
+            )
+        E_cap = _floor_q(int(E_truck_cap))
+        E_min = _ceil_q(int(E_truck_min))
+        E_init = min(E_cap, _floor_q(int(E_truck_init)))
+        if E_init < E_min:
+            raise ValueError(
+                f"NUMERICAL_GRID_REJECT: floored E_init={E_init} < E_min={E_min} "
+                f"(declared init={E_truck_init}, quantum={q}); not increasing energy"
+            )
+
+    # Cap charger power by vehicle CCS acceptance (constant-power approx).
+    if stations and vehicle.ccs_max_charge_kw is not None:
+        cap_kw = float(vehicle.ccs_max_charge_kw)
+        stations = {
+            k: StationData(
+                node=st.node,
+                power_kw=min(float(st.power_kw), cap_kw),
+                eta=st.eta,
+                price_cents_per_grid_kwh=st.price_cents_per_grid_kwh,
+                compatible=st.compatible,
+                official_name=st.official_name,
+                hypothetical_access=st.hypothetical_access,
+                hgv_status=st.hgv_status,
+                osm_id=st.osm_id,
+                snap_distance_m=st.snap_distance_m,
+            )
+            for k, st in stations.items()
+        }
+        station_notes.append(f"ccs_accept_cap_kw={cap_kw}")
+
+    rckm = float(cfg.road_cost_per_km if road_cost_per_km is None else road_cost_per_km)
+    term_target = terminal_target_truck_kwh if terminal_target_truck_kwh is not None else E_cap
 
     inst, ctx = build_path_union_routing_instance(
         G=G,
@@ -414,7 +451,7 @@ def build_physics_od_instance(
         vehicle=vehicle,
         fridge=fridge,
         weather=weather,
-        vehicle_yaml=cfg.vehicle_yaml,
+        vehicle_yaml=v_yaml,
         fridge_yaml=cfg.fridge_yaml,
         gcm_kg=cfg.gcm_kg,
         refrigeration_on=refrigeration_on,
@@ -428,7 +465,7 @@ def build_physics_od_instance(
         E_truck_init=E_init,
         E_truck_cap=E_cap,
         E_truck_min=E_min,
-        road_cost_per_km=cfg.road_cost_per_km,
+        road_cost_per_km=rckm,
         stations=stations,
         active_stations=active,
         decision_arcs=arcs,
@@ -448,7 +485,7 @@ def build_physics_od_instance(
             if terminal_eta is not None
             else float((cfg.raw.get("charger") or {}).get("eta", 0.95))
         ),
-        terminal_target_truck_kwh=terminal_target_truck_kwh,
+        terminal_target_truck_kwh=term_target,
     )
     if weather_assumed:
         ctx.weather_assumed = True

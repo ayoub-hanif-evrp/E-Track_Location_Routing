@@ -11,7 +11,7 @@ import yaml
 
 @dataclass(frozen=True)
 class VehicleParams:
-    """eActros-class tractor parameters in SI units."""
+    """Manufacturer research vehicle pack in SI units (multi-OEM)."""
 
     vehicle_id: str
     installed_kwh: float
@@ -33,6 +33,8 @@ class VehicleParams:
     cruise_mps: float
     gravity_m_s2: float
     air_density_default_kg_m3: float
+    # Max CCS acceptance (kW). None ⇒ no vehicle-side cap beyond charger power.
+    ccs_max_charge_kw: float | None
     raw: dict[str, Any]
 
     @property
@@ -55,6 +57,10 @@ def load_vehicle(path: str | Path) -> VehicleParams:
     batt = raw["battery"]
 
     cruise_mps = float(speed.get("cruise_mps", float(speed["cruise_kmh"]) / 3.6))
+    charging = raw.get("charging") or {}
+    ccs_max = charging.get("ccs_max_charge_kw")
+    if ccs_max is None:
+        ccs_max = charging.get("max_charge_kw")
 
     return VehicleParams(
         vehicle_id=str(raw.get("vehicle_id", path.stem)),
@@ -77,8 +83,23 @@ def load_vehicle(path: str | Path) -> VehicleParams:
         cruise_mps=cruise_mps,
         gravity_m_s2=float(raw.get("gravity_m_s2", 9.80665)),
         air_density_default_kg_m3=float(raw.get("air_density_default_kg_m3", 1.225)),
+        ccs_max_charge_kw=None if ccs_max is None else float(ccs_max),
         raw=raw,
     )
+
+
+def effective_charge_power_kw(vehicle: VehicleParams, charger_power_kw: float) -> float:
+    """
+    Constant-power acceptance approximation: min(charger, vehicle CCS max).
+
+    Not a SOC-dependent taper curve. Missing vehicle CCS ⇒ charger power only.
+    """
+    p_chg = float(charger_power_kw)
+    if p_chg <= 0:
+        raise ValueError("charger_power_kw must be > 0")
+    if vehicle.ccs_max_charge_kw is None:
+        return p_chg
+    return min(p_chg, float(vehicle.ccs_max_charge_kw))
 
 
 def mass_from_gcm(gcm_kg: float) -> float:

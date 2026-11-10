@@ -206,8 +206,16 @@ def main() -> int:
                         od_id=mission["od_id"],
                         path_rows=path_rows,
                         E_truck_init=int(mission["E_truck_init"]),
-                        E_truck_cap=int(cfg.raw.get("E_truck_cap", 600)),
-                        E_truck_min=int(cfg.raw.get("E_truck_min", 60)),
+                        E_truck_cap=(
+                            None
+                            if cfg.raw.get("E_truck_cap") is None
+                            else int(cfg.raw.get("E_truck_cap"))
+                        ),
+                        E_truck_min=(
+                            None
+                            if cfg.raw.get("E_truck_min") is None
+                            else int(cfg.raw.get("E_truck_min"))
+                        ),
                         refrigeration_on=bool(mission["refrigeration_on"]),
                         with_chargers=bool(mission["with_chargers"]),
                         energy_quantum_kwh=q,

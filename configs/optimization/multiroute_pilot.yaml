@@ -28,9 +28,12 @@ wait_max_steps: 0
 # Legacy path-set benchmark only (not used for scientific 05B rows)
 consumption_kwh_per_km: 1.0
 
-E_truck_cap: 600
-E_truck_min: 60
-E_truck_init: 600
+# Discrete energies are DERIVED from vehicle_config usable_kwh × soc_* (Task 06C).
+# Legacy numeric fields below are ignored when derive_from_vehicle=true.
+derive_energy_from_vehicle: true
+E_truck_cap: null
+E_truck_min: null
+E_truck_init: null
 
 physics:
   # Prefer per-arc COP-DEM when arc_{id}.json exists; else documented flat fallback
@@ -39,7 +42,11 @@ physics:
   drive_cache_dir: data/processed/multiroute/drive_tables
   gcm_kg: 25000.0      # light GCM research scenario
   gcm_heavy_kg: 40000.0
+  # Integer solver costs are cents. road_cost_per_km is cents per kilometre.
+  # Task 06A/06B historical CSVs used 1.0 (= 1 cent/km). Task 06C vehicle
+  # comparisons override to 100 (= 1 currency unit/km at cents_to_currency=0.01).
   road_cost_per_km: 1.0
+  road_cost_unit: cents_per_km
   # Tractability: induce union from shortest + up to N-1 most diverse alternatives
   max_alternatives_for_union: 2
 

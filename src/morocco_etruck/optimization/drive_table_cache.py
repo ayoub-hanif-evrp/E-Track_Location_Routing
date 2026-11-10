@@ -7,8 +7,8 @@ import json
 from pathlib import Path
 from typing import Any, Sequence
 
-DRIVE_TABLE_CACHE_VERSION = "06a.1"
-PREPROCESS_MODEL_VERSION = "06a.1_per_edge_speed"
+DRIVE_TABLE_CACHE_VERSION = "06c.1"
+PREPROCESS_MODEL_VERSION = "06c.1_multi_vehicle"
 
 
 def _sha256_text(text: str) -> str:

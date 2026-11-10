@@ -1,0 +1,96 @@
+# Volvo FH Electric 4×2 tractor — PROSPECTIVE Moroccan highway research pack
+# model_status: prospective_morocco (not verified in Moroccan refrigerated long-haul fleets)
+# Usable capacity scenario: Moroccan market page (475 kWh). See also *_usable460.yaml.
+# Access date for manufacturer pages: 2026-11-10
+# Do NOT mix with FH Aero Electric Extended Range / MCS / FE Electric.
+
+vehicle_id: volvo_fh_electric_4x2_540kwh_usable475
+model_status: prospective_morocco
+manufacturer: Volvo Trucks
+model: FH Electric
+model_generation_note: "FH Electric product pages (MA/global); not 2026 Aero Extended Range"
+configuration_axles: "4x2_tractor"
+battery_variant: "6_packs_up_to_540kwh_installed"
+usable_scenario: usable_ma_475
+name: "Volvo FH Electric 4x2 tractor (540 kWh installed / 475 kWh usable MA page)"
+
+sources:
+  morocco_page: "https://www.volvotrucks.ma/fr-ma/trucks/electric/volvo-fh-electric.html"
+  global_page: "https://www.volvotrucks.com/en-en/trucks/electric/volvo-fh-electric.html"
+  access_date: "2026-11-10"
+
+battery:
+  installed_kwh: 540.0
+  usable_kwh: 475.0
+  provenance: manufacturer_conflict_ma
+  source: "MA FH Electric page: onboard up to 540 kWh; usable up to 475 kWh"
+
+drive:
+  # Manufacturer lists Performance menu 300/350/400/470/540 kW without continuous/peak split.
+  continuous_power_kw: 400.0
+  peak_power_kw: 400.0
+  peak_regen_power_kw: 400.0
+  continuous_power_provenance: assumed_variant_pick
+  peak_power_provenance: assumed_variant_pick
+  peak_regen_provenance: assumed
+  note: "Selected mid-menu 400 kW applied to continuous and peak until OEM split is published"
+
+mass:
+  unladen_tractor_kg: 12000.0
+  provenance_tractor: assumed
+  note_tractor: "Engineering research bound — NOT Volvo OEM curb mass; sensitivity [11000, 13500]"
+  unladen_trailer_kg: 8000.0
+  provenance_trailer: assumed
+  technically_permissible_combination_kg: 65000.0
+  provenance_gcm_limit: manufacturer
+  note_gcm: "MA/global pages: GCW up to 65 t; research missions use 25/40 t under this limit"
+
+aero:
+  CdA_m2: 6.5
+  CdA_provenance: assumed
+  CdA_sensitivity: [5.5, 7.5]
+  Crr: 0.007
+  Crr_provenance: literature
+  Crr_sensitivity: [0.005, 0.010]
+  note: "Research long-haul tractor–trailer aero; not Volvo coast-down"
+
+efficiency:
+  eta_prop: 0.90
+  eta_prop_provenance: assumed
+  eta_prop_sensitivity: [0.85, 0.93]
+  eta_regen: 0.70
+  eta_regen_provenance: assumed
+  eta_regen_sensitivity: [0.55, 0.80]
+
+auxiliaries:
+  P_aux_w: 2500.0
+  provenance: assumed
+  note: "Constant cabin/HVAC/electronics; research parameter"
+  P_aux_sensitivity_w: [1000.0, 4000.0]
+
+soc:
+  soc_initial: 1.0
+  soc_min: 0.10
+  soc_max: 1.0
+  soc_min_note: "Assumed operating floor (10%); not a manufacturer warranty limit"
+
+charging:
+  ccs_max_charge_kw: 350.0
+  voltage_note: "Advertised CCS up to 350 kW below 750 V; ~65 min 20→80% claim"
+  provenance: manufacturer_advertised
+  taper_note: "No published SOC curve; model uses constant min(charger, 350 kW)×η"
+
+refrigeration:
+  power_source_default: A
+  epto_advertised: true
+  note: >
+    Config A (tractor battery supplies electric TRU) is a DECLARED RESEARCH ASSUMPTION.
+    ePTO availability on FH Electric does not prove a specific refrigerated trailer pairing.
+
+speed_policy:
+  cruise_kmh: 80.0
+  cruise_mps: 22.22222222222222
+  note: "Constant research cruise; OSM maxspeed not used as travel speed"
+
+gravity_m_s2: 9.80665
+air_density_default_kg_m3: 1.225

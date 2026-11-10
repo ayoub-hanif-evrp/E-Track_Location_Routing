@@ -60,6 +60,15 @@ soc:
   soc_max: 1.0
   soc_min_note: "Assumed operating floor (10%); not a manufacturer warranty limit"
 
+charging:
+  # Research: MCS/CCS capability not fully specified in this pack; no vehicle-side cap.
+  ccs_max_charge_kw: null
+  note: "No manufacturer CCS acceptance curve in this pack; charger power alone applies"
+
+refrigeration:
+  power_source_default: A
+  note: "Config A (tractor battery → TRU) is a declared research assumption"
+
 speed_policy:
   cruise_kmh: 80.0
   cruise_mps: 22.22222222222222

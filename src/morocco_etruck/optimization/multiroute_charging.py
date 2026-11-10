@@ -325,12 +325,20 @@ def to_station_data(
     power_kw: float,
     eta: float,
     price_cents: int,
+    vehicle_ccs_max_kw: float | None = None,
 ) -> dict[str, StationData]:
+    """
+    Build StationData. Effective charge power is min(charger, vehicle CCS max)
+    when a vehicle acceptance limit is provided (Task 06C constant-power approx).
+    """
     reject_artificial_midpoint_keys([c.key for c in chargers])
+    p = float(power_kw)
+    if vehicle_ccs_max_kw is not None:
+        p = min(p, float(vehicle_ccs_max_kw))
     return {
         c.key: StationData(
             node=c.key,
-            power_kw=power_kw,
+            power_kw=p,
             eta=eta,
             price_cents_per_grid_kwh=price_cents,
             compatible=True,

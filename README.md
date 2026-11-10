@@ -8,7 +8,7 @@ PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible r
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–06B)
+## Current scope (Tasks 01–06C)
 
 **Task 01 / 01B / 01C — geographic foundation**
 
@@ -94,6 +94,25 @@ Eventually determine which Moroccan motorway service areas should receive truck-
 - Admissible MRLS/reference stop under terminal valuation; split-invariant road costs; placement compared at q=10/5/(2) × both modes.
 - **Not claimed:** grid-robust nationwide optimality, config B Moroccan results, market tariffs, or B&B speedup.
 
+**Task 06C — Moroccan vehicle realism and multi-vehicle validation**
+
+- Evidence matrix for Volvo FH Electric 4×2 (prospective highway) vs eActros 600 comparator; Petit Forestier / Centrale Danone ~7.5 t dossier only (urban EV; **no** highway YAML).
+- Dual usable scenarios **475 kWh (MA)** and **460 kWh (global)** — never merged; discrete `E_cap/min/init` derived from loaded vehicle (no hard-coded 600/60).
+- CCS acceptance `min(charger, vehicle_ccs_max)`; Config A refrigeration labeled declared assumption.
+- Certification: unresolved portfolio probe → `UNRESOLVED_SERVICEABILITY` / `CONDITIONAL_RESTRICTED_PORTFOLIO`, never false full-portfolio `CERTIFIED_OPTIMAL`.
+- Research monetary convention for 06C CSVs: solver integers = cents; `road_cost_per_km=100` ¢/km.
+- Identical-mission eActros vs Volvo B&B–MRLS comparison on path-union ODs.
+- **Not claimed:** FH Electric already in Moroccan refrigerated long-haul fleets; FE Electric as FH; Aero Extended Range mix-in; measured OEM curb/CdA.
+
+### Claim taxonomy (read before citing results)
+
+| Label | Meaning |
+|---|---|
+| **(A) Real Moroccan refrigerated EV** | Petit Forestier ~7.5 t / Centrale Danone urban–peri-urban duty (dossier only) |
+| **(B) Prospective long-haul scenario** | Volvo FH Electric 4×2 on MA product pages — research highway pack |
+| **(C) Manufacturer specs** | Published installed/usable kWh, CCS ceiling, GCW, driveline menu |
+| **(D) Assumed physics / demand** | CdA, Crr, η, curb mass bounds, Config A TRU, illustrative tariffs/demand |
+
 ## Requirements
 
 - Python **3.11+** (developed with 3.12)
@@ -122,6 +141,9 @@ pip install -e ".[dev,extract]"
 | Open-Meteo Historical API | https://open-meteo.com/ |
 | AWS COP-DEM GLO-30 Public | https://registry.opendata.aws/copernicus-dem/ (DOI 10.5270/ESA-c5d3d65) |
 | Mercedes-Benz eActros 600 | Manufacturer product sheet (model 983403 class) |
+| Volvo FH Electric (MA) | https://www.volvotrucks.ma/fr-ma/trucks/electric/volvo-fh-electric.html |
+| Volvo FH Electric (global) | https://www.volvotrucks.com/en-en/trucks/electric/volvo-fh-electric.html |
+| Petit Forestier Morocco EV | https://www.petitforestier.com/fr-ma/posts/270_petit-forestier-met-en-circulation-le-premier-poids-lourd-frigorifique-100-electrique-au-maroc |
 
 Full registry after build: `data/metadata/sources.csv`.
 
@@ -189,9 +211,10 @@ Open `reports/pilot_corridor_report.html` after a successful build. Literature o
 
 | Kind | Examples |
 |---|---|
-| **Real / manufacturer** | OSM geometry & tags; ADM names; Geofabrik hash; eActros battery/mass/power from product sheet; Open-Meteo & COP-DEM retrievals |
-| **Derived** | Directed graph; shortest paths; DEM grades along baselines; SOC trajectories; pilot CSV |
-| **Assumed / uncertain** | \(C_{rr}\), \(C_dA\), efficiencies, \(P_\mathrm{aux}\), UA/COP refrigeration approx, trailer pack (B), SOC floor 10%; HGV access unknown |
+| **Real / manufacturer** | OSM geometry & tags; ADM names; Geofabrik hash; eActros battery/mass/power from product sheet; Volvo FH installed/usable (MA 475 / global 460), CCS≤350 kW, GCW≤65 t; Open-Meteo & COP-DEM retrievals |
+| **Derived** | Directed graph; shortest paths; DEM grades along baselines; SOC trajectories; discrete energy bounds from usable kWh; pilot CSV |
+| **Assumed / uncertain** | \(C_{rr}\), \(C_dA\), efficiencies, \(P_\mathrm{aux}\), UA/COP refrigeration approx, trailer pack (B), SOC floor 10%; Volvo curb 12 t research bound; mid-menu 400 kW continuous=peak; Config A TRU; HGV access unknown |
+| **Operating evidence (non-highway)** | Petit Forestier / Centrale Danone ~7.5 t urban EV (dossier; not a tractor YAML) |
 
 ## Known limitations
 
@@ -359,11 +382,31 @@ Outputs:
 
 **Objective scope:** legacy en-route incremental cost vs energy-replenishment cost (terminal shortfall). Exactness only on the finite discrete model; continuous replay certifies served Moroccan journeys under research physics assumptions.
 
-## Not yet implemented (stop after Task 06B)
+## Task 06C — multi-vehicle comparison
 
-- Task 06C — refrigeration configuration B in the Moroccan adapter + scenario comparisons
+```bash
+pytest -q tests/unit/test_multi_vehicle_06c.py tests/unit
+python scripts/run_task06c_vehicle_comparison.py --quanta 10,5
+```
+
+Outputs:
+
+- `configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml` (usable 475 MA)
+- `configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml` (usable 460 global)
+- `results/task06c_vehicle_comparison.csv`
+- `results/task06c_vehicle_placement.csv`
+- `reports/task06c_vehicle_evidence_matrix.md`
+- `reports/task06c_vehicle_model_validation.md`
+- `reports/task06c_moroccan_operating_ev_dossier.md`
+- `reports/task06c_vehicle_comparison.md`
+
+**Vehicle scope:** eActros 600 comparator + prospective Volvo FH Electric 4×2 (dual usable). Petit Forestier is documented separately and is **not** run as a 40 t motorway pack.
+
+## Not yet implemented (stop after Task 06C)
+
+- Refrigeration configuration B Moroccan optimization
 - Nationwide search
 - ALNS, GA, Gurobi, OR-Tools, etc.
 - Paper writing
 
-**Stop after Task 06B** until the researcher reviews.
+**Stop after Task 06C** until the researcher reviews.

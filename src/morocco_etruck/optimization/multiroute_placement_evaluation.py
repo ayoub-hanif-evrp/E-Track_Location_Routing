@@ -77,6 +77,8 @@ def prepare_multiroute_mission(
     path_rows: list[dict[str, Any]],
     energy_quantum_kwh: int | None = None,
     objective_mode: str = "enroute_incremental_cost",
+    vehicle_yaml: Path | None = None,
+    road_cost_per_km: float | None = None,
 ) -> PreparedMultirouteMission:
     """Build fixed path-union graph once; template has active_stations=∅."""
     gcm_kg = float(
@@ -88,14 +90,17 @@ def prepare_multiroute_mission(
     prev = cfg_pilot.gcm_kg
     cfg_pilot.gcm_kg = gcm_kg
     try:
+        # Energies derived from vehicle usable_kwh; mission.E_truck_init is kWh.
+        raw_cap = cfg_pilot.raw.get("E_truck_cap")
+        raw_min = cfg_pilot.raw.get("E_truck_min")
         inst, ctx, notes = build_physics_od_instance(
             cfg=cfg_pilot,
             root=root,
             od_id=mission.od_id,
             path_rows=path_rows,
             E_truck_init=int(mission.E_truck_init),
-            E_truck_cap=int(cfg_pilot.raw.get("E_truck_cap", 600)),
-            E_truck_min=int(cfg_pilot.raw.get("E_truck_min", 60)),
+            E_truck_cap=None if raw_cap is None else int(raw_cap),
+            E_truck_min=None if raw_min is None else int(raw_min),
             refrigeration_on=bool(mission.refrigeration_on),
             weather_id=str(mission.weather_id),
             with_chargers=False,  # graph still attaches candidates; none active
@@ -103,6 +108,8 @@ def prepare_multiroute_mission(
             attach_candidate_chargers=True,
             energy_quantum_kwh=energy_quantum_kwh,
             objective_mode=objective_mode,
+            vehicle_yaml=vehicle_yaml,
+            road_cost_per_km=road_cost_per_km,
         )
     finally:
         cfg_pilot.gcm_kg = prev
@@ -337,7 +344,12 @@ def prepare_multiroute_placement_context(
     memo: PlacementMemo | None = None,
     energy_quantum_kwh: int | None = None,
     objective_mode: str = "enroute_incremental_cost",
+    vehicle_yaml: Path | None = None,
+    road_cost_per_km: float | None = None,
 ) -> dict[str, Any]:
+    from morocco_etruck.optimization.drive_table_cache import file_sha256
+    from morocco_etruck.optimization.placement_certification import ServiceabilityClass
+
     pilot = load_multiroute_pilot_config(cfg.multiroute_pilot_path, root=root)
     path_rows = pd.read_csv(pilot.path_alternatives_csv).to_dict(orient="records")
     missions = list(cfg.demand_scenarios[demand_name])
@@ -350,6 +362,8 @@ def prepare_multiroute_placement_context(
             path_rows=path_rows,
             energy_quantum_kwh=energy_quantum_kwh,
             objective_mode=objective_mode,
+            vehicle_yaml=vehicle_yaml,
+            road_cost_per_km=road_cost_per_km,
         )
 
     # Serviceability: probe with all sites installed
@@ -375,10 +389,27 @@ def prepare_multiroute_placement_context(
 
     structural_ids = {mid for mid, v in serviceability.items() if v == "peak_motor"}
     serviceable_ids = {mid for mid, v in serviceability.items() if v == "serviceable"}
+    unresolved_ids = {
+        mid
+        for mid, v in serviceability.items()
+        if v == ServiceabilityClass.LIMIT_REACHED.value
+    }
+    weight_by_id = {m.id: float(m.weight) for m in missions}
+    weight_total_demand = sum(weight_by_id.values())
+    unresolved_weight = sum(weight_by_id[i] for i in unresolved_ids)
     if memo is None:
         sample = next(iter(prepared.values())).template
+        vpath = Path(vehicle_yaml) if vehicle_yaml is not None else pilot.vehicle_yaml
+        if not vpath.is_absolute():
+            vpath = root / vpath
+        vsha = file_sha256(vpath) if vpath.exists() else "missing_vehicle"
         memo = PlacementMemo(
-            energy_model_fingerprint=f"multiroute_q{sample.energy_quantum_kwh}_t{sample.time_step_min}"
+            energy_model_fingerprint=(
+                f"multiroute_q{sample.energy_quantum_kwh}_t{sample.time_step_min}"
+                f"_veh{vsha[:12]}_mode{objective_mode}"
+                f"_E{sample.E_truck_cap}_{sample.E_truck_min}"
+                f"_obj{getattr(sample, 'objective_mode', objective_mode)}"
+            )
         )
     return {
         "pilot": pilot,
@@ -387,7 +418,13 @@ def prepare_multiroute_placement_context(
         "serviceability": serviceability,
         "structural_ids": structural_ids,
         "serviceable_ids": serviceable_ids,
+        "unresolved_ids": unresolved_ids,
+        "unresolved_weight": unresolved_weight,
+        "weight_total_demand": weight_total_demand,
         "memo": memo,
+        "vehicle_yaml": str(vehicle_yaml or pilot.vehicle_yaml),
+        "objective_mode": objective_mode,
+        "road_cost_per_km": road_cost_per_km,
     }
 
 
@@ -502,6 +539,12 @@ def run_multiroute_branch_and_bound(
         node_limit=cfg.node_limit,
         time_limit_sec=cfg.time_limit_sec,
     )
+    from morocco_etruck.optimization.placement_certification import portfolio_optimality_status
+
     core.structural_ids = set(context["structural_ids"])
     core.serviceability = dict(context["serviceability"])
+    core.optimality_status = portfolio_optimality_status(
+        core_status=core.optimality_status,
+        serviceability=core.serviceability,
+    )
     return core, context
