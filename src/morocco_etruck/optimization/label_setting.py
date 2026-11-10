@@ -1,4 +1,4 @@
-"""Multi-resource label-setting solver (Task 03A)."""
+"""Multi-resource label-setting solver (Task 03A / 06B)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,11 @@ from heapq import heappop, heappush
 from typing import Any
 
 from morocco_etruck.optimization.dominance import DominanceStore
-from morocco_etruck.optimization.problem import RoutingInstance, validate_routing_instance
+from morocco_etruck.optimization.problem import (
+    RoutingInstance,
+    total_objective_cents,
+    validate_routing_instance,
+)
 from morocco_etruck.optimization.resource_transitions import (
     Label,
     apply_charge,
@@ -55,6 +59,10 @@ def _reconstruct(labels_by_id: dict[int, Label], lab: Label) -> tuple[list[str],
     return path, actions
 
 
+def _uses_terminal_valuation(inst: RoutingInstance) -> bool:
+    return getattr(inst, "objective_mode", "enroute_incremental_cost") == "energy_replenishment_cost"
+
+
 def solve_mrls(
     inst: RoutingInstance,
     *,
@@ -65,13 +73,19 @@ def solve_mrls(
     """
     Exact MRLS for the finite discrete instance (with optional computational limits).
 
-    Priority: minimize cost, then time.
+    Priority: minimize en-route cost, then time.
+
+    ``enroute_incremental_cost``: first destination label popped is optimal.
+    ``energy_replenishment_cost``: continue while unfinished labels can beat the
+    best completed total (en-route + nonnegative terminal shortfall); prune when
+    ``lab.cost >= incumbent_total`` (admissible residual LB = 0).
     """
     validate_routing_instance(inst)
     t0 = time.perf_counter()
     store = DominanceStore(enabled=use_dominance)
     labels_by_id: dict[int, Label] = {}
     next_id = 0
+    terminal_mode = _uses_terminal_valuation(inst)
 
     start = Label(
         node=inst.origin,
@@ -95,42 +109,60 @@ def solve_mrls(
     generated = 1
     expanded = 0
     best: Label | None = None
+    best_total: int | None = None
 
     while heap:
         if max_seconds is not None and (time.perf_counter() - t0) > max_seconds:
+            # Incomplete search — never claim OPTIMAL.
             return SolveResult(
                 status=SolverStatus.LIMIT_REACHED,
-                objective=best.cost if best else None,
+                objective=best_total,
                 path_nodes=[],
                 actions=[],
                 final_label=best,
-                stats=_stats(generated, expanded, store.dominated_count, t0, best),
+                stats=_stats(generated, expanded, store.dominated_count, t0, best, best_total),
             )
         if max_expansions is not None and expanded >= max_expansions:
             return SolveResult(
                 status=SolverStatus.LIMIT_REACHED,
-                objective=best.cost if best else None,
+                objective=best_total,
                 path_nodes=[],
                 actions=[],
                 final_label=best,
-                stats=_stats(generated, expanded, store.dominated_count, t0, best),
+                stats=_stats(generated, expanded, store.dominated_count, t0, best, best_total),
             )
 
         _c, _t, lid = heappop(heap)
         lab = labels_by_id[lid]
-        # Skip if a better label already made this stale (still in heap)
-        # We keep all; dominance prevents inserting dominated ones.
+
+        # Admissible prune under terminal valuation: residual en-route + terminal ≥ 0.
+        if terminal_mode and best_total is not None and lab.cost >= best_total:
+            continue
 
         if lab.node == inst.destination:
-            path, actions = _reconstruct(labels_by_id, lab)
-            return SolveResult(
-                status=SolverStatus.OPTIMAL,
-                objective=lab.cost,
-                path_nodes=path,
-                actions=actions,
-                final_label=lab,
-                stats=_stats(generated, expanded, store.dominated_count, t0, lab),
+            total = total_objective_cents(inst, lab.cost, lab.E_truck, lab.E_trailer)
+            better = best_total is None or total < best_total
+            tie_faster = (
+                best_total is not None
+                and total == best_total
+                and best is not None
+                and lab.t < best.t
             )
+            if better or tie_faster:
+                best = lab
+                best_total = total
+            if not terminal_mode:
+                path, actions = _reconstruct(labels_by_id, lab)
+                return SolveResult(
+                    status=SolverStatus.OPTIMAL,
+                    objective=total,
+                    path_nodes=path,
+                    actions=actions,
+                    final_label=lab,
+                    stats=_stats(generated, expanded, store.dominated_count, t0, lab, total),
+                )
+            # Terminal mode: do not expand from destination; keep searching.
+            continue
 
         expanded += 1
 
@@ -142,6 +174,8 @@ def solve_mrls(
             generated += 1
             nxt = r.label
             next_id += 1
+            if terminal_mode and best_total is not None and nxt.cost >= best_total:
+                continue
             if store.accept(nxt):
                 labels_by_id[nxt.label_id] = nxt
                 heappush(heap, (nxt.cost, nxt.t, nxt.label_id))
@@ -157,6 +191,8 @@ def solve_mrls(
                 generated += 1
                 nxt = r.label
                 next_id += 1
+                if terminal_mode and best_total is not None and nxt.cost >= best_total:
+                    continue
                 if store.accept(nxt):
                     labels_by_id[nxt.label_id] = nxt
                     heappush(heap, (nxt.cost, nxt.t, nxt.label_id))
@@ -169,9 +205,22 @@ def solve_mrls(
             generated += 1
             nxt = r.label
             next_id += 1
+            if terminal_mode and best_total is not None and nxt.cost >= best_total:
+                continue
             if store.accept(nxt):
                 labels_by_id[nxt.label_id] = nxt
                 heappush(heap, (nxt.cost, nxt.t, nxt.label_id))
+
+    if best is not None and best_total is not None:
+        path, actions = _reconstruct(labels_by_id, best)
+        return SolveResult(
+            status=SolverStatus.OPTIMAL,
+            objective=best_total,
+            path_nodes=path,
+            actions=actions,
+            final_label=best,
+            stats=_stats(generated, expanded, store.dominated_count, t0, best, best_total),
+        )
 
     return SolveResult(
         status=SolverStatus.INFEASIBLE,
@@ -179,15 +228,23 @@ def solve_mrls(
         path_nodes=[],
         actions=[],
         final_label=None,
-        stats=_stats(generated, expanded, store.dominated_count, t0, None),
+        stats=_stats(generated, expanded, store.dominated_count, t0, None, None),
     )
 
 
-def _stats(generated: int, expanded: int, dominated: int, t0: float, best: Label | None) -> dict[str, Any]:
+def _stats(
+    generated: int,
+    expanded: int,
+    dominated: int,
+    t0: float,
+    best: Label | None,
+    best_total: int | None,
+) -> dict[str, Any]:
     return {
         "labels_generated": generated,
         "labels_expanded": expanded,
         "labels_dominated": dominated,
         "runtime_s": time.perf_counter() - t0,
-        "best_cost": best.cost if best else None,
+        "best_cost": best_total if best_total is not None else (best.cost if best else None),
+        "best_enroute_cost": best.cost if best else None,
     }

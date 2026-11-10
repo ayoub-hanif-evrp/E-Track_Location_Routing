@@ -168,7 +168,14 @@ def apply_drive(inst: RoutingInstance, lab: Label, arc: ArcData, new_id: int) ->
     if reason:
         return TransitionResult(False, reason=reason)
     cost2 = lab.cost + arc.road_cost
-    action = {"type": "DRIVE", "u": arc.u, "v": arc.v, "road_cost": arc.road_cost}
+    action = {
+        "type": "DRIVE",
+        "u": arc.u,
+        "v": arc.v,
+        "road_cost": arc.road_cost,
+        "dt_steps": arc.dt_steps,
+        "dE_truck_kwh": arc.dE_truck_kwh,
+    }
     if arc.arc_id is not None:
         action["arc_id"] = arc.arc_id
     return TransitionResult(

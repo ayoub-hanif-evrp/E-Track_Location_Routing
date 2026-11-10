@@ -56,18 +56,82 @@ def continuous_replay(
         trailer_soc = inst.E_trailer_init / float(ctx.fridge.trailer_usable_kwh)
     min_soc = soc
     t_s = 0.0
-    macros = {(m.u, m.v): m for m in ctx.macros}
+    # Index by arc_id when present; (u,v) only when unique.
+    by_id: dict[str, Any] = {}
+    for m in ctx.macros:
+        aid = str((m.meta or {}).get("arc_id") or "")
+        if aid:
+            by_id[aid] = m
+    current_node = inst.origin
 
     for act in actions:
         typ = act.get("type")
         if typ == "DRIVE":
-            key = (act["u"], act["v"])
-            macro = macros.get(key)
-            if macro is None:
+            u, v = act["u"], act["v"]
+            if current_node != u:
                 return ContinuousReplayReport(
-                    False, f"missing_macro:{key}", discrete_cost, discrete_t, discrete_E_truck,
-                    t_s, None, None, None, None, min_soc,
+                    False,
+                    f"drive_from_wrong_node:{current_node}!={u}",
+                    discrete_cost,
+                    discrete_t,
+                    discrete_E_truck,
+                    t_s,
+                    None,
+                    None,
+                    None,
+                    None,
+                    min_soc,
                 )
+            aid = act.get("arc_id")
+            macro = None
+            if aid is not None and str(aid).strip():
+                macro = by_id.get(str(aid))
+                if macro is None:
+                    return ContinuousReplayReport(
+                        False,
+                        f"missing_or_ambiguous_arc_id:{aid}",
+                        discrete_cost,
+                        discrete_t,
+                        discrete_E_truck,
+                        t_s,
+                        None,
+                        None,
+                        None,
+                        None,
+                        min_soc,
+                    )
+                if macro.u != u or macro.v != v:
+                    return ContinuousReplayReport(
+                        False,
+                        f"arc_id_endpoint_mismatch:{macro.u}->{macro.v}!={u}->{v}",
+                        discrete_cost,
+                        discrete_t,
+                        discrete_E_truck,
+                        t_s,
+                        None,
+                        None,
+                        None,
+                        None,
+                        min_soc,
+                    )
+            else:
+                cands = [m for m in ctx.macros if m.u == u and m.v == v]
+                if len(cands) != 1:
+                    return ContinuousReplayReport(
+                        False,
+                        "ambiguous_parallel_arc" if cands else f"missing_macro:{(u, v)}",
+                        discrete_cost,
+                        discrete_t,
+                        discrete_E_truck,
+                        t_s,
+                        None,
+                        None,
+                        None,
+                        None,
+                        min_soc,
+                    )
+                macro = cands[0]
+            current_node = v
             ok, dt, soc, trailer_soc, reason = simulate_drive_from_soc(
                 macro.micro_edges,
                 macro.terrain,
@@ -91,6 +155,20 @@ def continuous_replay(
                 )
         elif typ == "CHARGE":
             node = act["node"]
+            if node != current_node:
+                return ContinuousReplayReport(
+                    False,
+                    f"charge_wrong_node:{current_node}!={node}",
+                    discrete_cost,
+                    discrete_t,
+                    discrete_E_truck,
+                    t_s,
+                    None,
+                    None,
+                    None,
+                    None,
+                    min_soc,
+                )
             if node not in inst.active_stations:
                 return ContinuousReplayReport(
                     False, "station_inactive", discrete_cost, discrete_t, discrete_E_truck,
@@ -181,6 +259,20 @@ def continuous_replay(
                 t_s, None, None, None, None, min_soc,
             )
 
+    if current_node != inst.destination:
+        return ContinuousReplayReport(
+            False,
+            f"not_at_destination:{current_node}!={inst.destination}",
+            discrete_cost,
+            discrete_t,
+            discrete_E_truck,
+            t_s,
+            soc * usable,
+            None if trailer_soc is None else trailer_soc * ctx.fridge.trailer_usable_kwh,
+            None,
+            None,
+            min_soc,
+        )
     E_cont = soc * usable
     El_cont = None if trailer_soc is None else trailer_soc * ctx.fridge.trailer_usable_kwh
     dE = None if discrete_E_truck is None else E_cont - float(discrete_E_truck)

@@ -80,16 +80,20 @@ def continuous_replay_multiroute(
         return _fail("weather_assumed_not_historical")
 
     last_v_nid: int | None = None
+    current_node = inst.origin
 
     for act in actions:
         typ = act.get("type")
         if typ == "DRIVE":
+            u, v = act.get("u"), act.get("v")
+            if current_node != u:
+                return _fail(f"drive_from_wrong_node:{current_node}!={u}")
             aid = act.get("arc_id")
             if not aid:
                 cands = [
                     m
                     for m in ctx.macros_by_arc_id.values()
-                    if m.u == act.get("u") and m.v == act.get("v")
+                    if m.u == u and m.v == v
                 ]
                 if len(cands) != 1:
                     return _fail("missing_or_ambiguous_arc_id")
@@ -99,6 +103,8 @@ def continuous_replay_multiroute(
                 macro = ctx.macros_by_arc_id.get(str(aid))
             if macro is None:
                 return _fail(f"missing_macro:{aid}")
+            if macro.u != u or macro.v != v:
+                return _fail(f"arc_id_endpoint_mismatch:{macro.u}->{macro.v}!={u}->{v}")
             tnote = str(macro.meta.get("terrain_note") or "")
             if ctx.terrain_mode == "dem" and (
                 tnote.startswith("dem_unavailable") or macro.meta.get("dem_ok") is False
@@ -139,8 +145,11 @@ def continuous_replay_multiroute(
                 return _fail("tractor_soc_ceiling")
             if t_s > deadline_s + 1e-9:
                 return _fail("deadline")
+            current_node = str(v)
         elif typ == "CHARGE":
             node = act["node"]
+            if node != current_node:
+                return _fail(f"charge_wrong_node:{current_node}!={node}")
             if node not in inst.active_stations:
                 return _fail("station_inactive")
             st = inst.stations.get(node)
@@ -218,6 +227,10 @@ def continuous_replay_multiroute(
 
     if t_s > deadline_s + 1e-9:
         return _fail("deadline")
+    if current_node != inst.destination:
+        return _fail(f"not_at_destination:{current_node}!={inst.destination}")
+    if discrete_E_truck is not None and soc * usable + 1e-6 < float(inst.E_truck_min):
+        return _fail("tractor_soc_floor_terminal")
 
     E_cont = soc * usable
     El_cont = None if trailer_soc is None else trailer_soc * ctx.fridge.trailer_usable_kwh

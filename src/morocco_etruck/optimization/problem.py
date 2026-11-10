@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 PowerSource = Literal["A", "B"]
+ObjectiveMode = Literal["enroute_incremental_cost", "energy_replenishment_cost"]
 
 
 @dataclass(frozen=True)
@@ -87,6 +88,14 @@ class RoutingInstance:
     wait_max_steps: int = 6
     time_step_min: int = 5
     energy_quantum_kwh: int = 1
+    # Operating-cost mode (Task 06B). Legacy default preserves Task 03–06A J.
+    objective_mode: ObjectiveMode = "enroute_incremental_cost"
+    # Terminal replenishment (used only when objective_mode=energy_replenishment_cost).
+    # None ⇒ E_truck_cap / uniform research tariff defaults applied by helpers.
+    terminal_target_truck_kwh: int | None = None
+    terminal_target_trailer_kwh: int | None = None
+    terminal_price_cents_per_grid_kwh: int | None = None
+    terminal_eta: float | None = None
     notes: str = ""
     expected: dict[str, Any] = field(default_factory=dict)
 
@@ -111,6 +120,69 @@ class RoutingInstance:
 
 class InstanceValidationError(ValueError):
     """Unsupported or inconsistent routing instance."""
+
+
+def terminal_replenishment_cents(
+    inst: RoutingInstance,
+    E_truck: int,
+    E_trailer: int | None,
+) -> int:
+    """
+    Nonnegative terminal shortfall cost (cents).
+
+    ``enroute_incremental_cost`` → 0 (preloaded battery treated as sunk).
+    ``energy_replenishment_cost`` → price × ceil(shortfall / η) for tractor
+    (and trailer when config-B fields are present). Does not re-price energy
+    already purchased en route.
+    """
+    if getattr(inst, "objective_mode", "enroute_incremental_cost") != "energy_replenishment_cost":
+        return 0
+    price = inst.terminal_price_cents_per_grid_kwh
+    if price is None:
+        # Prefer any active station price; else first station; else research default 20.
+        prices = [
+            int(st.price_cents_per_grid_kwh)
+            for sid, st in inst.stations.items()
+            if sid in inst.active_stations
+        ]
+        if not prices:
+            prices = [int(st.price_cents_per_grid_kwh) for st in inst.stations.values()]
+        price = prices[0] if prices else 20
+    eta = float(inst.terminal_eta) if inst.terminal_eta is not None else 0.95
+    if eta <= 0.0 or eta > 1.0:
+        raise InstanceValidationError("terminal_eta must be in (0, 1]")
+    if int(price) < 0:
+        raise InstanceValidationError("terminal_price_cents_per_grid_kwh must be >= 0")
+
+    target_tr = (
+        int(inst.terminal_target_truck_kwh)
+        if inst.terminal_target_truck_kwh is not None
+        else int(inst.E_truck_cap)
+    )
+    short_tr = max(0, target_tr - int(E_truck))
+    grid_tr = int(math.ceil(short_tr / eta)) if short_tr > 0 else 0
+    cost = int(price) * grid_tr
+
+    if inst.E_trailer_cap is not None and E_trailer is not None:
+        target_tl = (
+            int(inst.terminal_target_trailer_kwh)
+            if inst.terminal_target_trailer_kwh is not None
+            else int(inst.E_trailer_cap)
+        )
+        short_tl = max(0, target_tl - int(E_trailer))
+        grid_tl = int(math.ceil(short_tl / eta)) if short_tl > 0 else 0
+        cost += int(price) * grid_tl
+    return cost
+
+
+def total_objective_cents(
+    inst: RoutingInstance,
+    enroute_cost: int,
+    E_truck: int,
+    E_trailer: int | None,
+) -> int:
+    """En-route label cost plus terminal replenishment (0 in legacy mode)."""
+    return int(enroute_cost) + terminal_replenishment_cents(inst, E_truck, E_trailer)
 
 
 def validate_routing_instance(inst: RoutingInstance) -> None:
@@ -139,6 +211,13 @@ def validate_routing_instance(inst: RoutingInstance) -> None:
         raise InstanceValidationError("truck energy bounds must lie on energy_quantum_kwh grid")
     if inst.aux_w < 0 or inst.tru_mean_w < 0:
         raise InstanceValidationError("aux_w and tru_mean_w must be non-negative")
+    mode = getattr(inst, "objective_mode", "enroute_incremental_cost")
+    if mode not in ("enroute_incremental_cost", "energy_replenishment_cost"):
+        raise InstanceValidationError(f"unsupported objective_mode: {mode!r}")
+    if inst.terminal_eta is not None and not (0.0 < float(inst.terminal_eta) <= 1.0):
+        raise InstanceValidationError("terminal_eta must be in (0, 1]")
+    if inst.terminal_price_cents_per_grid_kwh is not None and int(inst.terminal_price_cents_per_grid_kwh) < 0:
+        raise InstanceValidationError("terminal_price_cents_per_grid_kwh must be >= 0")
 
     if inst.power_source == "B" and inst.refrigeration_on:
         if inst.E_trailer_cap is None or inst.E_trailer_min is None or inst.E_trailer_init is None:

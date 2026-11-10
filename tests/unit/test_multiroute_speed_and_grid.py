@@ -161,6 +161,18 @@ def test_invalid_e_init_rejected(tmp_path: Path):
         )
 
 
+def test_parent_total_units_split_sums_exactly():
+    from morocco_etruck.optimization.arc_preprocessing import allocate_path_road_costs as alloc
+
+    parent = alloc([10000.0], road_cost_per_km=1.0)[0]
+    parts = alloc(
+        [2500.0, 2500.0, 2500.0, 2500.0],
+        road_cost_per_km=1.0,
+        total_units=parent,
+    )
+    assert sum(parts) == parent
+
+
 def test_path_road_cost_allocation_invariant_under_split():
     lengths = [10000.0]
     one = allocate_path_road_costs(lengths, road_cost_per_km=1.0)

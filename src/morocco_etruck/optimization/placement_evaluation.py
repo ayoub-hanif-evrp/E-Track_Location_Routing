@@ -159,6 +159,13 @@ def _clone_instance_for_subset(template_inst, *, active: set[str], price_mode: s
         wait_max_steps=template_inst.wait_max_steps,
         time_step_min=template_inst.time_step_min,
         energy_quantum_kwh=template_inst.energy_quantum_kwh,
+        objective_mode=getattr(template_inst, "objective_mode", "enroute_incremental_cost"),
+        terminal_target_truck_kwh=getattr(template_inst, "terminal_target_truck_kwh", None),
+        terminal_target_trailer_kwh=getattr(template_inst, "terminal_target_trailer_kwh", None),
+        terminal_price_cents_per_grid_kwh=getattr(
+            template_inst, "terminal_price_cents_per_grid_kwh", None
+        ),
+        terminal_eta=getattr(template_inst, "terminal_eta", None),
         notes=template_inst.notes,
     )
 

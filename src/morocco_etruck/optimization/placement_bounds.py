@@ -8,8 +8,12 @@ charger capacity / queues, nonnegative site costs, fixed directed paths):
 adding an operational compatible site cannot make a previously feasible mission
 infeasible, and cannot increase that mission's optimal discrete operating cost.
 
-Invalidated by: shared capacity, queues, coupled schedules, negative costs,
-or mandatory detours that add energy.
+Task 06B: this remains valid for both ``enroute_incremental_cost`` and
+``energy_replenishment_cost`` when terminal tariff/η are nonnegative and fixed
+(ignore-new-station). ``C_var`` is the selected-mode MRLS objective (including
+terminal shortfall when enabled). Invalidated by: shared capacity, queues,
+coupled schedules, negative costs, mandatory detours, or site-dependent
+terminal prices that break ignore-new-station.
 
 Coverage upper bound
 --------------------

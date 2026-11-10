@@ -8,7 +8,7 @@ PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible r
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–06A)
+## Current scope (Tasks 01–06B)
 
 **Task 01 / 01B / 01C — geographic foundation**
 
@@ -86,6 +86,13 @@ Eventually determine which Moroccan motorway service areas should receive truck-
 - DRIVE-table fingerprint `06a.1` includes speed schedule; no silent `E_init` bump.
 - Grid sensitivity + discrete vs continuous feasibility audit; placement enum↔B&B revalidated.
 - **Not claimed:** observed truck speeds, empirical vehicle validation, or B&B speedup on the tiny site set.
+
+**Task 06B — Objective integrity, exact replay, grid-robust placement**
+
+- Discrete/continuous replay resolve DRIVE arcs by `arc_id` (no silent parallel-arc pick); destination terminal checks.
+- Explicit modes: `enroute_incremental_cost` (legacy Task 03A \(J\)) vs `energy_replenishment_cost` (terminal shortfall to usable cap at research tariff/η).
+- Admissible MRLS/reference stop under terminal valuation; split-invariant road costs; placement compared at q=10/5/(2) × both modes.
+- **Not claimed:** grid-robust nationwide optimality, config B Moroccan results, market tariffs, or B&B speedup.
 
 ## Requirements
 
@@ -333,11 +340,30 @@ Outputs:
 - `reports/task06a_discretization_validation.md`
 - `reports/task06a_corrected_placement_comparison.md`
 
-## Not yet implemented (stop after Task 06A)
+## Task 06B — objective / replay / grid placement
 
-- Task 06B scientific comparative experiments / sensitivity campaigns
+```bash
+pytest -q tests/unit/test_exact_arc_replay.py \
+         tests/unit/test_terminal_energy_cost.py \
+         tests/unit/test_placement_grid_robustness.py
+python scripts/run_task06b_placement_grid.py --quanta 10,5,2
+```
+
+Outputs:
+
+- `results/task06b_objective_comparison.csv`
+- `results/task06b_placement_grid_comparison.csv`
+- `reports/task06b_objective_and_replay_audit.md`
+- `reports/task06b_grid_robustness.md`
+- `reports/task06b_bb_certification.md`
+
+**Objective scope:** legacy en-route incremental cost vs energy-replenishment cost (terminal shortfall). Exactness only on the finite discrete model; continuous replay certifies served Moroccan journeys under research physics assumptions.
+
+## Not yet implemented (stop after Task 06B)
+
+- Task 06C — refrigeration configuration B in the Moroccan adapter + scenario comparisons
 - Nationwide search
 - ALNS, GA, Gurobi, OR-Tools, etc.
 - Paper writing
 
-**Stop after Task 06A** until the researcher reviews.
+**Stop after Task 06B** until the researcher reviews.

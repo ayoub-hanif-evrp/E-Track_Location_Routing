@@ -372,9 +372,16 @@ def main() -> int:
                 "solve_sec": solve_s,
                 "hgv_uncertainty": "unknown_tags_retained_explicit_no_filtered",
                 "claim_scope": "path_union_of_verified_alternatives_only",
-                "labels_expanded": getattr(result.stats, "expanded", None)
-                if result.stats
-                else None,
+                "labels_generated": (
+                    result.stats.get("labels_generated") if isinstance(result.stats, dict) else None
+                ),
+                "labels_expanded": (
+                    result.stats.get("labels_expanded") if isinstance(result.stats, dict) else None
+                ),
+                "labels_dominated": (
+                    result.stats.get("labels_dominated") if isinstance(result.stats, dict) else None
+                ),
+                "objective_mode": getattr(inst, "objective_mode", "enroute_incremental_cost"),
             }
         )
         print(

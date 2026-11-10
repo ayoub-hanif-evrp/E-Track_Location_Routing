@@ -75,6 +75,8 @@ def prepare_multiroute_mission(
     cfg_pilot,
     root: Path,
     path_rows: list[dict[str, Any]],
+    energy_quantum_kwh: int | None = None,
+    objective_mode: str = "enroute_incremental_cost",
 ) -> PreparedMultirouteMission:
     """Build fixed path-union graph once; template has active_stations=∅."""
     gcm_kg = float(
@@ -99,6 +101,8 @@ def prepare_multiroute_mission(
             with_chargers=False,  # graph still attaches candidates; none active
             terrain_mode=str(mission.terrain_mode),
             attach_candidate_chargers=True,
+            energy_quantum_kwh=energy_quantum_kwh,
+            objective_mode=objective_mode,
         )
     finally:
         cfg_pilot.gcm_kg = prev
@@ -125,7 +129,9 @@ def evaluate_multiroute_mission(
         cache_key = memo.make_key(
             mission_id=mission.id,
             active_station_keys=frozenset(active),
-            price_mode="uniform",
+            price_mode=(
+                f"uniform:{getattr(prepared.template, 'objective_mode', 'enroute_incremental_cost')}"
+            ),
             q=prepared.template.energy_quantum_kwh,
             time_step_min=prepared.template.time_step_min,
         )
@@ -329,6 +335,8 @@ def prepare_multiroute_placement_context(
     root: Path,
     demand_name: str,
     memo: PlacementMemo | None = None,
+    energy_quantum_kwh: int | None = None,
+    objective_mode: str = "enroute_incremental_cost",
 ) -> dict[str, Any]:
     pilot = load_multiroute_pilot_config(cfg.multiroute_pilot_path, root=root)
     path_rows = pd.read_csv(pilot.path_alternatives_csv).to_dict(orient="records")
@@ -336,7 +344,12 @@ def prepare_multiroute_placement_context(
     prepared: dict[str, PreparedMultirouteMission] = {}
     for m in missions:
         prepared[m.id] = prepare_multiroute_mission(
-            m, cfg_pilot=pilot, root=root, path_rows=path_rows
+            m,
+            cfg_pilot=pilot,
+            root=root,
+            path_rows=path_rows,
+            energy_quantum_kwh=energy_quantum_kwh,
+            objective_mode=objective_mode,
         )
 
     # Serviceability: probe with all sites installed

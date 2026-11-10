@@ -19,6 +19,7 @@ from morocco_etruck.energy.vehicle import VehicleParams, load_vehicle
 from morocco_etruck.energy.weather import CorridorWeatherDay, WeatherPointDay
 from morocco_etruck.optimization.arc_preprocessing import (
     MacroArcSpec,
+    apply_parent_split_road_costs,
     build_drive_table,
     build_macro_arc,
 )
@@ -28,7 +29,12 @@ from morocco_etruck.optimization.drive_table_cache import (
     save_cached_table,
     terrain_sample_hash,
 )
-from morocco_etruck.optimization.problem import ArcData, RoutingInstance, StationData
+from morocco_etruck.optimization.problem import (
+    ArcData,
+    ObjectiveMode,
+    RoutingInstance,
+    StationData,
+)
 from morocco_etruck.optimization.route_choice_graph import DecisionArc, make_arc_id
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -429,6 +435,10 @@ def build_path_union_routing_instance(
     wait_max_steps: int = 0,
     name: str | None = None,
     speed_policy: dict[str, Any] | None = None,
+    objective_mode: ObjectiveMode = "enroute_incremental_cost",
+    terminal_price_cents_per_grid_kwh: int | None = None,
+    terminal_eta: float | None = None,
+    terminal_target_truck_kwh: int | None = None,
 ) -> tuple[RoutingInstance, MultirouteMissionContext]:
     if decision_arcs is None:
         arcs_in, origin_n, dest_n, nodes = induce_od_decision_arcs(dec, path_rows, od_id)
@@ -500,6 +510,33 @@ def build_path_union_routing_instance(
             )
         )
 
+    # Representation-invariant road costs for charger-split children.
+    parent_lengths: dict[str, float] = {}
+    for darc in arcs_in:
+        if darc.parent_arc_id:
+            parent_lengths.setdefault(str(darc.parent_arc_id), 0.0)
+            parent_lengths[str(darc.parent_arc_id)] += float(darc.length_m)
+    apply_parent_split_road_costs(
+        list(macros.values()),
+        road_cost_per_km=road_cost_per_km,
+        parent_length_m=parent_lengths or None,
+    )
+    # Refresh ArcData road costs after redistribution (tables unchanged).
+    arc_data = [
+        ArcData(
+            u=a.u,
+            v=a.v,
+            dt_steps=a.dt_steps,
+            dE_truck_kwh=a.dE_truck_kwh,
+            dE_trailer_kwh=a.dE_trailer_kwh,
+            road_cost=int(macros[str(a.arc_id)].road_cost) if a.arc_id and a.arc_id in macros else a.road_cost,
+            power_ok=a.power_ok,
+            drive_table=a.drive_table,
+            arc_id=a.arc_id,
+        )
+        for a in arc_data
+    ]
+
     # Stationary loads (W) for CHARGE accounting
     aux_w = float(vehicle.P_aux_w)
     t_amb = float(weather.T_corridor_mean_c)
@@ -527,9 +564,14 @@ def build_path_union_routing_instance(
         wait_max_steps=wait_max_steps,
         time_step_min=time_step_min,
         energy_quantum_kwh=energy_quantum_kwh,
+        objective_mode=objective_mode,
+        terminal_target_truck_kwh=terminal_target_truck_kwh,
+        terminal_price_cents_per_grid_kwh=terminal_price_cents_per_grid_kwh,
+        terminal_eta=terminal_eta,
         notes=(
             "Task 05B path-union MRLS with DRIVE tables; "
-            "claim_scope=path_union_of_verified_alternatives_only"
+            "claim_scope=path_union_of_verified_alternatives_only; "
+            f"objective_mode={objective_mode}"
         ),
     )
     if terrain_mode == "dem" and not dem_complete:

@@ -145,7 +145,8 @@ def build_legacy_path_set_instance(
         for u, v in ((origin_name, mid), (mid, dest_name)):
             dt = _dt_steps(half, mean_speed_kmh, cfg.time_step_min)
             dE = _dE_kwh(half, cfg.consumption_kwh_per_km, cfg.energy_quantum_kwh)
-            road_cost = max(1, int(round(half / 1000.0)))
+            # No per-macro max(1, …) floor (Task 06A/06B representation integrity).
+            road_cost = max(0, int(round(half / 1000.0)))
             arcs.append(
                 ArcData(
                     u=u,
@@ -270,6 +271,13 @@ def clone_physics_instance_for_subset(
         wait_max_steps=template.wait_max_steps,
         time_step_min=template.time_step_min,
         energy_quantum_kwh=template.energy_quantum_kwh,
+        objective_mode=getattr(template, "objective_mode", "enroute_incremental_cost"),
+        terminal_target_truck_kwh=getattr(template, "terminal_target_truck_kwh", None),
+        terminal_target_trailer_kwh=getattr(template, "terminal_target_trailer_kwh", None),
+        terminal_price_cents_per_grid_kwh=getattr(
+            template, "terminal_price_cents_per_grid_kwh", None
+        ),
+        terminal_eta=getattr(template, "terminal_eta", None),
         notes=template.notes,
     )
 
@@ -290,6 +298,10 @@ def build_physics_od_instance(
     terrain_mode: str | None = None,
     attach_candidate_chargers: bool | None = None,
     active_station_keys: set[str] | None = None,
+    objective_mode: str = "enroute_incremental_cost",
+    terminal_price_cents_per_grid_kwh: int | None = None,
+    terminal_eta: float | None = None,
+    terminal_target_truck_kwh: int | None = None,
 ) -> tuple[RoutingInstance, MultirouteMissionContext, list[str]]:
     """
     Scientific Task 05B/05C builder: OD path-union + DRIVE tables.
@@ -425,6 +437,18 @@ def build_physics_od_instance(
         decision_nodes=nodes,
         wait_max_steps=int(cfg.raw.get("wait_max_steps", 0)),
         speed_policy=cfg.speed_policy,
+        objective_mode=objective_mode,  # type: ignore[arg-type]
+        terminal_price_cents_per_grid_kwh=(
+            terminal_price_cents_per_grid_kwh
+            if terminal_price_cents_per_grid_kwh is not None
+            else int((cfg.raw.get("charger") or {}).get("price_uniform_cents", 20))
+        ),
+        terminal_eta=(
+            terminal_eta
+            if terminal_eta is not None
+            else float((cfg.raw.get("charger") or {}).get("eta", 0.95))
+        ),
+        terminal_target_truck_kwh=terminal_target_truck_kwh,
     )
     if weather_assumed:
         ctx.weather_assumed = True

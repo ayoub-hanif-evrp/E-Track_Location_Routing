@@ -7,17 +7,17 @@ from heapq import heappop, heappush
 from typing import Any
 
 from morocco_etruck.optimization.label_setting import SolveResult, SolverStatus
-from morocco_etruck.optimization.problem import RoutingInstance, validate_routing_instance
+from morocco_etruck.optimization.problem import (
+    RoutingInstance,
+    total_objective_cents,
+    validate_routing_instance,
+)
 from morocco_etruck.optimization.resource_transitions import (
     Label,
     apply_charge,
     apply_drive,
     apply_wait,
 )
-
-
-def _state_key(lab: Label) -> tuple:
-    return (lab.node, lab.t, lab.E_truck, lab.E_trailer, lab.cost)
 
 
 def solve_reference(
@@ -29,15 +29,20 @@ def solve_reference(
     """
     Exact shortest-path over the full discrete state graph.
 
-    Visited key: (node, t, E_truck, E_trailer). Keeps best cost only per key
-    (equality pruning, not Pareto dominance across unequal energies).
+    Visited key: (node, t, E_truck, E_trailer, can_charge). Keeps best en-route
+    cost only per key (equality pruning, not Pareto dominance across unequal energies).
+
+    Under ``energy_replenishment_cost``, first destination pop is not sufficient:
+    continue while unfinished labels can improve the best completed total.
     """
     validate_routing_instance(inst)
     t0 = time.perf_counter()
     labels_by_id: dict[int, Label] = {}
     next_id = 0
-    # best cost seen for (node, t, E_truck, E_trailer, can_charge)
     best_cost: dict[tuple, int] = {}
+    terminal_mode = (
+        getattr(inst, "objective_mode", "enroute_incremental_cost") == "energy_replenishment_cost"
+    )
 
     start = Label(
         node=inst.origin,
@@ -58,6 +63,8 @@ def solve_reference(
     heap: list[tuple[int, int, int]] = [(0, 0, start.label_id)]
     generated = 1
     expanded = 0
+    best: Label | None = None
+    best_total: int | None = None
 
     def reconstruct(lab: Label) -> tuple[list[str], list[dict[str, Any]]]:
         actions: list[dict[str, Any]] = []
@@ -78,36 +85,35 @@ def solve_reference(
                 path.append(n)
         return path, actions
 
+    def _stats() -> dict[str, Any]:
+        return {
+            "labels_generated": generated,
+            "labels_expanded": expanded,
+            "labels_dominated": 0,
+            "runtime_s": time.perf_counter() - t0,
+            "solver": "reference",
+            "best_cost": best_total,
+            "best_enroute_cost": best.cost if best else None,
+        }
+
     while heap:
         if max_seconds is not None and (time.perf_counter() - t0) > max_seconds:
             return SolveResult(
                 status=SolverStatus.LIMIT_REACHED,
-                objective=None,
+                objective=best_total,
                 path_nodes=[],
                 actions=[],
-                final_label=None,
-                stats={
-                    "labels_generated": generated,
-                    "labels_expanded": expanded,
-                    "labels_dominated": 0,
-                    "runtime_s": time.perf_counter() - t0,
-                    "solver": "reference",
-                },
+                final_label=best,
+                stats=_stats(),
             )
         if max_expansions is not None and expanded >= max_expansions:
             return SolveResult(
                 status=SolverStatus.LIMIT_REACHED,
-                objective=None,
+                objective=best_total,
                 path_nodes=[],
                 actions=[],
-                final_label=None,
-                stats={
-                    "labels_generated": generated,
-                    "labels_expanded": expanded,
-                    "labels_dominated": 0,
-                    "runtime_s": time.perf_counter() - t0,
-                    "solver": "reference",
-                },
+                final_label=best,
+                stats=_stats(),
             )
 
         cost, _t, lid = heappop(heap)
@@ -115,29 +121,39 @@ def solve_reference(
         sk = (lab.node, lab.t, lab.E_truck, lab.E_trailer, lab.can_charge)
         if cost > best_cost.get(sk, cost):
             continue
+        if terminal_mode and best_total is not None and lab.cost >= best_total:
+            continue
 
         if lab.node == inst.destination:
-            path, actions = reconstruct(lab)
-            return SolveResult(
-                status=SolverStatus.OPTIMAL,
-                objective=lab.cost,
-                path_nodes=path,
-                actions=actions,
-                final_label=lab,
-                stats={
-                    "labels_generated": generated,
-                    "labels_expanded": expanded,
-                    "labels_dominated": 0,
-                    "runtime_s": time.perf_counter() - t0,
-                    "solver": "reference",
-                    "best_cost": lab.cost,
-                },
+            total = total_objective_cents(inst, lab.cost, lab.E_truck, lab.E_trailer)
+            better = best_total is None or total < best_total
+            tie_faster = (
+                best_total is not None
+                and total == best_total
+                and best is not None
+                and lab.t < best.t
             )
+            if better or tie_faster:
+                best = lab
+                best_total = total
+            if not terminal_mode:
+                path, actions = reconstruct(lab)
+                return SolveResult(
+                    status=SolverStatus.OPTIMAL,
+                    objective=total,
+                    path_nodes=path,
+                    actions=actions,
+                    final_label=lab,
+                    stats=_stats(),
+                )
+            continue
 
         expanded += 1
 
         def _push(nxt: Label) -> None:
             nonlocal next_id, generated
+            if terminal_mode and best_total is not None and nxt.cost >= best_total:
+                return
             key = (nxt.node, nxt.t, nxt.E_truck, nxt.E_trailer, nxt.can_charge)
             prev = best_cost.get(key)
             if prev is not None and prev <= nxt.cost:
@@ -168,17 +184,22 @@ def solve_reference(
                 next_id += 1
                 _push(r.label)
 
+    if best is not None and best_total is not None:
+        path, actions = reconstruct(best)
+        return SolveResult(
+            status=SolverStatus.OPTIMAL,
+            objective=best_total,
+            path_nodes=path,
+            actions=actions,
+            final_label=best,
+            stats=_stats(),
+        )
+
     return SolveResult(
         status=SolverStatus.INFEASIBLE,
         objective=None,
         path_nodes=[],
         actions=[],
         final_label=None,
-        stats={
-            "labels_generated": generated,
-            "labels_expanded": expanded,
-            "labels_dominated": 0,
-            "runtime_s": time.perf_counter() - t0,
-            "solver": "reference",
-        },
+        stats=_stats(),
     )

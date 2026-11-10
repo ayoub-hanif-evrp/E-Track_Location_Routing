@@ -228,17 +228,31 @@ def allocate_path_road_costs(
     lengths_m: Sequence[float],
     *,
     road_cost_per_km: float,
+    total_units: int | None = None,
 ) -> list[int]:
-    """Largest-remainder allocation so child macros sum to the unsplit path total."""
+    """
+    Largest-remainder allocation so child macros sum to a single nonnegative total.
+
+    Default total = round(sum(km) × rate). Pass ``total_units`` (e.g. parent macro
+    cost) to keep charger-split children representation-invariant.
+    """
     n = len(lengths_m)
     if n == 0:
         return []
-    if road_cost_per_km <= 0:
+    if road_cost_per_km <= 0 and total_units is None:
         return [0] * n
     total_km = sum(float(L) for L in lengths_m) / 1000.0
-    total = max(0, int(round(total_km * road_cost_per_km)))
-    if total_km <= 0:
+    if total_units is None:
+        total = max(0, int(round(total_km * road_cost_per_km)))
+    else:
+        total = max(0, int(total_units))
+    if total <= 0:
         return [0] * n
+    if total_km <= 0:
+        # Degenerate lengths: put entire total on the first child.
+        out = [0] * n
+        out[0] = total
+        return out
     raw = [total * (float(L) / 1000.0) / total_km for L in lengths_m]
     floors = [int(math.floor(x)) for x in raw]
     rem = total - sum(floors)
@@ -247,6 +261,42 @@ def allocate_path_road_costs(
     for i in order[: max(0, rem)]:
         out[i] += 1
     return out
+
+
+def apply_parent_split_road_costs(
+    macros: Sequence[MacroArcSpec],
+    *,
+    road_cost_per_km: float,
+    parent_length_m: dict[str, float] | None = None,
+) -> None:
+    """
+    In-place: for macros sharing ``parent_arc_id``, redistribute a single parent
+    integer road cost so child costs sum exactly to the parent total.
+    """
+    groups: dict[str, list[MacroArcSpec]] = {}
+    for m in macros:
+        pid = str((m.meta or {}).get("parent_arc_id") or "")
+        if pid:
+            groups.setdefault(pid, []).append(m)
+    for pid, children in groups.items():
+        if len(children) < 2:
+            continue
+        lengths = [float(c.length_m) for c in children]
+        if parent_length_m and pid in parent_length_m:
+            parent_total = allocate_road_cost_units(
+                float(parent_length_m[pid]), road_cost_per_km=road_cost_per_km
+            )
+        else:
+            parent_total = allocate_road_cost_units(
+                sum(lengths), road_cost_per_km=road_cost_per_km
+            )
+        parts = allocate_path_road_costs(
+            lengths, road_cost_per_km=road_cost_per_km, total_units=parent_total
+        )
+        for child, rc in zip(children, parts):
+            child.road_cost = int(rc)
+            child.meta["road_cost_split_invariant"] = True
+            child.meta["road_cost_parent_id"] = pid
 
 
 def build_macro_arc(
