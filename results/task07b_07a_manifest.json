@@ -1,0 +1,75 @@
+{
+  "task": "07B_stage1_baseline_manifest",
+  "reviewed_commit_sha": "f18711c19552e1c2850be897b7a085008d853844",
+  "access_date": "2026-11-11",
+  "claim_scope": "finite_model_research_scenario_not_moroccan_infrastructure_recommendation",
+  "vehicles": {
+    "eactros_600": {
+      "yaml": "configs/vehicles/eactros_600.yaml",
+      "sha256_16": "f703c0c4ede002cd",
+      "usable_kwh": 600.0
+    },
+    "volvo_475": {
+      "yaml": "configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml",
+      "sha256_16": "8f6c01d5c058c78f",
+      "usable_kwh": 475.0
+    },
+    "volvo_460": {
+      "yaml": "configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml",
+      "sha256_16": "fe48bd079870d3f7",
+      "usable_kwh": 460.0
+    }
+  },
+  "freight": {
+    "cargo_payload_kg": 5300.0,
+    "comparison_design": "fixed_payload",
+    "E_init_soc_frac": 0.5,
+    "refrigeration_on": true,
+    "power_source": "A",
+    "setpoint_c": 2.0,
+    "weather_id": "cool",
+    "terrain_mode_07a": "flat",
+    "demand_name": "cold_chain_baseline_07a",
+    "weight_total_demand": 5.5,
+    "mission_ids": ["M_casa_marrakech", "M_casa_agadir", "M_marrakech_agadir"],
+    "mission_weights": {"M_casa_marrakech": 2.0, "M_casa_agadir": 2.0, "M_marrakech_agadir": 1.5}
+  },
+  "grids": {
+    "energy_quantum_kwh_primary": 10,
+    "energy_quantum_kwh_sensitivity": 5,
+    "time_step_min": 5,
+    "deadline_steps": 240,
+    "deadline_hours": 20.0
+  },
+  "costs": {
+    "road_cost_per_km_cents": 100.0,
+    "charger_power_kw_hypothetical": 350.0,
+    "cents_to_currency": 0.01,
+    "objective_modes": ["enroute_incremental_cost", "energy_replenishment_cost"]
+  },
+  "sites": [
+    {"id": "y_settat_ca", "station_key": "settat_ca", "osm_id": 127661106, "evidence_class": "hypothetical_future_truck_site"},
+    {"id": "y_benguerir_ca", "station_key": "benguerir_ca", "osm_id": 127661099, "evidence_class": "hypothetical_future_truck_site"},
+    {"id": "y_amskroud_ca", "station_key": "amskroud_ca", "osm_id": 1530179371, "evidence_class": "hypothetical_future_truck_site"}
+  ],
+  "data_hashes_sha256_16": {
+    "multiroute_placement_07a.yaml": "68435740000bb70b",
+    "multiroute_pilot.yaml": "eed645bd9026c880",
+    "refrigeration_approx.yaml": "5a45146a5e650293",
+    "path_alternatives.csv": "b4507df04874b946",
+    "decision_graph.json": "33f7d07af40099bb"
+  },
+  "07a_headline": {
+    "eactros_one_site_coverage": 4.0,
+    "eactros_alternate_optima": ["y_settat_ca", "y_benguerir_ca"],
+    "volvo_one_site_coverage": 2.0,
+    "volvo_two_site_coverage": 4.0,
+    "unserved_weight_marrakech_agadir": 1.5,
+    "note": "finite flat-terrain model; not verified Moroccan install recommendation"
+  },
+  "preserve_artifacts": [
+    "results/task07a_placement.csv",
+    "results/task07a_refrigerated_routing.csv",
+    "results/task07a_sensitivity.csv"
+  ]
+}

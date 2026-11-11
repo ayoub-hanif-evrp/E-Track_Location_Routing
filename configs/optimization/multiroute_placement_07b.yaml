@@ -1,0 +1,153 @@
+# Task 07B — Physical realism stress-test of Task 07A cold-chain placement claim
+# Preserves B&B–MRLS, path unions, Volvo primary + eActros comparator.
+# Demand weights ILLUSTRATIVE — not observed Moroccan freight volumes.
+# Candidate sites remain hypothetical_future_truck_site.
+
+multiroute_pilot_config: configs/optimization/multiroute_pilot.yaml
+
+disclaimer: >
+  Task 07B physical-realism panel: matched Flat vs DEM, documented refrigeration UA
+  ladder, charge-duration/deadline accounting, q=10 vs q=5 diagnostics, and
+  comparable routing baselines A–E. Not certified HGV access. Not operating truck
+  chargers. Not observed demand, contracts, or TRU calibration.
+
+sites:
+  - id: y_settat_ca
+    direction: casablanca_to_agadir
+    station_key: settat_ca
+    label: Settat_Casa_to_Agadir_127661106
+    evidence_class: hypothetical_future_truck_site
+  - id: y_benguerir_ca
+    direction: casablanca_to_agadir
+    station_key: benguerir_ca
+    label: Benguerir_Casa_to_Agadir_127661099
+    evidence_class: hypothetical_future_truck_site
+  - id: y_amskroud_ca
+    direction: casablanca_to_agadir
+    station_key: amskroud_ca
+    label: Amskroud_Casa_to_Agadir_1530179371
+    evidence_class: hypothetical_future_truck_site
+
+capex_scenarios:
+  equal:
+    note: "Equal illustrative CAPEX per directional site"
+    site_capex:
+      y_settat_ca: 100.0
+      y_benguerir_ca: 100.0
+      y_amskroud_ca: 100.0
+
+annualization:
+  interest_rate: 0.08
+  lifetime_years: 15
+
+cents_to_currency: 0.01
+road_cost_per_km_cents: 100.0
+cargo_payload_kg: 5300.0
+
+budgets:
+  - name: B0
+    max_capex: 0.0
+  - name: B1
+    max_capex: 100.0
+  - name: B2
+    max_capex: 200.0
+  - name: Ball
+    max_capex: null
+
+price_modes:
+  - uniform
+
+demand_scenarios:
+  # P0 — Task 07A echo (flat, cool, nominal thermal via default fridge YAML)
+  cold_chain_baseline_07b_flat:
+    note: >
+      Flat-terrain echo of cold_chain_baseline_07a. Total weight 5.5. Refrigeration ON.
+    missions:
+      - id: M_casa_marrakech
+        od_id: casa_marrakech
+        weight: 2.0
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+        cargo_payload_kg: 5300.0
+      - id: M_casa_agadir
+        od_id: casa_agadir
+        weight: 2.0
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+        cargo_payload_kg: 5300.0
+      - id: M_marrakech_agadir
+        od_id: marrakech_agadir
+        weight: 1.5
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+        cargo_payload_kg: 5300.0
+
+  # P1 / P3 / P4 / P5 base — DEM + cool + nominal thermal (overrides for q/deadline/power in runner)
+  cold_chain_baseline_07b_dem:
+    note: >
+      Matched DEM portfolio of 07A baseline. Total weight 5.5. Requires complete
+      COP-DEM macros (Task 05B). Silent flat under terrain_mode=dem is forbidden.
+    missions:
+      - id: M_casa_marrakech
+        od_id: casa_marrakech
+        weight: 2.0
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: dem
+        weather_id: cool
+        gcm: light
+        cargo_payload_kg: 5300.0
+      - id: M_casa_agadir
+        od_id: casa_agadir
+        weight: 2.0
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: dem
+        weather_id: cool
+        gcm: light
+        cargo_payload_kg: 5300.0
+      - id: M_marrakech_agadir
+        od_id: marrakech_agadir
+        weight: 1.5
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: dem
+        weather_id: cool
+        gcm: light
+        cargo_payload_kg: 5300.0
+
+baselines:
+  none: []
+  settat_only:
+    - y_settat_ca
+  benguerir_only:
+    - y_benguerir_ca
+  settat_benguerir:
+    - y_settat_ca
+    - y_benguerir_ca
+
+solver:
+  max_seconds: 90.0
+  max_expansions: 800000
+  node_limit: null
+  time_limit_sec: null
+
+outputs:
+  enumeration_csv: results/task07b_placement_enumeration.csv
+  branch_bound_csv: results/task07b_placement_branch_bound.csv
+  table_cache_dir: data/processed/multiroute/drive_tables

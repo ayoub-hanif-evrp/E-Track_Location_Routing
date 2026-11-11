@@ -8,7 +8,7 @@ PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible r
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–07A)
+## Current scope (Tasks 01–07B)
 
 **Task 01 / 01B / 01C — geographic foundation**
 
@@ -445,11 +445,31 @@ Outputs:
 
 **Framing:** future infrastructure planning at ADM service areas (`hypothetical_future_truck_site`). Illustrative demand weights — not observed Moroccan freight volumes.
 
-## Not yet implemented (stop after Task 07A)
+## Task 07B — physical realism and scientific validation
+
+```bash
+pytest -q tests/unit/test_task07b_physical_realism.py
+python scripts/run_task07b_physical_validation.py --stages all
+python scripts/write_task07b_reports.py
+```
+
+Outputs:
+
+- `reports/task07b_07a_baseline_manifest.md` + `results/task07b_07a_manifest.json`
+- `results/task07b_physical_sensitivity.csv` / `reports/task07b_refrigeration_uncertainty.md`
+- `results/task07b_charging_duration.csv` / `reports/task07b_charge_time_and_deadlines.md`
+- `results/task07b_discretization_diagnostics.csv` / `reports/task07b_discretization_diagnostics.md`
+- `results/task07b_routing_baselines.csv` / `reports/task07b_routing_baselines.md`
+- `results/task07b_placement_robustness.csv` / `reports/task07b_infrastructure_robustness.md`
+- `configs/optimization/multiroute_placement_07b.yaml` + `configs/energy/task07b_thermal_*.yaml`
+
+**Framing:** stress-test of the Task 07A eActros one-site vs Volvo two-site finite-model contrast under DEM, documented UA ladder, charge-duration/deadlines, and q-grid diagnostics. Not a Moroccan install recommendation.
+
+## Not yet implemented (stop after Task 07B)
 
 - Refrigeration configuration B Moroccan optimization
-- Nationwide search / large scalability B&B study
+- Nationwide search / large scalability B&B study (Task 07C design note only)
 - ALNS, GA, Gurobi, OR-Tools, etc.
 - Paper writing
 
-**Stop after Task 07A** until the researcher reviews.
+**Stop after Task 07B** until the researcher reviews.

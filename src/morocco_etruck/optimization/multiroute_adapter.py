@@ -306,6 +306,10 @@ def build_physics_od_instance(
     road_cost_per_km: float | None = None,
     vehicle_yaml: Path | None = None,
     gcm_kg: float | None = None,
+    deadline_steps: int | None = None,
+    fridge_yaml: Path | None = None,
+    charger_power_kw: float | None = None,
+    max_alternatives_for_union: int | None = None,
 ) -> tuple[RoutingInstance, MultirouteMissionContext, list[str]]:
     """
     Scientific Task 05B/05C builder: OD path-union + DRIVE tables.
@@ -318,11 +322,19 @@ def build_physics_od_instance(
 
     ``gcm_kg`` (Task 06D): when set, used as the immutable mission mass and does
     **not** mutate ``cfg.gcm_kg``. Prefer this over mutating the shared pilot config.
+
+    ``deadline_steps`` / ``fridge_yaml`` / ``charger_power_kw`` /
+    ``max_alternatives_for_union`` (Task 07B): optional per-mission overrides
+    without mutating the shared pilot config object.
     """
     dec = load_decision_graph(cfg.decision_graph_path)
     G = load_graph_from_csv(cfg.nodes_csv, cfg.edges_csv)
     # Tractability: optional cap on alternatives used for the OD path-union
-    max_alts = int((cfg.raw.get("physics") or {}).get("max_alternatives_for_union") or 0)
+    max_alts = int(
+        max_alternatives_for_union
+        if max_alternatives_for_union is not None
+        else (cfg.raw.get("physics") or {}).get("max_alternatives_for_union") or 0
+    )
     rows_for_od = [r for r in path_rows if str(r.get("od_id")) == od_id]
     if max_alts > 0 and len(rows_for_od) > max_alts:
         short = [r for r in rows_for_od if str(r.get("method")) == "shortest_distance"]
@@ -357,13 +369,19 @@ def build_physics_od_instance(
             station_notes.append("no_topology_verified_charger_on_union")
         else:
             ch = cfg.raw.get("charger") or {}
+            p_kw = float(
+                ch.get("power_kw", 350.0)
+                if charger_power_kw is None
+                else charger_power_kw
+            )
             # vehicle loaded below; temporary charger power — capped after load
             stations = to_station_data(
                 attachable,
-                power_kw=float(ch.get("power_kw", 350.0)),
+                power_kw=p_kw,
                 eta=float(ch.get("eta", 0.95)),
                 price_cents=int(ch.get("price_uniform_cents", 20)),
             )
+            station_notes.append(f"charger_power_kw={p_kw}")
             arcs, nodes, _alias = split_arcs_at_charger_nodes(
                 arcs, chargers=attachable, decision_nodes=nodes, G=G
             )
@@ -390,7 +408,10 @@ def build_physics_od_instance(
     if not v_yaml.is_absolute():
         v_yaml = root / v_yaml
     vehicle = load_vehicle(v_yaml)
-    fridge = load_refrigeration(cfg.fridge_yaml)
+    f_yaml = Path(fridge_yaml) if fridge_yaml is not None else cfg.fridge_yaml
+    if not f_yaml.is_absolute():
+        f_yaml = root / f_yaml
+    fridge = load_refrigeration(f_yaml)
     weather, weather_assumed = load_weather_for_multiroute(
         root=root, morocco_pilot_yaml=cfg.morocco_pilot_yaml, weather_id=weather_id
     )
@@ -398,6 +419,9 @@ def build_physics_od_instance(
     mission_gcm_kg = float(cfg.gcm_kg if gcm_kg is None else gcm_kg)
     validate_gcm(mission_gcm_kg, vehicle)
     station_notes.append(f"gcm_realized_kg={mission_gcm_kg}")
+    dl_steps = int(cfg.deadline_steps if deadline_steps is None else deadline_steps)
+    station_notes.append(f"deadline_steps={dl_steps}")
+    station_notes.append(f"fridge_yaml={f_yaml.name}")
 
     derive = bool(cfg.raw.get("derive_energy_from_vehicle", True))
     if derive or E_truck_cap is None or E_truck_min is None or E_truck_init is None:
@@ -459,7 +483,7 @@ def build_physics_od_instance(
         fridge=fridge,
         weather=weather,
         vehicle_yaml=v_yaml,
-        fridge_yaml=cfg.fridge_yaml,
+        fridge_yaml=f_yaml,
         gcm_kg=mission_gcm_kg,
         refrigeration_on=refrigeration_on,
         power_source="A",
@@ -468,7 +492,7 @@ def build_physics_od_instance(
         cache_dir=cfg.drive_cache_dir,
         time_step_min=cfg.time_step_min,
         energy_quantum_kwh=q,
-        deadline_steps=cfg.deadline_steps,
+        deadline_steps=dl_steps,
         E_truck_init=E_init,
         E_truck_cap=E_cap,
         E_truck_min=E_min,

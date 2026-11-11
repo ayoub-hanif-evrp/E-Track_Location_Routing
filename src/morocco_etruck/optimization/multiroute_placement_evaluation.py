@@ -115,6 +115,10 @@ def prepare_multiroute_mission(
     road_cost_per_km: float | None = None,
     gcm_kg: float | None = None,
     E_truck_init: int | None = None,
+    deadline_steps: int | None = None,
+    fridge_yaml: Path | None = None,
+    charger_power_kw: float | None = None,
+    max_alternatives_for_union: int | None = None,
 ) -> PreparedMultirouteMission:
     """Build fixed path-union graph once; template has active_stations=∅."""
     from morocco_etruck.energy.vehicle import load_vehicle
@@ -155,6 +159,10 @@ def prepare_multiroute_mission(
         vehicle_yaml=vehicle_yaml,
         road_cost_per_km=road_cost_per_km,
         gcm_kg=mission_gcm,
+        deadline_steps=deadline_steps,
+        fridge_yaml=fridge_yaml,
+        charger_power_kw=charger_power_kw,
+        max_alternatives_for_union=max_alternatives_for_union,
     )
     return PreparedMultirouteMission(
         mission=mission, template=inst, ctx=ctx, station_notes=list(notes)
@@ -389,8 +397,13 @@ def prepare_multiroute_placement_context(
     objective_mode: str = "enroute_incremental_cost",
     vehicle_yaml: Path | None = None,
     road_cost_per_km: float | None = None,
+    deadline_steps: int | None = None,
+    fridge_yaml: Path | None = None,
+    charger_power_kw: float | None = None,
+    max_alternatives_for_union: int | None = None,
 ) -> dict[str, Any]:
     from morocco_etruck.optimization.drive_table_cache import file_sha256
+    from morocco_etruck.optimization.placement_cache import build_mission_energy_fingerprint
     from morocco_etruck.optimization.placement_certification import ServiceabilityClass
 
     pilot = load_multiroute_pilot_config(cfg.multiroute_pilot_path, root=root)
@@ -407,6 +420,10 @@ def prepare_multiroute_placement_context(
             objective_mode=objective_mode,
             vehicle_yaml=vehicle_yaml,
             road_cost_per_km=road_cost_per_km,
+            deadline_steps=deadline_steps,
+            fridge_yaml=fridge_yaml,
+            charger_power_kw=charger_power_kw,
+            max_alternatives_for_union=max_alternatives_for_union,
         )
 
     # Serviceability: probe with all sites installed
@@ -447,13 +464,34 @@ def prepare_multiroute_placement_context(
         vpath = Path(vehicle_yaml) if vehicle_yaml is not None else pilot.vehicle_yaml
         if not vpath.is_absolute():
             vpath = root / vpath
-        vsha = file_sha256(vpath) if vpath.exists() else "missing_vehicle"
+        fpath = Path(fridge_yaml) if fridge_yaml is not None else pilot.fridge_yaml
+        if not fpath.is_absolute():
+            fpath = root / fpath
+        terrains = sorted({str(m.terrain_mode) for m in missions})
         memo = PlacementMemo(
-            energy_model_fingerprint=(
-                f"multiroute_q{sample.energy_quantum_kwh}_t{sample.time_step_min}"
-                f"_veh{vsha[:12]}_mode{objective_mode}"
-                f"_E{sample.E_truck_cap}_{sample.E_truck_min}"
-                f"_obj{getattr(sample, 'objective_mode', objective_mode)}"
+            energy_model_fingerprint=build_mission_energy_fingerprint(
+                vehicle_yaml=vpath if vpath.exists() else None,
+                fridge_yaml=fpath if fpath.exists() else None,
+                q=int(sample.energy_quantum_kwh),
+                time_step_min=int(sample.time_step_min),
+                terrain_mode=",".join(terrains),
+                weather_id=",".join(sorted({str(m.weather_id) for m in missions})),
+                refrigeration=",".join(
+                    sorted({"on" if m.refrigeration_on else "off" for m in missions})
+                ),
+                power_source="A",
+                extra={
+                    "deadline_steps": int(sample.deadline_steps),
+                    "charger_power_kw": (
+                        None
+                        if charger_power_kw is None
+                        else float(charger_power_kw)
+                    ),
+                    "objective_mode": objective_mode,
+                    "E_truck": [sample.E_truck_min, sample.E_truck_cap],
+                    "max_alternatives_for_union": max_alternatives_for_union,
+                    "demand_name": demand_name,
+                },
             )
         )
     return {

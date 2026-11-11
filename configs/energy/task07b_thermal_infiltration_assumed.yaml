@@ -1,0 +1,41 @@
+model_id: refrigeration_ua_cop_approx
+disclaimer: "Approximate research model for pilot energy accounting. Parameters are\
+  \ assumed / literature-order. Do not claim empirical validation against measured\
+  \ TRU logs.\n Task 07B scenario thermal_infiltration_assumed: explicit assumed duty,\
+  \ not observed."
+setpoint_c: 2.0
+setpoint_note: "Refrigerated freight setpoint example (+2 \xB0C)"
+UA_w_per_k: 80.0
+UA_provenance: assumed
+UA_sensitivity_w_per_k:
+- 50.0
+- 120.0
+UA_note: Order-of-magnitude insulated semi-trailer; not MB or Thermo King calibrated
+infiltration_w: 500.0
+infiltration_note: Pilot sets door/infiltration = 0
+cop:
+  cop_at_delta_0: 2.8
+  cop_at_delta_40: 1.2
+  cop_min: 1.0
+  cop_max: 3.2
+  provenance: assumed
+  note: "Tabulated linear COP(\u0394T) with hard bounds; engineering guess"
+power_source:
+  A:
+    draws_from: tractor_battery
+    description: TRU energy deducted from tractor usable pack
+  B:
+    draws_from: trailer_battery
+    description: Independent trailer pack; tractor SOC unaffected by TRU
+    trailer_usable_kwh: 30.0
+    trailer_usable_provenance: assumed
+    trailer_usable_sensitivity_kwh:
+    - 20.0
+    - 40.0
+    trailer_soc_initial: 1.0
+    trailer_soc_min: 0.1
+citation_inspiration: "Bank et al. (2025) cold-chain / refrigerated truck energy literature\
+  \ \u2014 methodological inspiration only at abstract level; parameters here are\
+  \ NOT claimed as a calibrated reproduction.\n"
+task07b_scenario_id: thermal_infiltration_assumed
+task07b_note: explicit assumed duty, not observed
