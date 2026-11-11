@@ -132,7 +132,7 @@ def continuous_replay(
                     )
                 macro = cands[0]
             current_node = v
-            ok, dt, soc, trailer_soc, reason = simulate_drive_from_soc(
+            ok, dt, soc, trailer_soc, reason, _e = simulate_drive_from_soc(
                 macro.micro_edges,
                 macro.terrain,
                 soc0=soc,

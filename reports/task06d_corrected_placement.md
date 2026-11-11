@@ -1,5 +1,7 @@
 # Task 06D — Corrected placement (immutable GCM, enum + B&B)
 
+> **Task 07A note:** The `refrigerated_06d` portfolio mixed ablation-OFF and hot-weather rows into demand (total weight 9.0). That coverage headline is **not** a primary scientific claim. Use `cold_chain_baseline_07a` (weight 5.5) in `reports/task07a_placement_robustness.md` / `results/task07a_placement.csv`. Legacy `default` portfolio below remains a historical diagnostic.
+
 Artifact: `results/task06d_vehicle_placement.csv` (48 rows)  
 q=10; `road_cost_per_km=100` ¢/km; unresolved_weight=0 on reported rows.
 

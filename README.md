@@ -8,7 +8,7 @@ PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible r
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–06D)
+## Current scope (Tasks 01–07A)
 
 **Task 01 / 01B / 01C — geographic foundation**
 
@@ -422,11 +422,34 @@ Outputs:
 
 **Scientific gate:** equal-mass and equal-payload comparisons; equal departure SOC vs equal absolute kWh labeled separately; certification downgrades on `replay_invalid` as well as `limit_reached`.
 
-## Not yet implemented (stop after Task 06D)
+**Task 06D `refrigerated_06d` is non-primary** (ablation/hot mixed into demand). Use Task 07A cold-chain baseline.
+
+## Task 07A — cold-chain benchmark integrity
+
+```bash
+pytest -q tests/unit/test_task07a_demand_integrity.py tests/unit
+python scripts/run_task07a_benchmark.py
+```
+
+Outputs:
+
+- `configs/optimization/multiroute_placement_07a.yaml` (separated baseline / ablation / hot / cool)
+- `results/task07a_refrigerated_routing.csv`
+- `results/task07a_placement.csv`
+- `results/task07a_sensitivity.csv`
+- `reports/task07a_demand_portfolio_audit.md`
+- `reports/task07a_moroccan_site_evidence.md`
+- `reports/task07a_refrigeration_ablation.md`
+- `reports/task07a_placement_robustness.md`
+- `reports/task07a_research_claims_and_limitations.md`
+
+**Framing:** future infrastructure planning at ADM service areas (`hypothetical_future_truck_site`). Illustrative demand weights — not observed Moroccan freight volumes.
+
+## Not yet implemented (stop after Task 07A)
 
 - Refrigeration configuration B Moroccan optimization
-- Nationwide search
+- Nationwide search / large scalability B&B study
 - ALNS, GA, Gurobi, OR-Tools, etc.
 - Paper writing
 
-**Stop after Task 06D** until the researcher reviews.
+**Stop after Task 07A** until the researcher reviews.

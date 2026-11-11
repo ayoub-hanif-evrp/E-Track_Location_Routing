@@ -54,7 +54,7 @@ def _classify_continuous_paths(ctx, inst) -> dict:
                 continue
             if ctx.terrain_mode == "dem" and macro.meta.get("dem_ok") is False:
                 continue
-            ok, _dt, soc2, tr2, reason = simulate_drive_from_soc(
+            ok, _dt, soc2, tr2, reason, _e = simulate_drive_from_soc(
                 macro.micro_edges,
                 macro.terrain,
                 soc0=soc,

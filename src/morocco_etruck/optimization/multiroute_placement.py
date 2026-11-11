@@ -29,6 +29,8 @@ class MultiroutePlacementMission:
     structural_candidate: bool = False
     # When set, prepare_multiroute_mission derives E_truck_init from vehicle usable kWh.
     E_init_soc_frac: float | None = None
+    # Task 07A: fixed-payload design overrides light/heavy GCM labels when set.
+    cargo_payload_kg: float | None = None
 
 
 @dataclass
@@ -130,6 +132,11 @@ def load_multiroute_placement_config(
                     None
                     if m.get("E_init_soc_frac") is None
                     else float(m["E_init_soc_frac"])
+                ),
+                cargo_payload_kg=(
+                    None
+                    if m.get("cargo_payload_kg") is None
+                    else float(m["cargo_payload_kg"])
                 ),
             )
             for m in dcfg["missions"]

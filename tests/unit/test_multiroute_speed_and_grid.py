@@ -71,8 +71,8 @@ def test_edge_speed_affects_duration_and_energy():
     )
     fast = [EdgeInput(geometry=geom, length_m=L, speed_mps=80.0 / 3.6, speed_source="test")]
     slow = [EdgeInput(geometry=geom, length_m=L, speed_mps=40.0 / 3.6, speed_source="test")]
-    ok_f, dt_f, soc_f, _, _ = simulate_drive_from_soc(fast, **common)
-    ok_s, dt_s, soc_s, _, _ = simulate_drive_from_soc(slow, **common)
+    ok_f, dt_f, soc_f, _, _, _ = simulate_drive_from_soc(fast, **common)
+    ok_s, dt_s, soc_s, _, _, _ = simulate_drive_from_soc(slow, **common)
     assert ok_f and ok_s
     assert dt_s == pytest.approx(2.0 * dt_f, rel=0.02)
     # Slower: less aero drag → higher remaining SOC (lower energy use)

@@ -90,14 +90,13 @@ demand_scenarios:
         weather_id: cool
         gcm: light
 
-  # Task 06D — refrigerated-first portfolio (Config A = declared assumption).
-  # Equal departure SOC 50% via E_init_soc_frac (kWh derived per vehicle).
+  # Task 06D — HISTORICAL illustrative portfolio (NON-PRIMARY as of Task 07A).
+  # Mixes hot weather + refrigeration-OFF ablation into the same demand denominator.
+  # Use configs/optimization/multiroute_placement_07a.yaml for scientific claims.
   refrigerated_06d:
     note: >
-      Cold-chain placement portfolio: refrigeration ON for all missions;
-      equal departure SOC 0.5; light GCM label (immutable 25 t from pilot physics);
-      cool + hot ambient contrast on Casa–Marrakech; ablation twin off-refrigeration
-      on Casa–Agadir only.
+      HISTORICAL ONLY (Task 06D). Incorrectly mixes ablation OFF and hot twin as
+      extra demand (total weight 9.0). Do not use for primary PhD claims; see Task 07A.
     missions:
       - id: M_casa_marrakech_refrig_cool
         od_id: casa_marrakech

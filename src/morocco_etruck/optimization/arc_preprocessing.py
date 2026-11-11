@@ -370,15 +370,23 @@ def simulate_drive_from_soc(
     gcm_kg: float,
     refrigeration_on: bool,
     power_source: str,
-) -> tuple[bool, float, float, float | None, str | None]:
+) -> tuple[bool, float, float, float | None, str | None, dict[str, float]]:
     """
     Continuous micro-profile simulation.
 
-    Returns (ok, dt_s, soc_end, trailer_soc_end, reason).
+    Returns (ok, dt_s, soc_end, trailer_soc_end, reason, energy_kwh).
+    energy_kwh keys: E_traction, E_aux, E_refrig, E_regen_credit (negative traction sum).
     """
     state = EnergyState(soc=soc0, trailer_soc=trailer_soc0)
     s_cursor = 0.0
     dt_total = 0.0
+    e_trac = e_aux = e_ref = e_regen = 0.0
+    empty = {
+        "E_traction_kwh": 0.0,
+        "E_aux_kwh": 0.0,
+        "E_refrig_kwh": 0.0,
+        "E_regen_credit_kwh": 0.0,
+    }
     for edge in micro_edges:
         r = apply_drive(
             state,
@@ -395,10 +403,40 @@ def simulate_drive_from_soc(
         )
         dt_total += r.dt_s
         s_cursor += edge.length_m
+        e_trac += max(0.0, float(r.E_traction_j)) / 3.6e6
+        e_regen += max(0.0, -float(r.E_traction_j)) / 3.6e6
+        e_aux += float(r.E_aux_j) / 3.6e6
+        e_ref += float(r.E_refrig_j) / 3.6e6
         if r.violation_reason:
-            return False, dt_total, state.soc, state.trailer_soc, r.violation_reason
+            return (
+                False,
+                dt_total,
+                state.soc,
+                state.trailer_soc,
+                r.violation_reason,
+                {
+                    "E_traction_kwh": e_trac,
+                    "E_aux_kwh": e_aux,
+                    "E_refrig_kwh": e_ref,
+                    "E_regen_credit_kwh": e_regen,
+                },
+            )
         state = r.next_state
-    return True, dt_total, state.soc, state.trailer_soc, None
+    return (
+        True,
+        dt_total,
+        state.soc,
+        state.trailer_soc,
+        None,
+        {
+            "E_traction_kwh": e_trac,
+            "E_aux_kwh": e_aux,
+            "E_refrig_kwh": e_ref,
+            "E_regen_credit_kwh": e_regen,
+        }
+        if True
+        else empty,
+    )
 
 
 def build_drive_table(
@@ -439,7 +477,7 @@ def build_drive_table(
         for El in trailer_vals:
             soc0 = Et / usable
             trailer_soc0 = None if El is None else El / t_usable
-            ok, dt_s, soc_end, trailer_end, reason = simulate_drive_from_soc(
+            ok, dt_s, soc_end, trailer_end, reason, _e = simulate_drive_from_soc(
                 macro.micro_edges,
                 macro.terrain,
                 soc0=soc0,

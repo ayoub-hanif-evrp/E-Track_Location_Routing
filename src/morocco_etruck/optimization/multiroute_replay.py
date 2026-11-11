@@ -18,6 +18,16 @@ class MultirouteReplayExtras:
     arc_ids: list[str]
     length_m: float
     charge_events: list[dict[str, Any]]
+    # Task 07A continuous energy accounting (kWh)
+    E_traction_kwh: float = 0.0
+    E_aux_drive_kwh: float = 0.0
+    E_refrig_drive_kwh: float = 0.0
+    E_regen_credit_kwh: float = 0.0
+    E_aux_stationary_kwh: float = 0.0
+    E_refrig_stationary_kwh: float = 0.0
+    charge_kwh_total: float = 0.0
+    charge_duration_s: float = 0.0
+    min_soc: float = 1.0
 
 
 def continuous_replay_multiroute(
@@ -71,8 +81,17 @@ def continuous_replay_multiroute(
                 None,
                 min_soc,
             ),
-            MultirouteReplayExtras(osm_path, arc_ids, length_m, charges),
+            MultirouteReplayExtras(
+                osm_path,
+                arc_ids,
+                length_m,
+                charges,
+                min_soc=min_soc,
+            ),
         )
+
+    e_trac = e_aux_d = e_ref_d = e_regen = e_aux_s = e_ref_s = 0.0
+    charge_kwh = charge_dur = 0.0
 
     if ctx.terrain_mode == "dem" and not ctx.dem_complete:
         return _fail("dem_incomplete")
@@ -113,7 +132,7 @@ def continuous_replay_multiroute(
             pn = [int(x) for x in macro.path_nodes]
             if last_v_nid is not None and pn and int(pn[0]) != int(last_v_nid):
                 return _fail("directed_continuity_break")
-            ok, dt, soc, trailer_soc, reason = simulate_drive_from_soc(
+            ok, dt, soc, trailer_soc, reason, ecomp = simulate_drive_from_soc(
                 macro.micro_edges,
                 macro.terrain,
                 soc0=soc,
@@ -125,6 +144,10 @@ def continuous_replay_multiroute(
                 refrigeration_on=ctx.refrigeration_on,
                 power_source=ctx.power_source,
             )
+            e_trac += float(ecomp.get("E_traction_kwh", 0.0))
+            e_aux_d += float(ecomp.get("E_aux_kwh", 0.0))
+            e_ref_d += float(ecomp.get("E_refrig_kwh", 0.0))
+            e_regen += float(ecomp.get("E_regen_credit_kwh", 0.0))
             t_s += dt
             min_soc = min(min_soc, soc)
             arc_ids.append(str(aid))
@@ -185,6 +208,10 @@ def continuous_replay_multiroute(
             E_tr = min(usable * ctx.vehicle.soc_max, E_tr)
             soc = E_tr / usable
             t_s += dt
+            e_aux_s += e_aux_kwh
+            e_ref_s += e_ref_kwh
+            charge_kwh += de
+            charge_dur += dt
             charges.append({"node": node, "delta_e_kwh": de, "dt_s": dt})
             min_soc = min(min_soc, soc)
             if t_s > deadline_s + 1e-9:
@@ -215,6 +242,8 @@ def continuous_replay_multiroute(
                         trailer_soc * ctx.fridge.trailer_usable_kwh - e_ref / 3.6e6
                     ) / ctx.fridge.trailer_usable_kwh
             t_s += dt
+            e_aux_s += e_aux / 3.6e6
+            e_ref_s += e_ref / 3.6e6
             min_soc = min(min_soc, soc)
             if t_s > deadline_s + 1e-9:
                 return _fail("deadline")
@@ -250,5 +279,19 @@ def continuous_replay_multiroute(
             dT,
             min_soc,
         ),
-        MultirouteReplayExtras(osm_path, arc_ids, length_m, charges),
+        MultirouteReplayExtras(
+            osm_path,
+            arc_ids,
+            length_m,
+            charges,
+            E_traction_kwh=e_trac,
+            E_aux_drive_kwh=e_aux_d,
+            E_refrig_drive_kwh=e_ref_d,
+            E_regen_credit_kwh=e_regen,
+            E_aux_stationary_kwh=e_aux_s,
+            E_refrig_stationary_kwh=e_ref_s,
+            charge_kwh_total=charge_kwh,
+            charge_duration_s=charge_dur,
+            min_soc=min_soc,
+        ),
     )

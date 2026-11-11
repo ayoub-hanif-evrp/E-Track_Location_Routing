@@ -69,8 +69,27 @@ def _charge_nodes(actions: list) -> str:
     )
 
 
-def resolve_mission_gcm_kg(mission: MultiroutePlacementMission, cfg_pilot) -> float:
-    """Immutable light/heavy GCM from pilot physics — never from mutated cfg.gcm_kg."""
+def resolve_mission_gcm_kg(
+    mission: MultiroutePlacementMission,
+    cfg_pilot,
+    *,
+    vehicle=None,
+) -> float:
+    """
+    Immutable mission mass.
+
+    Prefer fixed cargo_payload_kg (Task 07A) → GCM = empty combination + payload.
+    Else light/heavy from pilot physics YAML — never from mutated cfg.gcm_kg.
+    """
+    payload = getattr(mission, "cargo_payload_kg", None)
+    if payload is not None:
+        if vehicle is None:
+            raise ValueError("cargo_payload_kg requires a loaded vehicle to resolve GCM")
+        from morocco_etruck.energy.vehicle import gcm_from_payload, validate_gcm
+
+        gcm = gcm_from_payload(float(payload), vehicle)
+        validate_gcm(gcm, vehicle)
+        return float(gcm)
     phys = cfg_pilot.raw.get("physics") or {}
     light = float(phys.get("gcm_kg", getattr(cfg_pilot, "gcm_kg", 25000.0)))
     heavy = float(phys.get("gcm_heavy_kg", 40000.0))
@@ -78,7 +97,6 @@ def resolve_mission_gcm_kg(mission: MultiroutePlacementMission, cfg_pilot) -> fl
         return heavy
     if mission.gcm == "light":
         return light
-    # Allow numeric string override in research configs
     try:
         return float(mission.gcm)
     except (TypeError, ValueError) as exc:
@@ -99,7 +117,17 @@ def prepare_multiroute_mission(
     E_truck_init: int | None = None,
 ) -> PreparedMultirouteMission:
     """Build fixed path-union graph once; template has active_stations=∅."""
-    mission_gcm = float(gcm_kg) if gcm_kg is not None else resolve_mission_gcm_kg(mission, cfg_pilot)
+    from morocco_etruck.energy.vehicle import load_vehicle
+
+    v_yaml = Path(vehicle_yaml) if vehicle_yaml is not None else cfg_pilot.vehicle_yaml
+    if not v_yaml.is_absolute():
+        v_yaml = root / v_yaml
+    vehicle = load_vehicle(v_yaml)
+    mission_gcm = (
+        float(gcm_kg)
+        if gcm_kg is not None
+        else resolve_mission_gcm_kg(mission, cfg_pilot, vehicle=vehicle)
+    )
     # Energies derived from vehicle usable_kwh; mission.E_truck_init is kWh
     # (or caller override for equal-SOC experiments).
     raw_cap = cfg_pilot.raw.get("E_truck_cap")
@@ -107,12 +135,7 @@ def prepare_multiroute_mission(
     e_init = int(mission.E_truck_init if E_truck_init is None else E_truck_init)
     soc_frac = getattr(mission, "E_init_soc_frac", None)
     if soc_frac is not None and E_truck_init is None:
-        from morocco_etruck.energy.vehicle import load_vehicle
-
-        v_yaml = Path(vehicle_yaml) if vehicle_yaml is not None else cfg_pilot.vehicle_yaml
-        if not v_yaml.is_absolute():
-            v_yaml = root / v_yaml
-        usable = float(load_vehicle(v_yaml).usable_kwh)
+        usable = float(vehicle.usable_kwh)
         e_init = int(round(float(soc_frac) * usable))
     inst, ctx, notes = build_physics_od_instance(
         cfg=cfg_pilot,
@@ -448,6 +471,29 @@ def prepare_multiroute_placement_context(
         "objective_mode": objective_mode,
         "road_cost_per_km": road_cost_per_km,
     }
+
+
+def all_optimal_site_sets(
+    enum_rows: list[dict[str, Any]],
+    *,
+    tol_cov: float = 1e-9,
+    tol_cost: float = 1e-6,
+) -> list[str]:
+    """All budget-feasible certified subsets matching best coverage then secondary cost."""
+    feas = [r for r in enum_rows if r.get("budget_ok") and r.get("certified")]
+    if not feas:
+        return []
+    best_cov = max(float(r["coverage_serviceable"]) for r in feas)
+    at_cov = [
+        r for r in feas if abs(float(r["coverage_serviceable"]) - best_cov) <= tol_cov
+    ]
+    best_cost = min(float(r["secondary_cost"]) for r in at_cov)
+    opts = [
+        str(r["sites"])
+        for r in at_cov
+        if abs(float(r["secondary_cost"]) - best_cost) <= tol_cost
+    ]
+    return sorted(set(opts))
 
 
 def run_multiroute_enumeration(

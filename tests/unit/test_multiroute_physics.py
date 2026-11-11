@@ -411,7 +411,7 @@ def test_uphill_macro_exceeds_peak_motor():
         valid_mask=[True, True],
     )
     geom = LineString([(-8.0, 32.0), (-7.99, 32.005)])
-    ok, _dt, _soc, _ts, reason = simulate_drive_from_soc(
+    ok, _dt, _soc, _ts, reason, _e = simulate_drive_from_soc(
         [EdgeInput(geometry=geom, length_m=L)],
         terrain,
         soc0=1.0,
@@ -457,8 +457,8 @@ def test_downhill_regen_depends_on_soc_headroom():
         refrigeration_on=False,
         power_source="A",
     )
-    ok_full, _, soc_full, _, _ = simulate_drive_from_soc(soc0=1.0, **common)
-    ok_mid, _, soc_mid, _, _ = simulate_drive_from_soc(soc0=0.50, **common)
+    ok_full, _, soc_full, _, _, _ = simulate_drive_from_soc(soc0=1.0, **common)
+    ok_mid, _, soc_mid, _, _, _ = simulate_drive_from_soc(soc0=0.50, **common)
     assert ok_full and ok_mid
     # Mid-SOC must retain more energy relative to start (regen headroom)
     delta_full = soc_full - 1.0

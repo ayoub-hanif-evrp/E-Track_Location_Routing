@@ -1,0 +1,228 @@
+# Task 07A — Scientific cold-chain placement benchmark
+# Future infrastructure planning on ADM service areas (hypothetical 350 kW truck chargers).
+# Demand weights are ILLUSTRATIVE research scenario parameters — not observed Moroccan freight volumes.
+# Ablations and weather variants are SEPARATE portfolios (never mixed into primary demand).
+
+multiroute_pilot_config: configs/optimization/multiroute_pilot.yaml
+
+disclaimer: >
+  Task 07A cold-chain benchmark: refrigeration ON for every primary mission; equal
+  departure SOC 0.5; fixed cargo payload 5300 kg (vehicle-specific GCM). Candidate
+  sites are hypothetical_future_truck_site (ADM identity + OSM topology only).
+  Not certified HGV access. Not operating 350 kW truck chargers. Not observed demand.
+
+sites:
+  - id: y_settat_ca
+    direction: casablanca_to_agadir
+    station_key: settat_ca
+    label: Settat_Casa_to_Agadir_127661106
+    evidence_class: hypothetical_future_truck_site
+  - id: y_benguerir_ca
+    direction: casablanca_to_agadir
+    station_key: benguerir_ca
+    label: Benguerir_Casa_to_Agadir_127661099
+    evidence_class: hypothetical_future_truck_site
+  - id: y_amskroud_ca
+    direction: casablanca_to_agadir
+    station_key: amskroud_ca
+    label: Amskroud_Casa_to_Agadir_1530179371
+    evidence_class: hypothetical_future_truck_site
+
+capex_scenarios:
+  equal:
+    note: "Equal illustrative CAPEX per directional site"
+    site_capex:
+      y_settat_ca: 100.0
+      y_benguerir_ca: 100.0
+      y_amskroud_ca: 100.0
+
+annualization:
+  interest_rate: 0.08
+  lifetime_years: 15
+
+cents_to_currency: 0.01
+# Research monetary convention (Task 06C/06D): solver integers = cents; road cost set in runner.
+road_cost_per_km_cents: 100.0
+
+# Fixed-payload primary service design (kg cargo). GCM = curb + trailer + payload per vehicle.
+cargo_payload_kg: 5300.0
+
+budgets:
+  - name: B0
+    max_capex: 0.0
+  - name: B1
+    max_capex: 100.0
+  - name: B2
+    max_capex: 200.0
+  - name: Ball
+    max_capex: null
+
+price_modes:
+  - uniform
+
+demand_scenarios:
+  # PRIMARY claim portfolio — total demand weight = 5.5 (stable across matched variants)
+  cold_chain_baseline_07a:
+    note: >
+      Primary refrigerated freight portfolio. All missions refrigeration ON, cool weather,
+      equal departure SOC 0.5, fixed cargo 5300 kg. Weights illustrative only.
+    missions:
+      - id: M_casa_marrakech
+        od_id: casa_marrakech
+        weight: 2.0
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+        cargo_payload_kg: 5300.0
+      - id: M_casa_agadir
+        od_id: casa_agadir
+        weight: 2.0
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+        cargo_payload_kg: 5300.0
+      - id: M_marrakech_agadir
+        od_id: marrakech_agadir
+        weight: 1.5
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+        cargo_payload_kg: 5300.0
+
+  # Matched ablation: SAME IDs/OD/weights/SOC/payload; refrigeration OFF only
+  cold_chain_no_refrigeration_ablation_07a:
+    note: >
+      Matched refrigeration-OFF ablation of cold_chain_baseline_07a. Same demand IDs and
+      weights (total 5.5). Not additional freight demand.
+    missions:
+      - id: M_casa_marrakech
+        od_id: casa_marrakech
+        weight: 2.0
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: false
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+        cargo_payload_kg: 5300.0
+      - id: M_casa_agadir
+        od_id: casa_agadir
+        weight: 2.0
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: false
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+        cargo_payload_kg: 5300.0
+      - id: M_marrakech_agadir
+        od_id: marrakech_agadir
+        weight: 1.5
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: false
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+        cargo_payload_kg: 5300.0
+
+  cold_chain_hot_07a:
+    note: >
+      Matched hot-weather portfolio (same IDs/weights as baseline; weather=hot; refrig ON).
+      Separate comparison — not simultaneous seasonal demand.
+    missions:
+      - id: M_casa_marrakech
+        od_id: casa_marrakech
+        weight: 2.0
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: hot
+        gcm: light
+        cargo_payload_kg: 5300.0
+      - id: M_casa_agadir
+        od_id: casa_agadir
+        weight: 2.0
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: hot
+        gcm: light
+        cargo_payload_kg: 5300.0
+      - id: M_marrakech_agadir
+        od_id: marrakech_agadir
+        weight: 1.5
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: hot
+        gcm: light
+        cargo_payload_kg: 5300.0
+
+  cold_chain_cool_07a:
+    note: >
+      Cool-weather alias of baseline (same missions). Kept as named scenario for runners.
+    missions:
+      - id: M_casa_marrakech
+        od_id: casa_marrakech
+        weight: 2.0
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+        cargo_payload_kg: 5300.0
+      - id: M_casa_agadir
+        od_id: casa_agadir
+        weight: 2.0
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+        cargo_payload_kg: 5300.0
+      - id: M_marrakech_agadir
+        od_id: marrakech_agadir
+        weight: 1.5
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+        cargo_payload_kg: 5300.0
+
+baselines:
+  none: []
+  settat_only:
+    - y_settat_ca
+  benguerir_only:
+    - y_benguerir_ca
+  settat_benguerir:
+    - y_settat_ca
+    - y_benguerir_ca
+
+solver:
+  max_seconds: 90.0
+  max_expansions: 800000
+  node_limit: null
+  time_limit_sec: null
+
+outputs:
+  enumeration_csv: results/task07a_placement_enumeration.csv
+  branch_bound_csv: results/task07a_placement_branch_bound.csv
+  table_cache_dir: data/processed/multiroute/drive_tables
