@@ -8,7 +8,7 @@ PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible r
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–07B)
+## Current scope (Tasks 01–07C freeze)
 
 **Task 01 / 01B / 01C — geographic foundation**
 
@@ -465,11 +465,36 @@ Outputs:
 
 **Framing:** stress-test of the Task 07A eActros one-site vs Volvo two-site finite-model contrast under DEM, documented UA ladder, charge-duration/deadlines, and q-grid diagnostics. Not a Moroccan install recommendation.
 
-## Not yet implemented (stop after Task 07B)
+**Invalidated:** Task 07B `task07b_routing_baselines.csv` shortest-vs-multi-route nesting claims (different physical graphs via `max_alts` rebuild). See Task 07C.
+
+## Task 07C — route nesting integrity and research freeze
+
+```bash
+pytest -q tests/unit/test_task07c_route_nesting.py
+python scripts/run_task07c_final_freeze.py --stages all --terrain dem
+python scripts/write_task07c_reports.py
+```
+
+Outputs:
+
+- `reports/task07c_route_nesting_integrity.md`
+- `reports/task07c_final_scientific_results.md`
+- `reports/task07c_evidence_and_novelty_matrix.md`
+- `results/task07c_matched_routing_baselines.csv`
+- `results/task07c_final_placement.csv`
+- `results/task07c_final_sensitivity.csv`
+- `reports/figures/task07c_*.png`
+
+**Correction:** build the scientific pilot path-union once; restrict routes with `allowed_arc_ids`; toggle chargers with `active_stations` only.
+
+**Freeze framing:** evidence-grounded prospective optimization study. Not field-validated Moroccan deployment.
+
+## Not yet implemented (software freeze after Task 07C)
 
 - Refrigeration configuration B Moroccan optimization
-- Nationwide search / large scalability B&B study (Task 07C design note only)
+- Nationwide / large scalability B&B study
 - ALNS, GA, Gurobi, OR-Tools, etc.
-- Paper writing
+- Paper writing (manuscript tables/figures can use the freeze artifacts)
+- External fleet GPS/TRU logs and certified HGV charger-access data
 
-**Stop after Task 07B** until the researcher reviews.
+**Stop after Task 07C.** Do not add a new task-ID feature chain unless a critical invariant fails.

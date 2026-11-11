@@ -246,8 +246,20 @@ def clone_physics_instance_for_subset(
     *,
     active_stations: set[str],
     name: str | None = None,
+    allowed_arc_ids: frozenset[str] | None = None,
 ) -> RoutingInstance:
-    """Reuse fixed DRIVE tables/graph; only active charging actions change."""
+    """
+    Reuse fixed DRIVE tables/graph.
+
+    ``active_stations`` toggles charging actions only.
+    ``allowed_arc_ids`` (Task 07C) masks DRIVE successors on the *same* physical
+    arcs/tables. ``None`` keeps the template mask (typically all arcs).
+    """
+    mask = (
+        allowed_arc_ids
+        if allowed_arc_ids is not None
+        else getattr(template, "allowed_arc_ids", None)
+    )
     return RoutingInstance(
         name=name or template.name,
         nodes=list(template.nodes),
@@ -280,7 +292,48 @@ def clone_physics_instance_for_subset(
         ),
         terminal_eta=getattr(template, "terminal_eta", None),
         notes=template.notes,
+        allowed_arc_ids=mask,
     )
+
+
+def shortest_path_edge_set(
+    path_rows: list[dict[str, Any]],
+    od_id: str,
+) -> set[tuple[int, int]]:
+    """Directed OSM edge pairs on the OD ``shortest_distance`` alternative."""
+    rows = [r for r in path_rows if str(r.get("od_id")) == od_id]
+    short = next(
+        (r for r in rows if str(r.get("method")) == "shortest_distance"),
+        None,
+    )
+    if short is None:
+        raise ValueError(f"No shortest_distance path for {od_id}")
+    node_path = [int(x) for x in json.loads(short["node_path_json"])]
+    return {(int(u), int(v)) for u, v in zip(node_path[:-1], node_path[1:])}
+
+
+def shortest_path_allowed_arc_ids(
+    ctx: MultirouteMissionContext,
+    path_rows: list[dict[str, Any]],
+    od_id: str,
+) -> frozenset[str]:
+    """
+    Arc ids whose OSM edge pairs lie entirely on the shortest verified path.
+
+    Used to restrict MRLS to the fixed shortest route on the *same* full
+    path-union graph (Task 07C nesting).
+    """
+    edges = shortest_path_edge_set(path_rows, od_id)
+    allowed: set[str] = set()
+    for aid, macro in ctx.macros_by_arc_id.items():
+        pairs = list(macro.osm_edge_pairs or [])
+        if not pairs:
+            # Fallback: consecutive path_nodes as OSM ids when pairs missing
+            pn = list(macro.path_nodes or [])
+            pairs = [(int(u), int(v)) for u, v in zip(pn[:-1], pn[1:])]
+        if pairs and all((int(u), int(v)) in edges for u, v in pairs):
+            allowed.add(str(aid))
+    return frozenset(allowed)
 
 
 def build_physics_od_instance(

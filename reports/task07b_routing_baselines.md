@@ -1,5 +1,8 @@
 # Task 07B — Comparable routing baselines A–E
 
+> **INVALIDATED for nesting / algorithm-superiority claims (Task 07C).**  
+> A/B/C used `max_alts=1` rebuilds; D used effective `max_alts=2`. Different physical graphs. Use `results/task07c_matched_routing_baselines.csv` and `reports/task07c_route_nesting_integrity.md` instead. This file is preserved for audit only.
+
 Same demand weight 5.5 freight definition (payload 5300 kg, SOC 0.5, cool, nominal thermal). Attribute gains separately: route freedom vs infrastructure vs vehicle vs refrigeration vs terrain vs q.
 
 | ID | Meaning |

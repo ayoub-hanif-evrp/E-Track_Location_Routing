@@ -98,9 +98,23 @@ class RoutingInstance:
     terminal_eta: float | None = None
     notes: str = ""
     expected: dict[str, Any] = field(default_factory=dict)
+    # Task 07C: None = all arcs allowed. When set, DRIVE successors are masked
+    # on this same physical graph (no rebuild). Charging still uses active_stations.
+    allowed_arc_ids: frozenset[str] | None = None
 
     def outgoing(self, node: str) -> list[ArcData]:
-        return [a for a in self.arcs if a.u == node]
+        arcs = [a for a in self.arcs if a.u == node]
+        if self.allowed_arc_ids is None:
+            return arcs
+        allowed = self.allowed_arc_ids
+        out: list[ArcData] = []
+        for a in arcs:
+            # Synthetics without arc_id remain visible; Morocco macros always have ids.
+            if a.arc_id is None or str(a.arc_id) == "":
+                out.append(a)
+            elif str(a.arc_id) in allowed:
+                out.append(a)
+        return out
 
     def charge_duration_steps(self, station: StationData, delta_e_batt_kwh: int) -> int:
         """Time steps to deliver delta_e_batt_kwh into the battery at station power×η."""
