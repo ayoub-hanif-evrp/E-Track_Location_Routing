@@ -24,6 +24,27 @@ class ServiceabilityClass(str, Enum):
     REPLAY_INVALID = "replay_invalid"
 
 
+# Statuses for which serviceability has not been proved at the all-sites probe.
+UNRESOLVED_SERVICEABILITY_VALUES = frozenset(
+    {
+        ServiceabilityClass.LIMIT_REACHED.value,
+        "limit_reached",
+        ServiceabilityClass.REPLAY_INVALID.value,
+        "replay_invalid",
+        "prep_failed",
+        "graph_failed",
+        "physics_input_failed",
+        "unresolved",
+    }
+)
+
+
+def is_unresolved_serviceability(status: str | None) -> bool:
+    if status is None:
+        return False
+    return str(status).lower() in UNRESOLVED_SERVICEABILITY_VALUES
+
+
 def portfolio_optimality_status(
     *,
     core_status: OptimalityStatus,
@@ -31,12 +52,10 @@ def portfolio_optimality_status(
 ) -> OptimalityStatus:
     """
     Downgrade full-portfolio CERTIFIED_OPTIMAL when any mission is unresolved
-    at the all-sites serviceability probe (e.g. LIMIT_REACHED).
+    at the all-sites serviceability probe (LIMIT_REACHED, replay_invalid, prep failure).
     """
     unresolved = {
-        mid
-        for mid, v in serviceability.items()
-        if v in {ServiceabilityClass.LIMIT_REACHED.value, "limit_reached"}
+        mid for mid, v in serviceability.items() if is_unresolved_serviceability(v)
     }
     if not unresolved:
         return core_status

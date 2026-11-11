@@ -13,7 +13,7 @@ import yaml
 
 from morocco_etruck.energy.battery_bounds import derive_discrete_energy_bounds
 from morocco_etruck.energy.refrigeration import load_refrigeration
-from morocco_etruck.energy.vehicle import load_vehicle
+from morocco_etruck.energy.vehicle import load_vehicle, validate_gcm
 from morocco_etruck.optimization.multiroute_charging import (
     ChargerSelectionResult,
     GroundedCharger,
@@ -305,6 +305,7 @@ def build_physics_od_instance(
     terminal_target_truck_kwh: int | None = None,
     road_cost_per_km: float | None = None,
     vehicle_yaml: Path | None = None,
+    gcm_kg: float | None = None,
 ) -> tuple[RoutingInstance, MultirouteMissionContext, list[str]]:
     """
     Scientific Task 05B/05C builder: OD path-union + DRIVE tables.
@@ -314,6 +315,9 @@ def build_physics_od_instance(
       - Split macros once at those OSM nodes (fixed physical graph).
       - ``with_chargers`` / ``active_station_keys`` only toggle charging actions.
       - DRIVE tables are never rebuilt when activating/deactivating sites.
+
+    ``gcm_kg`` (Task 06D): when set, used as the immutable mission mass and does
+    **not** mutate ``cfg.gcm_kg``. Prefer this over mutating the shared pilot config.
     """
     dec = load_decision_graph(cfg.decision_graph_path)
     G = load_graph_from_csv(cfg.nodes_csv, cfg.edges_csv)
@@ -391,6 +395,9 @@ def build_physics_od_instance(
         root=root, morocco_pilot_yaml=cfg.morocco_pilot_yaml, weather_id=weather_id
     )
     q = int(energy_quantum_kwh if energy_quantum_kwh is not None else cfg.energy_quantum_kwh)
+    mission_gcm_kg = float(cfg.gcm_kg if gcm_kg is None else gcm_kg)
+    validate_gcm(mission_gcm_kg, vehicle)
+    station_notes.append(f"gcm_realized_kg={mission_gcm_kg}")
 
     derive = bool(cfg.raw.get("derive_energy_from_vehicle", True))
     if derive or E_truck_cap is None or E_truck_min is None or E_truck_init is None:
@@ -453,7 +460,7 @@ def build_physics_od_instance(
         weather=weather,
         vehicle_yaml=v_yaml,
         fridge_yaml=cfg.fridge_yaml,
-        gcm_kg=cfg.gcm_kg,
+        gcm_kg=mission_gcm_kg,
         refrigeration_on=refrigeration_on,
         power_source="A",
         terrain_mode=terrain_mode or cfg.terrain_mode,

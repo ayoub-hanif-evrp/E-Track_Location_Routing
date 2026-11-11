@@ -1,4 +1,4 @@
-# Task 05C — Joint multi-route B&B–MRLS placement (small directional portfolio)
+# Task 05C/06D — Joint multi-route B&B–MRLS placement (small directional portfolio)
 # Exactness only over the finite candidate set + verified OD path unions.
 # CAPEX/tariffs are RESEARCH SCENARIO PARAMETERS, not Moroccan market prices.
 
@@ -55,7 +55,7 @@ price_modes:
 
 demand_scenarios:
   default:
-    note: "Small multi-route portfolio (flat terrain; cool weather fixtures)"
+    note: "Legacy multi-route portfolio (mostly non-refrigerated; absolute kWh inits)"
     missions:
       - id: M_casa_marrakech_low
         od_id: casa_marrakech
@@ -85,6 +85,61 @@ demand_scenarios:
         od_id: casa_marrakech
         weight: 1.0
         E_truck_init: 300
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+
+  # Task 06D — refrigerated-first portfolio (Config A = declared assumption).
+  # Equal departure SOC 50% via E_init_soc_frac (kWh derived per vehicle).
+  refrigerated_06d:
+    note: >
+      Cold-chain placement portfolio: refrigeration ON for all missions;
+      equal departure SOC 0.5; light GCM label (immutable 25 t from pilot physics);
+      cool + hot ambient contrast on Casa–Marrakech; ablation twin off-refrigeration
+      on Casa–Agadir only.
+    missions:
+      - id: M_casa_marrakech_refrig_cool
+        od_id: casa_marrakech
+        weight: 2.0
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+      - id: M_casa_marrakech_refrig_hot
+        od_id: casa_marrakech
+        weight: 2.0
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: hot
+        gcm: light
+      - id: M_casa_agadir_refrig_cool
+        od_id: casa_agadir
+        weight: 2.0
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: true
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+      - id: M_casa_agadir_ablation_off
+        od_id: casa_agadir
+        weight: 1.5
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
+        refrigeration_on: false
+        terrain_mode: flat
+        weather_id: cool
+        gcm: light
+      - id: M_marrakech_agadir_refrig_cool
+        od_id: marrakech_agadir
+        weight: 1.5
+        E_truck_init: 0
+        E_init_soc_frac: 0.5
         refrigeration_on: true
         terrain_mode: flat
         weather_id: cool

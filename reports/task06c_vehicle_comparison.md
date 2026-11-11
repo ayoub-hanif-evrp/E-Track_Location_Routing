@@ -1,5 +1,7 @@
 # Task 06C — eActros vs Volvo FH Electric identical-mission comparison
 
+> **INVALIDATED (Task 06D):** the routing CSV had a GCM state-leak (`gcm_label=light` with `gcm_kg=40000` on 126/144 light rows). Retained as `results/task06c_vehicle_comparison_INVALIDATED_gcm_leak.csv`. Use `reports/task06d_*.md` and `results/task06d_*.csv` for vehicle conclusions.
+
 Access date: 2026-11-10  
 Artifacts: `results/task06c_vehicle_comparison.csv` (156 rows), `results/task06c_vehicle_placement.csv` (24 rows)  
 Convention: solver integers = **cents**; `road_cost_per_km = 100` ¢/km (= 1 currency unit/km at `cents_to_currency=0.01`).  

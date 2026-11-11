@@ -69,6 +69,22 @@ def _charge_nodes(actions: list) -> str:
     )
 
 
+def resolve_mission_gcm_kg(mission: MultiroutePlacementMission, cfg_pilot) -> float:
+    """Immutable light/heavy GCM from pilot physics — never from mutated cfg.gcm_kg."""
+    phys = cfg_pilot.raw.get("physics") or {}
+    light = float(phys.get("gcm_kg", getattr(cfg_pilot, "gcm_kg", 25000.0)))
+    heavy = float(phys.get("gcm_heavy_kg", 40000.0))
+    if mission.gcm == "heavy":
+        return heavy
+    if mission.gcm == "light":
+        return light
+    # Allow numeric string override in research configs
+    try:
+        return float(mission.gcm)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Unknown mission.gcm={mission.gcm!r}") from exc
+
+
 def prepare_multiroute_mission(
     mission: MultiroutePlacementMission,
     *,
@@ -79,40 +95,44 @@ def prepare_multiroute_mission(
     objective_mode: str = "enroute_incremental_cost",
     vehicle_yaml: Path | None = None,
     road_cost_per_km: float | None = None,
+    gcm_kg: float | None = None,
+    E_truck_init: int | None = None,
 ) -> PreparedMultirouteMission:
     """Build fixed path-union graph once; template has active_stations=∅."""
-    gcm_kg = float(
-        cfg_pilot.raw.get("physics", {}).get("gcm_heavy_kg", 40000.0)
-        if mission.gcm == "heavy"
-        else cfg_pilot.gcm_kg
+    mission_gcm = float(gcm_kg) if gcm_kg is not None else resolve_mission_gcm_kg(mission, cfg_pilot)
+    # Energies derived from vehicle usable_kwh; mission.E_truck_init is kWh
+    # (or caller override for equal-SOC experiments).
+    raw_cap = cfg_pilot.raw.get("E_truck_cap")
+    raw_min = cfg_pilot.raw.get("E_truck_min")
+    e_init = int(mission.E_truck_init if E_truck_init is None else E_truck_init)
+    soc_frac = getattr(mission, "E_init_soc_frac", None)
+    if soc_frac is not None and E_truck_init is None:
+        from morocco_etruck.energy.vehicle import load_vehicle
+
+        v_yaml = Path(vehicle_yaml) if vehicle_yaml is not None else cfg_pilot.vehicle_yaml
+        if not v_yaml.is_absolute():
+            v_yaml = root / v_yaml
+        usable = float(load_vehicle(v_yaml).usable_kwh)
+        e_init = int(round(float(soc_frac) * usable))
+    inst, ctx, notes = build_physics_od_instance(
+        cfg=cfg_pilot,
+        root=root,
+        od_id=mission.od_id,
+        path_rows=path_rows,
+        E_truck_init=e_init,
+        E_truck_cap=None if raw_cap is None else int(raw_cap),
+        E_truck_min=None if raw_min is None else int(raw_min),
+        refrigeration_on=bool(mission.refrigeration_on),
+        weather_id=str(mission.weather_id),
+        with_chargers=False,  # graph still attaches candidates; none active
+        terrain_mode=str(mission.terrain_mode),
+        attach_candidate_chargers=True,
+        energy_quantum_kwh=energy_quantum_kwh,
+        objective_mode=objective_mode,
+        vehicle_yaml=vehicle_yaml,
+        road_cost_per_km=road_cost_per_km,
+        gcm_kg=mission_gcm,
     )
-    # Temporary override on config object (same pattern as experiment script)
-    prev = cfg_pilot.gcm_kg
-    cfg_pilot.gcm_kg = gcm_kg
-    try:
-        # Energies derived from vehicle usable_kwh; mission.E_truck_init is kWh.
-        raw_cap = cfg_pilot.raw.get("E_truck_cap")
-        raw_min = cfg_pilot.raw.get("E_truck_min")
-        inst, ctx, notes = build_physics_od_instance(
-            cfg=cfg_pilot,
-            root=root,
-            od_id=mission.od_id,
-            path_rows=path_rows,
-            E_truck_init=int(mission.E_truck_init),
-            E_truck_cap=None if raw_cap is None else int(raw_cap),
-            E_truck_min=None if raw_min is None else int(raw_min),
-            refrigeration_on=bool(mission.refrigeration_on),
-            weather_id=str(mission.weather_id),
-            with_chargers=False,  # graph still attaches candidates; none active
-            terrain_mode=str(mission.terrain_mode),
-            attach_candidate_chargers=True,
-            energy_quantum_kwh=energy_quantum_kwh,
-            objective_mode=objective_mode,
-            vehicle_yaml=vehicle_yaml,
-            road_cost_per_km=road_cost_per_km,
-        )
-    finally:
-        cfg_pilot.gcm_kg = prev
     return PreparedMultirouteMission(
         mission=mission, template=inst, ctx=ctx, station_notes=list(notes)
     )
@@ -387,12 +407,14 @@ def prepare_multiroute_placement_context(
         else:
             serviceability[m.id] = "unserved_all_candidates"
 
+    from morocco_etruck.optimization.placement_certification import (
+        is_unresolved_serviceability,
+    )
+
     structural_ids = {mid for mid, v in serviceability.items() if v == "peak_motor"}
     serviceable_ids = {mid for mid, v in serviceability.items() if v == "serviceable"}
     unresolved_ids = {
-        mid
-        for mid, v in serviceability.items()
-        if v == ServiceabilityClass.LIMIT_REACHED.value
+        mid for mid, v in serviceability.items() if is_unresolved_serviceability(v)
     }
     weight_by_id = {m.id: float(m.weight) for m in missions}
     weight_total_demand = sum(weight_by_id.values())

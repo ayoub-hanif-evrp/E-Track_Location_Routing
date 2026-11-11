@@ -8,7 +8,7 @@ PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible r
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–06C)
+## Current scope (Tasks 01–06D)
 
 **Task 01 / 01B / 01C — geographic foundation**
 
@@ -402,11 +402,31 @@ Outputs:
 
 **Vehicle scope:** eActros 600 comparator + prospective Volvo FH Electric 4×2 (dual usable). Petit Forestier is documented separately and is **not** run as a 40 t motorway pack.
 
-## Not yet implemented (stop after Task 06C)
+**Task 06C routing CSV is invalidated** by a GCM state-leak bug (light-labeled rows inherited 40 t). Retained as `results/task06c_vehicle_comparison_INVALIDATED_gcm_leak.csv`. Use Task 06D results instead.
+
+## Task 06D — fair multi-vehicle integrity + placement revalidation
+
+```bash
+pytest -q tests/unit/test_task06d_gcm_integrity.py tests/unit
+python scripts/run_task06d_vehicle_comparison.py --quanta 10,5
+```
+
+Outputs:
+
+- `results/task06d_vehicle_comparison.csv` (immutable GCM / fixed-payload / equal-SOC)
+- `results/task06d_vehicle_placement.csv` (legacy default + `refrigerated_06d`)
+- `reports/task06d_gcm_bug_root_cause.md`
+- `reports/task06d_fair_vehicle_comparison.md`
+- `reports/task06d_refrigerated_freight_sensitivity.md`
+- `reports/task06d_corrected_placement.md`
+
+**Scientific gate:** equal-mass and equal-payload comparisons; equal departure SOC vs equal absolute kWh labeled separately; certification downgrades on `replay_invalid` as well as `limit_reached`.
+
+## Not yet implemented (stop after Task 06D)
 
 - Refrigeration configuration B Moroccan optimization
 - Nationwide search
 - ALNS, GA, Gurobi, OR-Tools, etc.
 - Paper writing
 
-**Stop after Task 06C** until the researcher reviews.
+**Stop after Task 06D** until the researcher reviews.

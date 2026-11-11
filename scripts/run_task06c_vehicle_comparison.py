@@ -115,13 +115,17 @@ def run_routing_rows(*, quanta: list[int], objectives: list[str]) -> list[dict]:
         vehicle = load_vehicle(vpath)
         for q in quanta:
             for mode in objectives:
+                # Task 06D fix: freeze light/heavy from immutable physics YAML values.
+                # NEVER mutate cfg.gcm_kg — that caused the Task 06C light←40t leak.
+                _phys = cfg.raw.get("physics") or {}
+                _gcm_light = float(_phys.get("gcm_kg", 25000.0))
+                _gcm_heavy = float(_phys.get("gcm_heavy_kg", 40000.0))
                 for gcm_label, gcm_kg in (
-                    ("light", float(cfg.gcm_kg)),
-                    ("heavy", float(cfg.raw.get("physics", {}).get("gcm_heavy_kg", 40000))),
+                    ("light", _gcm_light),
+                    ("heavy", _gcm_heavy),
                 ):
                     if gcm_kg > vehicle.gcm_limit_kg + 1e-6:
                         continue
-                    cfg.gcm_kg = gcm_kg
                     for spec in _mission_specs(cfg):
                         if gcm_label == "heavy" and not spec["refrigeration_on"]:
                             # Keep heavy matrix small: only refrig / full-battery probes
@@ -178,6 +182,7 @@ def run_routing_rows(*, quanta: list[int], objectives: list[str]) -> list[dict]:
                                     vehicle_yaml=vpath,
                                     road_cost_per_km=ROAD_CENTS_PER_KM,
                                     active_station_keys=active_keys,
+                                    gcm_kg=float(gcm_kg),
                                 )
                             except Exception as exc:  # noqa: BLE001
                                 rows.append(

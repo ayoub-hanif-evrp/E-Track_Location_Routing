@@ -119,6 +119,18 @@ def cargo_payload_kg(gcm_kg: float, vehicle: VehicleParams) -> float:
     return float(gcm_kg) - empty_combination_kg(vehicle)
 
 
+def gcm_from_payload(cargo_payload_kg: float, vehicle: VehicleParams) -> float:
+    """
+    Fixed-payload design: GCM = empty combination + cargo.
+
+    Rejects non-positive cargo; caller must still ``validate_gcm``.
+    """
+    cargo = float(cargo_payload_kg)
+    if cargo < 0:
+        raise ValueError(f"cargo_payload_kg must be >= 0, got {cargo}")
+    return empty_combination_kg(vehicle) + cargo
+
+
 def validate_gcm(gcm_kg: float, vehicle: VehicleParams) -> None:
     """
     Ensure gross combination mass is within physical research bounds.

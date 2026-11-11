@@ -27,6 +27,8 @@ class MultiroutePlacementMission:
     weather_id: str = "cool"
     gcm: str = "light"
     structural_candidate: bool = False
+    # When set, prepare_multiroute_mission derives E_truck_init from vehicle usable kWh.
+    E_init_soc_frac: float | None = None
 
 
 @dataclass
@@ -124,6 +126,11 @@ def load_multiroute_placement_config(
                 weather_id=str(m.get("weather_id", "cool")),
                 gcm=str(m.get("gcm", "light")),
                 structural_candidate=bool(m.get("structural_candidate", False)),
+                E_init_soc_frac=(
+                    None
+                    if m.get("E_init_soc_frac") is None
+                    else float(m["E_init_soc_frac"])
+                ),
             )
             for m in dcfg["missions"]
         ]
