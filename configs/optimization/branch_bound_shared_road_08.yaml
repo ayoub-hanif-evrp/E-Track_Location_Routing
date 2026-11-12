@@ -1,0 +1,21 @@
+# Task 08 — SYNTHETIC shared-road B&B benchmark (not Moroccan traffic).
+# Instance is constructed programmatically in scripts/run_task08_final_validation.py
+# (build_shared_road_problem): 8 sites on shared trunk O→Hub→Si→D plus long Alt path.
+# This YAML documents the design for reproducibility metadata.
+
+note: >
+  Synthetic shared-trunk multi-route placement for enum vs B&B comparison.
+  Not Moroccan OSM. Not HGV-certified infrastructure.
+
+n_sites: 8
+n_missions: 4
+construction: programmatic_build_shared_road_problem
+runner: scripts/run_task08_final_validation.py --stages benchmark
+outputs: results/task08_algorithm_benchmarks.csv
+
+design:
+  shared_trunk: O -> Hub -> Si -> D
+  alternate_path: O -> Alt -> D  # higher road cost; feasible without charge at higher SOC
+  cheap_sites: [s00, s01, s02, s03, s04, s05]
+  expensive_sites: [s06, s07]
+  budgets: [B2, B3, Ball]

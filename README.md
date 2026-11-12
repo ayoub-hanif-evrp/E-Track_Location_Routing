@@ -8,7 +8,7 @@ PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible r
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–07C freeze)
+## Current scope (Tasks 01–08 freeze)
 
 **Task 01 / 01B / 01C — geographic foundation**
 
@@ -467,7 +467,7 @@ Outputs:
 
 **Invalidated:** Task 07B `task07b_routing_baselines.csv` shortest-vs-multi-route nesting claims (different physical graphs via `max_alts` rebuild). See Task 07C.
 
-## Task 07C — route nesting integrity and research freeze
+## Task 07C — route nesting integrity (still stands)
 
 ```bash
 pytest -q tests/unit/test_task07c_route_nesting.py
@@ -489,12 +489,34 @@ Outputs:
 
 **Freeze framing:** evidence-grounded prospective optimization study. Not field-validated Moroccan deployment.
 
-## Not yet implemented (software freeze after Task 07C)
+## Task 08 — final SOC/payload realism and algorithm validation
+
+```bash
+pytest -q tests/unit/test_task08_nesting_and_realism.py tests/unit/test_task07c_route_nesting.py
+python scripts/run_task08_final_validation.py --stages all
+python scripts/write_task08_reports.py
+```
+
+Outputs:
+
+- `reports/task08_final_model_audit.md`
+- `reports/task08_realism_and_soc_payload_robustness.md`
+- `reports/task08_algorithm_performance.md`
+- `reports/task08_claims_evidence_limitations.md`
+- `results/task08_soc_payload_comparison.csv`
+- `results/task08_placement_economics.csv`
+- `results/task08_algorithm_benchmarks.csv`
+- `results/task08_final_summary.csv`
+- `reports/figures/task08_*.png`
+
+**Headline:** the 50%-SOC one-site eActros vs two-site Volvo contrast does **not** universally survive 80%/100% departure SOC or 15 t cargo — report without retuning.
+
+## Not yet implemented (STOP after Task 08)
 
 - Refrigeration configuration B Moroccan optimization
-- Nationwide / large scalability B&B study
+- Nationwide network search
 - ALNS, GA, Gurobi, OR-Tools, etc.
-- Paper writing (manuscript tables/figures can use the freeze artifacts)
+- Paper writing (use freeze artifacts)
 - External fleet GPS/TRU logs and certified HGV charger-access data
 
-**Stop after Task 07C.** Do not add a new task-ID feature chain unless a critical invariant fails.
+**STOP DEVELOPMENT after Task 08.** Next activity is scientific writing and external evidence — not Task 09.

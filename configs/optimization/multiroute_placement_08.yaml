@@ -1,0 +1,225 @@
+multiroute_pilot_config: configs/optimization/multiroute_pilot.yaml
+disclaimer: 'Task 08 final validation: SOC and payload robustness. Illustrative demand.
+  Hypothetical sites. Not Moroccan investment advice.'
+sites:
+- id: y_settat_ca
+  direction: casablanca_to_agadir
+  station_key: settat_ca
+  label: Settat
+  evidence_class: hypothetical_future_truck_site
+- id: y_benguerir_ca
+  direction: casablanca_to_agadir
+  station_key: benguerir_ca
+  label: Benguerir
+  evidence_class: hypothetical_future_truck_site
+- id: y_amskroud_ca
+  direction: casablanca_to_agadir
+  station_key: amskroud_ca
+  label: Amskroud
+  evidence_class: hypothetical_future_truck_site
+capex_scenarios:
+  equal:
+    note: illustrative equal CAPEX
+    site_capex:
+      y_settat_ca: 100.0
+      y_benguerir_ca: 100.0
+      y_amskroud_ca: 100.0
+annualization:
+  interest_rate: 0.08
+  lifetime_years: 15
+cents_to_currency: 0.01
+road_cost_per_km_cents: 100.0
+cargo_payload_kg: 5300.0
+budgets:
+- name: B0
+  max_capex: 0.0
+- name: B1
+  max_capex: 100.0
+- name: B2
+  max_capex: 200.0
+- name: Ball
+  max_capex: null
+price_modes:
+- uniform
+demand_scenarios:
+  S50_dem_p5300_soc05:
+    note: SOC 0.5 light payload DEM
+    missions:
+    - id: M_casa_marrakech
+      od_id: casa_marrakech
+      weight: 2.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.5
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+    - id: M_casa_agadir
+      od_id: casa_agadir
+      weight: 2.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.5
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+    - id: M_marrakech_agadir
+      od_id: marrakech_agadir
+      weight: 1.5
+      E_truck_init: 0
+      E_init_soc_frac: 0.5
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+  S80_dem_p5300_soc08:
+    note: SOC 0.8 light payload DEM
+    missions:
+    - id: M_casa_marrakech
+      od_id: casa_marrakech
+      weight: 2.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+    - id: M_casa_agadir
+      od_id: casa_agadir
+      weight: 2.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+    - id: M_marrakech_agadir
+      od_id: marrakech_agadir
+      weight: 1.5
+      E_truck_init: 0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+  S100_dem_p5300_soc10:
+    note: SOC 1.0 light payload DEM
+    missions:
+    - id: M_casa_marrakech
+      od_id: casa_marrakech
+      weight: 2.0
+      E_truck_init: 0
+      E_init_soc_frac: 1.0
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+    - id: M_casa_agadir
+      od_id: casa_agadir
+      weight: 2.0
+      E_truck_init: 0
+      E_init_soc_frac: 1.0
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+    - id: M_marrakech_agadir
+      od_id: marrakech_agadir
+      weight: 1.5
+      E_truck_init: 0
+      E_init_soc_frac: 1.0
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+  H50_dem_p15000_soc05:
+    note: SOC 0.5 heavy 15t payload DEM
+    missions:
+    - id: M_casa_marrakech
+      od_id: casa_marrakech
+      weight: 2.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.5
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 15000.0
+    - id: M_casa_agadir
+      od_id: casa_agadir
+      weight: 2.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.5
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 15000.0
+    - id: M_marrakech_agadir
+      od_id: marrakech_agadir
+      weight: 1.5
+      E_truck_init: 0
+      E_init_soc_frac: 0.5
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 15000.0
+  H80_dem_p15000_soc08:
+    note: SOC 0.8 heavy 15t payload DEM
+    missions:
+    - id: M_casa_marrakech
+      od_id: casa_marrakech
+      weight: 2.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 15000.0
+    - id: M_casa_agadir
+      od_id: casa_agadir
+      weight: 2.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 15000.0
+    - id: M_marrakech_agadir
+      od_id: marrakech_agadir
+      weight: 1.5
+      E_truck_init: 0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 15000.0
+baselines:
+  none: []
+  settat_only:
+  - y_settat_ca
+  benguerir_only:
+  - y_benguerir_ca
+  settat_benguerir:
+  - y_settat_ca
+  - y_benguerir_ca
+solver:
+  max_seconds: 90.0
+  max_expansions: 800000
+outputs:
+  enumeration_csv: results/task08_placement_enumeration.csv
+  branch_bound_csv: results/task08_placement_branch_bound.csv
+  table_cache_dir: data/processed/multiroute/drive_tables

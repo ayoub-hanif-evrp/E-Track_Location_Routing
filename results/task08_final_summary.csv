@@ -1,0 +1,14 @@
+finding,cell_id,vehicle_key,soc_init,cargo_payload_kg,coverage_serviceable,best_sites,objective_agreement,budget_name,bb_sec,enum_sec
+placement_B1,S50,eactros_600,0.5,5300.0,4.0,y_benguerir_ca,True,,,
+placement_B1,S50,volvo_475,0.5,5300.0,2.0,y_settat_ca,True,,,
+placement_B1,S80,eactros_600,0.8,5300.0,5.5,y_benguerir_ca,True,,,
+placement_B1,S80,volvo_475,0.8,5300.0,4.0,y_benguerir_ca,True,,,
+placement_B1,S100,eactros_600,1.0,5300.0,5.5,y_benguerir_ca,True,,,
+placement_B1,S100,volvo_475,1.0,5300.0,5.5,y_benguerir_ca,True,,,
+placement_B1,H50,eactros_600,0.5,15000.0,2.0,y_settat_ca,True,,,
+placement_B1,H50,volvo_475,0.5,15000.0,0.0,,True,,,
+placement_B1,H80,eactros_600,0.8,15000.0,4.0,y_benguerir_ca,True,,,
+placement_B1,H80,volvo_475,0.8,15000.0,0.0,,True,,,
+synthetic_bb_enum,,,,,,,True,B2,0.9462515000050188,0.1145270999986678
+synthetic_bb_enum,,,,,,,True,B3,1.3540575999941211,0.3095217999943997
+synthetic_bb_enum,,,,,,,True,Ball,2.508414800002356,3.175707699992927
