@@ -183,6 +183,17 @@ def _drive_table_reason_hist(inst) -> dict[str, int]:
     return dict(c)
 
 
+def _publishable_claim(cause: str) -> str:
+    """Status-consistent publishable label (must not contradict diagnosis_class)."""
+    if cause == "served":
+        return "served_under_assumed_vehicle_model_and_reduced_network"
+    if cause == "discrete_grid_reject":
+        return "discrete_grid_reject_under_assumed_model_continuous_ok"
+    if cause in {"peak_motor", "soc_floor", "quantize", "charge_access"}:
+        return f"infeasible_{cause}_under_assumed_vehicle_model_and_reduced_network"
+    return "unresolved_under_assumed_vehicle_model_and_reduced_network"
+
+
 def _classify_row(
     *,
     cont_class: str,
@@ -349,9 +360,7 @@ def diagnose_cell(
             "mrls_ball_uncertified": bool(r_ball.uncertified),
             "mrls_ball_reason": r_ball.reason,
             "diagnosis_class": cause,
-            "publishable_claim": (
-                "infeasible_under_assumed_vehicle_model_and_reduced_network"
-            ),
+            "publishable_claim": _publishable_claim(cause),
             "prep_sec": time.perf_counter() - t0,
         }
         rows.append(row)

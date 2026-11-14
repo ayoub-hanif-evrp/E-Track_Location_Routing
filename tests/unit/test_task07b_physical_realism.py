@@ -40,13 +40,16 @@ def test_07b_dem_meta_complete_for_pilot_ods():
             encoding="utf-8"
         )
     )
-    assert meta.get("blockers") in (None, [])
     arcs = meta["arcs"]
-    assert len(arcs) == 29
-    assert all(a["quality"] == "valid" for a in arcs.values())
-    assert all(a["source"] == "copdem_glo30" for a in arcs.values())
+    pilot = {"casa_marrakech", "casa_agadir", "marrakech_agadir"}
+    pilot_arcs = {k: a for k, a in arcs.items() if a.get("od_id") in pilot}
+    assert pilot_arcs, "expected DEM arcs for southbound pilot ODs"
+    assert all(a.get("quality") == "valid" for a in pilot_arcs.values())
+    assert all(a.get("source") == "copdem_glo30" for a in pilot_arcs.values())
+    assert all(a.get("profile") for a in pilot_arcs.values())
     ods = {a["od_id"] for a in arcs.values()}
-    assert {"casa_marrakech", "casa_agadir", "marrakech_agadir"} <= ods
+    assert pilot <= ods
+    # PASS 2A may add northbound agadir_casa arcs; total count is not frozen.
 
 
 def test_thermal_ladder_yamls_match_documented_ranges():

@@ -542,7 +542,21 @@ Before any PASS 2 northbound scenario rewiring:
 
 **Key PASS 1 findings:** Task 07/08 portfolios are southbound-only; primary Moroccan refrigerated export motivation is northbound (Souss-Massa→Casablanca); reverse OD road data exist; reverse Amskroud missing; legal label `gross_mass_within_limit_axle_unverified`; methodological novelty is CONDITIONAL GO for certification-aware q-refinement diagnostics (NO-GO for unproved continuous-optimal adaptive theorems).
 
-## Not yet implemented (STOP — PASS 2 only after PASS 1 review)
+## PASS 2 — Northbound benchmark + bounded discretization test
+
+```bash
+python scripts/fetch_multiroute_dem.py --od-ids agadir_casa --merge-meta --max-alts 4
+python scripts/run_pass2a_northbound_benchmark.py
+python scripts/run_pass2b_discretization_refinement.py
+pytest -q -m "not integration"
+```
+
+- Case A proxy: firm-ripe tomatoes, `agadir_casa`, DEM validated, `settat_ac`/`benguerir_ac` only.
+- Under assumed power packs, Case A is peak-motor / model-infeasible (chargers do not restore).
+- PASS 2B: `CONDITIONAL_DIAGNOSTIC_ONLY` — q-refinement can change serviceability conclusions; not a top-tier new optimizer.
+- Ledger: `reports/pass2_final_claims_and_provenance.md`
+
+## Not yet implemented (manuscript + external operator data)
 
 - Refrigeration configuration B Moroccan optimization
 - Nationwide network search
