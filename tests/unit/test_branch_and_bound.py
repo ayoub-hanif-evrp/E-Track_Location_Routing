@@ -241,3 +241,34 @@ def test_injected_limit_reached_leaf_uncertified_not_certified_global():
     assert res.optimality_status == OptimalityStatus.INCUMBENT_UNPROVED
     assert res.incumbent is not None
     assert res.incumbent.site_ids in (frozenset({"A"}), frozenset({"B"}))
+
+
+def test_mrls_limit_reached_style_uncertified_blocks_certified_optimal():
+    """Task 08 contract: MRLS LIMIT_REACHED ⇒ subset certified=False ⇒ not CERTIFIED_OPTIMAL."""
+    crf = 0.1
+    capex = {"S0": 50.0, "S1": 50.0}
+
+    def evaluate_fn(installed: set[str]) -> SubsetEvaluation:
+        # Simulate one mission returning LIMIT_REACHED on every non-empty subset
+        # that includes S1 (artificial unresolved evaluation).
+        if "S1" in installed:
+            return _ev(
+                installed,
+                cov=0.0,
+                var=0.0,
+                capex_map=capex,
+                crf=crf,
+                certified=False,
+            )
+        cov = 1.0 if installed else 0.0
+        return _ev(installed, cov=cov, var=1.0, capex_map=capex, crf=crf, certified=True)
+
+    res = run_branch_and_bound_core(
+        site_ids=["S0", "S1"],
+        capex=capex,
+        max_capex=None,
+        crf=crf,
+        evaluate_fn=evaluate_fn,
+    )
+    assert res.optimality_status != OptimalityStatus.CERTIFIED_OPTIMAL
+    assert res.optimality_status == OptimalityStatus.INCUMBENT_UNPROVED

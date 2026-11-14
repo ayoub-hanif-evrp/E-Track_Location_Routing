@@ -6,9 +6,12 @@ Benchmark: 8 candidate sites on a shared trunk + long alternate path; 4 missions
 
 | Budget | enum sites | bb sites | agree | enum_s | bb_s | nodes | prune_cov | prune_cost | status |
 | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| B2 | s00 | s00 | True | 0.1145270999986678 | 0.9462515000050188 | 111 | 0 | 10 | CERTIFIED_OPTIMAL |
-| B3 | s00 | s00 | True | 0.3095217999943997 | 1.3540575999941211 | 139 | 0 | 17 | CERTIFIED_OPTIMAL |
-| Ball | s00 | s00 | True | 3.175707699992927 | 2.508414800002356 | 173 | 0 | 41 | CERTIFIED_OPTIMAL |
+| B2 | s00 | s00 | True | 0.1234418000094592 | 0.7858326000277884 | 111 | 0 | 10 | CERTIFIED_OPTIMAL |
+| B2 | s00 | s00 | True | 0.1543098000111058 | 0.6603202000260353 | 111 | 0 | 10 | CERTIFIED_OPTIMAL |
+| B3 | s00 | s00 | True | 0.4563924999674782 | 1.0788503999938257 | 139 | 0 | 17 | CERTIFIED_OPTIMAL |
+| B3 | s00 | s00 | True | 0.3870873000123538 | 0.961706400034018 | 139 | 0 | 17 | CERTIFIED_OPTIMAL |
+| Ball | s00 | s00 | True | 4.137166099972092 | 1.4133544999640435 | 173 | 0 | 41 | CERTIFIED_OPTIMAL |
+| Ball | s00 | s00 | True | 3.8451127000153065 | 0.0012526999926194 | 173 | 0 | 41 | CERTIFIED_OPTIMAL |
 
 All reported budgets: **enumeration and B&B agree** on the synthetic shared-road instance.
 

@@ -5,13 +5,15 @@
 1. **Under the tested DEM refrigerated portfolio**, vehicle usable energy and route flexibility affect the minimum hypothetical ADM site count needed for modeled coverage (weight 5.5 with MA often unserved).
 2. **Same-graph multi-route MRLS** can restore feasibility when fixed-shortest is infeasible (Task 07C/08 matched masks).
 3. **Synthetic shared-road B&B** matches enumeration on the 8-site Task 08 benchmark (correctness/pruning demo — not national scale).
-4. **Headline challenge (Task 08):** the Task 07A/07C eActros one-site vs Volvo two-site contrast at SOC 0.5 / 5300 kg **does not universally survive** SOC 0.8/1.0 or equal 15 t cargo — disappearance reported without retuning.
 
 ## Evidence grades
 
 | Input | Grade |
 | --- | --- |
-| Volvo/eActros usable kWh, empty combo, tech GCW | Manufacturer verified (YAML) |
+| Usable kWh (eActros / Volvo MA page) + tech GCW | Manufacturer-labeled in YAML |
+| Volvo empty tractor curb | **Assumed** (not OEM curb) |
+| Refrigerated trailer empty mass (both vehicles) | **Assumed** |
+| Empty combination mass | Derived = tractor+trailer; **not** manufacturer-verified combo |
 | ADM site identity / OSM topology | Official + OSM |
 | 350 kW truck charging at Settat/Benguerir/Amskroud | **Unavailable / hypothetical** |
 | Departure SOC 0.5/0.8/1.0 | Engineering assumption (dispatch policy) |
@@ -32,7 +34,9 @@
 | Energy purchased | Uniform research tariff; ONEE public tariffs are transferability-qualified only if cited as sensitivity — this freeze keeps uniform ¢/kWh |
 | Road operating cost | Research 100 ¢/km |
 | Annualization | CRF from 8% / 15 yr |
-| Freight-demand weights | Illustrative |
+| Freight-demand weights | Illustrative — **not** trips/year |
+
+**Unit note:** secondary cost mixes annualized CAPEX (CRF×ΣCAPEX) with Σw·C_var without defining w as annual trip frequency — normalized illustrative research costs only. See `reports/final_economic_units_and_provenance_audit.md`.
 
 CAPEX ratio sensitivity (0.5× / 1× / 2×) on equal illustrative site costs:
 

@@ -511,7 +511,27 @@ Outputs:
 
 **Headline:** the 50%-SOC one-site eActros vs two-site Volvo contrast does **not** universally survive 80%/100% departure SOC or 15 t cargo — report without retuning.
 
-## Not yet implemented (STOP after Task 08)
+## Publication-readiness checkpoint (post Task 08)
+
+```bash
+pytest -q -m "not integration"
+python scripts/run_final_heavy_vehicle_diagnosis.py
+python scripts/run_task08_final_validation.py --stages benchmark
+```
+
+Outputs:
+
+- `reports/final_publication_results.md`
+- `reports/final_heavy_vehicle_feasibility_diagnosis.md`
+- `reports/final_algorithm_benchmark_audit.md`
+- `reports/final_economic_units_and_provenance_audit.md`
+- `results/final_heavy_vehicle_feasibility_diagnosis.csv`
+- `results/task08_algorithm_benchmarks.csv` (corrected cert/timings)
+- `results/task08_algorithm_benchmarks_historical_8site.csv`
+
+**Defensible headline:** charger requirements depend strongly on vehicle configuration, departure SOC, cargo payload, and route flexibility — not a universal one-truck / one-site ranking.
+
+## Not yet implemented (STOP — manuscript next)
 
 - Refrigeration configuration B Moroccan optimization
 - Nationwide network search
@@ -519,4 +539,4 @@ Outputs:
 - Paper writing (use freeze artifacts)
 - External fleet GPS/TRU logs and certified HGV charger-access data
 
-**STOP DEVELOPMENT after Task 08.** Next activity is scientific writing and external evidence — not Task 09.
+**STOP DEVELOPMENT.** No Task 09 feature chain. Next activity is manuscript preparation and external Moroccan operational evidence.

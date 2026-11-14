@@ -9,6 +9,9 @@ placement_B1,H50,eactros_600,0.5,15000.0,2.0,y_settat_ca,True,,,
 placement_B1,H50,volvo_475,0.5,15000.0,0.0,,True,,,
 placement_B1,H80,eactros_600,0.8,15000.0,4.0,y_benguerir_ca,True,,,
 placement_B1,H80,volvo_475,0.8,15000.0,0.0,,True,,,
-synthetic_bb_enum,,,,,,,True,B2,0.9462515000050188,0.1145270999986678
-synthetic_bb_enum,,,,,,,True,B3,1.3540575999941211,0.3095217999943997
-synthetic_bb_enum,,,,,,,True,Ball,2.508414800002356,3.175707699992927
+synthetic_bb_enum,,,,,,,True,B2,0.7858326000277884,0.1234418000094592
+synthetic_bb_enum,,,,,,,True,B2,0.6603202000260353,0.1543098000111058
+synthetic_bb_enum,,,,,,,True,B3,1.0788503999938257,0.4563924999674782
+synthetic_bb_enum,,,,,,,True,B3,0.961706400034018,0.3870873000123538
+synthetic_bb_enum,,,,,,,True,Ball,1.4133544999640435,4.137166099972092
+synthetic_bb_enum,,,,,,,True,Ball,0.0012526999926194,3.8451127000153065

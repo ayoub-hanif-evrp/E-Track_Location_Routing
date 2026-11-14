@@ -38,6 +38,10 @@ from morocco_etruck.optimization.multiroute_placement_evaluation import (  # noq
     run_multiroute_branch_and_bound,
     run_multiroute_enumeration,
 )
+from morocco_etruck.optimization.placement_cache import (  # noqa: E402
+    CachedMissionResult,
+    PlacementMemo,
+)
 from morocco_etruck.optimization.placement_certification import OptimalityStatus  # noqa: E402
 from morocco_etruck.optimization.placement_evaluation import SubsetEvaluation  # noqa: E402
 from morocco_etruck.optimization.placement_problem import (  # noqa: E402
@@ -478,42 +482,70 @@ def build_shared_road_problem() -> tuple[list[PlacementSite], dict[str, float], 
     return sites, capex, missions, templates
 
 
-def run_shared_road_benchmark() -> list[dict]:
-    sites, capex, missions, templates = build_shared_road_problem()
-    crf = capital_recovery_factor(0.08, 15)
-    cents = 0.01
+def _make_shared_road_evaluator(
+    *,
+    sites: list[PlacementSite],
+    capex: dict[str, float],
+    missions: list[dict],
+    templates: dict[str, RoutingInstance],
+    crf: float,
+    memo: PlacementMemo,
+    cents: float = 0.01,
+):
+    """Subset evaluator with honest MRLS certification and memoized call counts."""
     weight = {m["id"]: float(m["weight"]) for m in missions}
     wtot = sum(weight.values())
-    rows: list[dict] = []
 
     def evaluate_fn(installed: set[str]) -> SubsetEvaluation:
         active = {
-            sites[i].station_key
-            for i, s in enumerate(sites)
-            if s.id in installed
+            s.station_key for s in sites if s.id in installed
         }
-        # serviceability probe uses all sites — for evaluate just solve each
-        results = []
         served_w = 0.0
         var = 0.0
+        any_uncertified = False
         for m in missions:
             mid = m["id"]
-            inst = clone_physics_instance_for_subset(
-                templates[mid], active_stations=active
+            key = memo.make_key(
+                mission_id=mid,
+                active_station_keys=frozenset(active),
+                price_mode="synthetic_shared_road",
+                q=int(templates[mid].energy_quantum_kwh),
+                time_step_min=int(templates[mid].time_step_min),
             )
-            # ensure allowed_arc_ids copies
-            r = solve_mrls(inst, max_seconds=5.0, max_expansions=50_000)
-            ok = r.status == SolverStatus.OPTIMAL
-            if ok:
+            hit = memo.get(key)
+            if hit is None:
+                inst = clone_physics_instance_for_subset(
+                    templates[mid], active_stations=active
+                )
+                r = solve_mrls(inst, max_seconds=5.0, max_expansions=50_000)
+                status = r.status.value if hasattr(r.status, "value") else str(r.status)
+                ok = r.status == SolverStatus.OPTIMAL
+                # LIMIT_REACHED ⇒ uncertified; true INFEASIBLE remains certified-negative
+                uncertified = r.status == SolverStatus.LIMIT_REACHED
+                hit = CachedMissionResult(
+                    status=status,
+                    served=bool(ok),
+                    uncertified=bool(uncertified),
+                    objective_cents=None if r.objective is None else int(r.objective),
+                    charge_kwh=0,
+                    charges="",
+                    path="",
+                    continuous_replay_ok=bool(ok),
+                    discrete_replay_ok=bool(ok),
+                    reason=status,
+                )
+                memo.put(key, hit)
+            if hit.uncertified:
+                any_uncertified = True
+            if hit.served:
                 served_w += weight[mid]
-                var += weight[mid] * float(r.objective or 0) * cents
-            results.append(ok)
+                var += weight[mid] * float(hit.objective_cents or 0) * cents
         infra = subset_capex(installed, capex)
         infra_ann = annualized_infra_cost(installed, capex, crf)
         return SubsetEvaluation(
             site_ids=frozenset(installed),
             budget_ok=True,
-            certified=True,
+            certified=not any_uncertified,
             coverage_total=served_w,
             coverage_serviceable=served_w,
             weight_total=wtot,
@@ -525,45 +557,90 @@ def run_shared_road_benchmark() -> list[dict]:
             missions=[],
         )
 
-    # Serviceability under all sites
-    all_ids = {s.id for s in sites}
-    all_eval = evaluate_fn(all_ids)
-    serviceable = all_eval.coverage_serviceable >= wtot - 1e-9
+    return evaluate_fn
+
+
+def _enum_best(
+    *,
+    site_ids: list[str],
+    capex: dict[str, float],
+    max_capex: float | None,
+    evaluate_fn,
+) -> tuple[SubsetEvaluation | None, int]:
+    best_enum = None
+    n_enum = 0
+    for subset in all_subsets(site_ids):
+        if not budget_ok(subset, capex, max_capex):
+            continue
+        n_enum += 1
+        ev = evaluate_fn(subset)
+        if best_enum is None:
+            best_enum = ev
+            continue
+        better = ev.coverage_serviceable > best_enum.coverage_serviceable + 1e-9
+        tie = (
+            abs(ev.coverage_serviceable - best_enum.coverage_serviceable) <= 1e-9
+            and ev.secondary_cost < best_enum.secondary_cost - 1e-9
+        )
+        if better or tie:
+            best_enum = ev
+    return best_enum, n_enum
+
+
+def run_shared_road_benchmark() -> list[dict]:
+    """Corrected synthetic enum vs B&B: certification, MRLS counts, cold/warm timings."""
+    t_prep0 = time.perf_counter()
+    sites, capex, missions, templates = build_shared_road_problem()
+    crf = capital_recovery_factor(0.08, 15)
+    site_ids = [s.id for s in sites]
+    prep_sec = time.perf_counter() - t_prep0
+    rows: list[dict] = []
 
     for bname, max_capex in (("B2", 200.0), ("B3", 300.0), ("Ball", None)):
+        # --- Cold-cache primary comparison (fresh memo each method) ---
+        memo_enum = PlacementMemo(energy_model_fingerprint="synthetic_shared_road_08")
+        eval_enum = _make_shared_road_evaluator(
+            sites=sites,
+            capex=capex,
+            missions=missions,
+            templates=templates,
+            crf=crf,
+            memo=memo_enum,
+        )
         t0 = time.perf_counter()
-        best_enum = None
-        n_enum = 0
-        for subset in all_subsets([s.id for s in sites]):
-            if not budget_ok(subset, capex, max_capex):
-                continue
-            n_enum += 1
-            ev = evaluate_fn(subset)
-            if best_enum is None:
-                best_enum = ev
-            else:
-                better = ev.coverage_serviceable > best_enum.coverage_serviceable + 1e-9
-                tie = (
-                    abs(ev.coverage_serviceable - best_enum.coverage_serviceable)
-                    <= 1e-9
-                    and ev.secondary_cost < best_enum.secondary_cost - 1e-9
-                )
-                if better or tie:
-                    best_enum = ev
+        best_enum, n_enum = _enum_best(
+            site_ids=site_ids,
+            capex=capex,
+            max_capex=max_capex,
+            evaluate_fn=eval_enum,
+        )
         enum_s = time.perf_counter() - t0
+        enum_calls = int(memo_enum.hits + memo_enum.misses)
+        enum_hits = int(memo_enum.hits)
 
+        memo_bb = PlacementMemo(energy_model_fingerprint="synthetic_shared_road_08")
+        eval_bb = _make_shared_road_evaluator(
+            sites=sites,
+            capex=capex,
+            missions=missions,
+            templates=templates,
+            crf=crf,
+            memo=memo_bb,
+        )
         t1 = time.perf_counter()
         bb = run_branch_and_bound_core(
-            site_ids=[s.id for s in sites],
+            site_ids=site_ids,
             capex=capex,
             max_capex=max_capex,
             crf=crf,
-            evaluate_fn=evaluate_fn,
+            evaluate_fn=eval_bb,
+            memo=memo_bb,
             time_limit_sec=60.0,
             node_limit=None,
         )
         bb_s = time.perf_counter() - t1
         inc = bb.incumbent
+        stats = bb.stats
         agree = False
         if best_enum is not None and inc is not None:
             agree = (
@@ -572,47 +649,155 @@ def run_shared_road_benchmark() -> list[dict]:
             )
         elif best_enum is None and inc is None:
             agree = True
-        stats = bb.stats
+
+        row_cold = {
+            "benchmark": "shared_road_8site_synthetic",
+            "cache_mode": "cold",
+            "n_sites": 8,
+            "n_missions": len(missions),
+            "budget_name": bname,
+            "max_capex": max_capex,
+            "prep_sec": prep_sec,
+            "enum_subsets_evaluated": n_enum,
+            "enum_best_sites": (
+                ",".join(sorted(best_enum.site_ids)) if best_enum else ""
+            ),
+            "enum_coverage": (
+                None if best_enum is None else best_enum.coverage_serviceable
+            ),
+            "enum_secondary_cost": (
+                None if best_enum is None else best_enum.secondary_cost
+            ),
+            "enum_sec": enum_s,
+            "enum_mrls_calls": enum_calls,
+            "enum_mrls_cache_hits": enum_hits,
+            "bb_best_sites": ",".join(sorted(inc.site_ids)) if inc else "",
+            "bb_coverage": None if inc is None else inc.coverage_serviceable,
+            "bb_secondary_cost": None if inc is None else inc.secondary_cost,
+            "bb_sec": bb_s,
+            "bb_mrls_calls": stats.mrls_calls,
+            "bb_mrls_cache_hits": stats.mrls_cache_hits,
+            "total_sec": prep_sec + enum_s + bb_s,
+            "objective_agreement": agree,
+            "optimality_status": bb.optimality_status.value,
+            "bb_nodes_visited": stats.nodes_visited,
+            "bb_leaves_evaluated": stats.leaves_evaluated,
+            "bb_prunes_budget": stats.prune_budget,
+            "bb_prunes_coverage": stats.prune_coverage,
+            "bb_prunes_secondary": stats.prune_secondary,
+            "faster_method": (
+                "enumeration"
+                if enum_s < bb_s - 1e-9
+                else ("branch_and_bound" if bb_s < enum_s - 1e-9 else "tie")
+            ),
+            "claim_scope": "task08_algorithm_synthetic_shared_road",
+            "note": "synthetic_not_moroccan_traffic;cold_cache_fair_compare",
+        }
+        rows.append(row_cold)
+
+        # --- Shared-memo warm secondary (enum first, then B&B on same memo) ---
+        memo_warm = PlacementMemo(energy_model_fingerprint="synthetic_shared_road_08")
+        eval_warm = _make_shared_road_evaluator(
+            sites=sites,
+            capex=capex,
+            missions=missions,
+            templates=templates,
+            crf=crf,
+            memo=memo_warm,
+        )
+        t2 = time.perf_counter()
+        best_w, n_w = _enum_best(
+            site_ids=site_ids,
+            capex=capex,
+            max_capex=max_capex,
+            evaluate_fn=eval_warm,
+        )
+        enum_warm_s = time.perf_counter() - t2
+        enum_warm_calls = int(memo_warm.hits + memo_warm.misses)
+        enum_warm_hits = int(memo_warm.hits)
+        hits_before_bb = int(memo_warm.hits)
+        misses_before_bb = int(memo_warm.misses)
+
+        t3 = time.perf_counter()
+        bb_w = run_branch_and_bound_core(
+            site_ids=site_ids,
+            capex=capex,
+            max_capex=max_capex,
+            crf=crf,
+            evaluate_fn=eval_warm,
+            memo=memo_warm,
+            time_limit_sec=60.0,
+            node_limit=None,
+        )
+        bb_warm_s = time.perf_counter() - t3
+        # Incremental B&B memo activity after enum warm-up
+        bb_warm_hits = int(memo_warm.hits) - hits_before_bb
+        bb_warm_calls = (int(memo_warm.hits) + int(memo_warm.misses)) - (
+            hits_before_bb + misses_before_bb
+        )
+        inc_w = bb_w.incumbent
+        agree_w = False
+        if best_w is not None and inc_w is not None:
+            agree_w = (
+                abs(best_w.coverage_serviceable - inc_w.coverage_serviceable) <= 1e-9
+                and abs(best_w.secondary_cost - inc_w.secondary_cost) <= 1e-6
+            )
+        elif best_w is None and inc_w is None:
+            agree_w = True
+        st_w = bb_w.stats
         rows.append(
             {
                 "benchmark": "shared_road_8site_synthetic",
+                "cache_mode": "warm_shared_after_enum",
                 "n_sites": 8,
                 "n_missions": len(missions),
                 "budget_name": bname,
                 "max_capex": max_capex,
-                "enum_subsets_evaluated": n_enum,
+                "prep_sec": prep_sec,
+                "enum_subsets_evaluated": n_w,
                 "enum_best_sites": (
-                    ",".join(sorted(best_enum.site_ids)) if best_enum else ""
+                    ",".join(sorted(best_w.site_ids)) if best_w else ""
                 ),
-                "enum_coverage": (
-                    None if best_enum is None else best_enum.coverage_serviceable
-                ),
+                "enum_coverage": None if best_w is None else best_w.coverage_serviceable,
                 "enum_secondary_cost": (
-                    None if best_enum is None else best_enum.secondary_cost
+                    None if best_w is None else best_w.secondary_cost
                 ),
-                "enum_sec": enum_s,
+                "enum_sec": enum_warm_s,
+                "enum_mrls_calls": enum_warm_calls,
+                "enum_mrls_cache_hits": enum_warm_hits,
                 "bb_best_sites": (
-                    ",".join(sorted(inc.site_ids)) if inc else ""
+                    ",".join(sorted(inc_w.site_ids)) if inc_w else ""
                 ),
-                "bb_coverage": None if inc is None else inc.coverage_serviceable,
-                "bb_secondary_cost": None if inc is None else inc.secondary_cost,
-                "bb_sec": bb_s,
-                "objective_agreement": agree,
-                "optimality_status": bb.optimality_status.value,
-                "bb_nodes_visited": stats.nodes_visited,
-                "bb_leaves_evaluated": stats.leaves_evaluated,
-                "bb_prunes_budget": stats.prune_budget,
-                "bb_prunes_coverage": stats.prune_coverage,
-                "bb_prunes_secondary": stats.prune_secondary,
-                "bb_mrls_calls": stats.mrls_calls,
-                "bb_mrls_cache_hits": stats.mrls_cache_hits,
+                "bb_coverage": None if inc_w is None else inc_w.coverage_serviceable,
+                "bb_secondary_cost": None if inc_w is None else inc_w.secondary_cost,
+                "bb_sec": bb_warm_s,
+                "bb_mrls_calls": bb_warm_calls,
+                "bb_mrls_cache_hits": bb_warm_hits,
+                "total_sec": prep_sec + enum_warm_s + bb_warm_s,
+                "objective_agreement": agree_w,
+                "optimality_status": bb_w.optimality_status.value,
+                "bb_nodes_visited": st_w.nodes_visited,
+                "bb_leaves_evaluated": st_w.leaves_evaluated,
+                "bb_prunes_budget": st_w.prune_budget,
+                "bb_prunes_coverage": st_w.prune_coverage,
+                "bb_prunes_secondary": st_w.prune_secondary,
+                "faster_method": (
+                    "enumeration"
+                    if enum_warm_s < bb_warm_s - 1e-9
+                    else (
+                        "branch_and_bound"
+                        if bb_warm_s < enum_warm_s - 1e-9
+                        else "tie"
+                    )
+                ),
                 "claim_scope": "task08_algorithm_synthetic_shared_road",
-                "note": "synthetic_not_moroccan_traffic",
+                "note": "synthetic_not_moroccan_traffic;warm_shared_secondary_only",
             }
         )
         print(
-            f"BB {bname}: agree={agree} enum={rows[-1]['enum_best_sites']} "
-            f"bb={rows[-1]['bb_best_sites']} enum_t={enum_s:.2f}s bb_t={bb_s:.2f}s",
+            f"BB {bname} cold: agree={agree} enum_t={enum_s:.2f}s bb_t={bb_s:.2f}s "
+            f"enum_mrls={enum_calls} bb_mrls={stats.mrls_calls} "
+            f"status={bb.optimality_status.value}",
             flush=True,
         )
     return rows
