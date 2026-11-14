@@ -312,6 +312,59 @@ def shortest_path_edge_set(
     return {(int(u), int(v)) for u, v in zip(node_path[:-1], node_path[1:])}
 
 
+def select_od_path_rows(
+    path_rows: list[dict[str, Any]],
+    od_id: str,
+    max_alts: int,
+) -> list[dict[str, Any]]:
+    """
+    Same alternative selection as ``build_physics_od_instance``:
+
+    shortest_distance first, then remaining by descending Jaccard distance,
+    capped at ``max_alts`` (``max_alts<=0`` keeps all OD rows).
+    """
+    rows = [r for r in path_rows if str(r.get("od_id")) == od_id]
+    if max_alts <= 0 or len(rows) <= max_alts:
+        return list(rows)
+    short = [r for r in rows if str(r.get("method")) == "shortest_distance"]
+    rest = sorted(
+        [r for r in rows if str(r.get("method")) != "shortest_distance"],
+        key=lambda r: -float(r.get("jaccard_distance_vs_shortest") or 0.0),
+    )
+    return (short[:1] + rest)[:max_alts]
+
+
+def edge_union_from_path_rows(path_rows: list[dict[str, Any]]) -> set[tuple[int, int]]:
+    """Directed OSM node-pair edges along the given path-alternative rows."""
+    edges: set[tuple[int, int]] = set()
+    for r in path_rows:
+        path = [int(x) for x in json.loads(r["node_path_json"])]
+        edges.update((int(u), int(v)) for u, v in zip(path[:-1], path[1:]))
+    return edges
+
+
+def allowed_arc_ids_for_edge_union(
+    ctx: MultirouteMissionContext,
+    edge_union: set[tuple[int, int]],
+) -> frozenset[str]:
+    """
+    Arc ids whose OSM edge pairs lie entirely inside ``edge_union``.
+
+    Use on a *fixed* path-union graph so restricted vs expanded route sets share
+    identical macros, DEM slices, DRIVE tables and charger splits (Task 07C /
+    northbound route-expansion integrity).
+    """
+    allowed: set[str] = set()
+    for aid, macro in ctx.macros_by_arc_id.items():
+        pairs = list(macro.osm_edge_pairs or [])
+        if not pairs:
+            pn = list(macro.path_nodes or [])
+            pairs = [(int(u), int(v)) for u, v in zip(pn[:-1], pn[1:])]
+        if pairs and all((int(u), int(v)) in edge_union for u, v in pairs):
+            allowed.add(str(aid))
+    return frozenset(allowed)
+
+
 def shortest_path_allowed_arc_ids(
     ctx: MultirouteMissionContext,
     path_rows: list[dict[str, Any]],
@@ -324,16 +377,7 @@ def shortest_path_allowed_arc_ids(
     path-union graph (Task 07C nesting).
     """
     edges = shortest_path_edge_set(path_rows, od_id)
-    allowed: set[str] = set()
-    for aid, macro in ctx.macros_by_arc_id.items():
-        pairs = list(macro.osm_edge_pairs or [])
-        if not pairs:
-            # Fallback: consecutive path_nodes as OSM ids when pairs missing
-            pn = list(macro.path_nodes or [])
-            pairs = [(int(u), int(v)) for u, v in zip(pn[:-1], pn[1:])]
-        if pairs and all((int(u), int(v)) in edges for u, v in pairs):
-            allowed.add(str(aid))
-    return frozenset(allowed)
+    return allowed_arc_ids_for_edge_union(ctx, edges)
 
 
 def build_physics_od_instance(
@@ -388,14 +432,8 @@ def build_physics_od_instance(
         if max_alternatives_for_union is not None
         else (cfg.raw.get("physics") or {}).get("max_alternatives_for_union") or 0
     )
-    rows_for_od = [r for r in path_rows if str(r.get("od_id")) == od_id]
-    if max_alts > 0 and len(rows_for_od) > max_alts:
-        short = [r for r in rows_for_od if str(r.get("method")) == "shortest_distance"]
-        rest = sorted(
-            [r for r in rows_for_od if str(r.get("method")) != "shortest_distance"],
-            key=lambda r: -float(r.get("jaccard_distance_vs_shortest") or 0.0),
-        )
-        rows_for_od = (short[:1] + rest)[:max_alts]
+    rows_for_od = select_od_path_rows(path_rows, od_id, max_alts)
+    if max_alts > 0:
         path_rows = [r for r in path_rows if str(r.get("od_id")) != od_id] + rows_for_od
     arcs, origin, dest, nodes = contract_od_path_union(
         G,

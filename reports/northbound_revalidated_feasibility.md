@@ -19,7 +19,8 @@
 - **Volvo FH Electric (475 kWh usable, 400 kW peak=cont):** remains unserved for all tested install/alts/speed policies. Continuous probes clear peak-motor rejects, then hit `tractor_soc_floor` before candidate chargers; discrete MRLS cannot reach settat_ac/benguerir_ac with residual energy. **Not** a claim that Volvo cannot operate in Morocco — only that this DSM-grade + mass + charger-set model remains energy-limited.
 - **eActros 600 (600 kWh usable, 600 kW peak / 400 kW continuous):** with `adapt_speed_to_peak_power` (and also continuous-adapt / floor-60 variants), **max_alts=2 + both candidates**, mission becomes OPTIMAL, discrete and continuous replay OK, charging ~240 kWh at `benguerir_ac`.
 - Placement (eActros, peak-adapt, alts=2): B0 coverage 0; Ball coverage 1.0; optimal site set `{y_benguerir_ac}`; B&B ↔ enumeration agree (CERTIFIED_OPTIMAL).
-- **max_alts=4 path-union:** eActros Ball cases revert to INFEASIBLE under the same speed policy — path-union expansion is material; do not claim robustness over larger alternative sets without re-certification.
+- **max_alts=4 at q=10 (rebuilt graph):** eActros Ball was INFEASIBLE in the first revalidation pass. **Correction:** this is a macro-segmentation / energy-flooring artifact vs the coarser `max_alts=2` rebuild, not physical infeasibility of the 2-alt roads. See `reports/northbound_route_expansion_integrity.md`.
+- **Canonical max_alts=4 + `allowed_arc_ids` nesting:** at **q=5**, mask(2) and full(4) are both OPTIMAL with equal objective; placement selects `{y_benguerir_ac}` (B1/B2/Ball), B&B ↔ enum agree.
 
 ### Limiting-cause classification
 
