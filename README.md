@@ -531,7 +531,18 @@ Outputs:
 
 **Defensible headline:** charger requirements depend strongly on vehicle configuration, departure SOC, cargo payload, and route flexibility — not a universal one-truck / one-site ranking.
 
-## Not yet implemented (STOP — manuscript next)
+## PASS 1 — Moroccan scientific integrity (awaiting independent review)
+
+Before any PASS 2 northbound scenario rewiring:
+
+- `reports/morocco_realism_and_freight_direction_audit.md`
+- `reports/morocco_law_vehicle_coldchain_evidence.md`
+- `reports/methodological_novelty_go_nogo.md`
+- `reports/moroccan_data_request_specification.md`
+
+**Key PASS 1 findings:** Task 07/08 portfolios are southbound-only; primary Moroccan refrigerated export motivation is northbound (Souss-Massa→Casablanca); reverse OD road data exist; reverse Amskroud missing; legal label `gross_mass_within_limit_axle_unverified`; methodological novelty is CONDITIONAL GO for certification-aware q-refinement diagnostics (NO-GO for unproved continuous-optimal adaptive theorems).
+
+## Not yet implemented (STOP — PASS 2 only after PASS 1 review)
 
 - Refrigeration configuration B Moroccan optimization
 - Nationwide network search
