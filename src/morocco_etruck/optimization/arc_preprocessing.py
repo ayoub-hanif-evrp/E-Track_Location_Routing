@@ -370,6 +370,9 @@ def simulate_drive_from_soc(
     gcm_kg: float,
     refrigeration_on: bool,
     power_source: str,
+    adapt_speed_to_peak_power: bool = False,
+    adapt_speed_to_continuous_power: bool = False,
+    min_adapt_speed_mps: float = 1.0 / 3.6,
 ) -> tuple[bool, float, float, float | None, str | None, dict[str, float]]:
     """
     Continuous micro-profile simulation.
@@ -400,6 +403,9 @@ def simulate_drive_from_soc(
             terrain=terrain,
             s_cursor_m=s_cursor,
             speed_mps=edge.speed_mps,
+            adapt_speed_to_peak_power=adapt_speed_to_peak_power,
+            adapt_speed_to_continuous_power=adapt_speed_to_continuous_power,
+            min_adapt_speed_mps=min_adapt_speed_mps,
         )
         dt_total += r.dt_s
         s_cursor += edge.length_m
@@ -454,6 +460,9 @@ def build_drive_table(
     E_trailer_cap: int | None,
     energy_quantum_kwh: int,
     time_step_min: int,
+    adapt_speed_to_peak_power: bool = False,
+    adapt_speed_to_continuous_power: bool = False,
+    min_adapt_speed_mps: float = 1.0 / 3.6,
 ) -> dict[tuple[int, int | None], DriveTableEntry]:
     """
     State-dependent DRIVE outcomes for every discrete start energy quantum.
@@ -488,6 +497,9 @@ def build_drive_table(
                 gcm_kg=gcm_kg,
                 refrigeration_on=refrigeration_on,
                 power_source=power_source,
+                adapt_speed_to_peak_power=adapt_speed_to_peak_power,
+                adapt_speed_to_continuous_power=adapt_speed_to_continuous_power,
+                min_adapt_speed_mps=min_adapt_speed_mps,
             )
             if not ok:
                 table[(Et, El)] = DriveTableEntry(feasible=False, reason=reason)

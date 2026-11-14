@@ -57,6 +57,10 @@ class MultirouteMissionContext:
     notes: list[str] = field(default_factory=list)
     dem_complete: bool = True
     weather_assumed: bool = False
+    adapt_speed_to_peak_power: bool = False
+    adapt_speed_to_continuous_power: bool = False
+    min_adapt_speed_mps: float = 1.0 / 3.6
+    speed_policy: dict[str, Any] | None = None
 
 
 def _is_subsequence(sub: list[int], full: list[int]) -> bool:
@@ -379,6 +383,10 @@ def drive_table_for_macro(
         cached = load_cached_table(cpath, fp)
         if cached is not None:
             return cached
+    sp = speed_policy or {}
+    adapt_peak = bool(sp.get("adapt_speed_to_peak_power", False))
+    adapt_cont = bool(sp.get("adapt_speed_to_continuous_power", False))
+    min_adapt = float(sp.get("min_adapt_speed_mps", 1.0 / 3.6))
     table = build_drive_table(
         macro,
         vehicle=vehicle,
@@ -393,6 +401,9 @@ def drive_table_for_macro(
         E_trailer_cap=E_trailer_cap,
         energy_quantum_kwh=energy_quantum_kwh,
         time_step_min=time_step_min,
+        adapt_speed_to_peak_power=adapt_peak,
+        adapt_speed_to_continuous_power=adapt_cont,
+        min_adapt_speed_mps=min_adapt,
     )
     if cache_dir is not None:
         save_cached_table(cache_dir / f"{arc_id}.json", fp, table)
@@ -578,6 +589,7 @@ def build_path_union_routing_instance(
         notes.append("dem_incomplete_scenario_indeterminate")
     if weather_assumed:
         notes.append("weather_assumed_synthetic_placeholder")
+    sp = speed_policy or {}
     ctx = MultirouteMissionContext(
         od_id=od_id,
         macros_by_arc_id=macros,
@@ -592,5 +604,9 @@ def build_path_union_routing_instance(
         notes=notes,
         dem_complete=dem_complete if terrain_mode == "dem" else True,
         weather_assumed=weather_assumed,
+        adapt_speed_to_peak_power=bool(sp.get("adapt_speed_to_peak_power", False)),
+        adapt_speed_to_continuous_power=bool(sp.get("adapt_speed_to_continuous_power", False)),
+        min_adapt_speed_mps=float(sp.get("min_adapt_speed_mps", 1.0 / 3.6)),
+        speed_policy=dict(sp) if sp else None,
     )
     return inst, ctx

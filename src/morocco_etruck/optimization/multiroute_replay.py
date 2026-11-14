@@ -143,6 +143,15 @@ def continuous_replay_multiroute(
                 gcm_kg=ctx.gcm_kg,
                 refrigeration_on=ctx.refrigeration_on,
                 power_source=ctx.power_source,
+                adapt_speed_to_peak_power=bool(
+                    getattr(ctx, "adapt_speed_to_peak_power", False)
+                ),
+                adapt_speed_to_continuous_power=bool(
+                    getattr(ctx, "adapt_speed_to_continuous_power", False)
+                ),
+                min_adapt_speed_mps=float(
+                    getattr(ctx, "min_adapt_speed_mps", 1.0 / 3.6)
+                ),
             )
             e_trac += float(ecomp.get("E_traction_kwh", 0.0))
             e_aux_d += float(ecomp.get("E_aux_kwh", 0.0))

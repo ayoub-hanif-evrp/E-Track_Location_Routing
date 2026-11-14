@@ -323,13 +323,12 @@ def write_report(df: pd.DataFrame) -> None:
             f"{r.get('discrete_false_negative_feasibility', '')} |"
         )
 
-    # Novelty verdict
+    # Novelty verdict — keep coverage vs site-decision fields DISTINCT
     false_negs = df[
         (df.method == "targeted_refinement")
         & (df.get("discrete_false_negative_feasibility") == True)  # noqa: E712
     ]
-    # Infrastructure decision change: compare fixed q10 vs q5 min_sites/best_sites
-    decision_changes = []
+    field_rows = []
     for scen in df.scenario.unique():
         sub = df[df.scenario == scen]
         a = sub[sub.method == "fixed_q10"]
@@ -337,22 +336,63 @@ def write_report(df: pd.DataFrame) -> None:
         if a.empty or b.empty:
             continue
         ra, rb = a.iloc[0], b.iloc[0]
-        changed = (
-            ra.place_min_sites != rb.place_min_sites
-            or str(ra.place_best_sites) != str(rb.place_best_sites)
-            or abs(float(ra.place_max_coverage or 0) - float(rb.place_max_coverage or 0))
-            > 1e-9
+        cov10 = float(ra.place_max_coverage or 0)
+        cov5 = float(rb.place_max_coverage or 0)
+        feas10 = str(ra.ball_status)
+        feas5 = str(rb.ball_status)
+        sites10 = str(ra.place_best_sites)
+        sites5 = str(rb.place_best_sites)
+        min10 = ra.place_min_sites
+        min5 = rb.place_min_sites
+        field_rows.append(
+            {
+                "scenario": scen,
+                "feasibility_class_changed": bool(feas10 != feas5),
+                "coverage_changed": bool(abs(cov10 - cov5) > 1e-9),
+                "minimum_site_count_changed": bool(str(min10) != str(min5)),
+                "optimal_site_set_changed": bool(sites10 != sites5),
+                "objective_changed": bool(
+                    abs(cov10 - cov5) > 1e-9
+                    or str(min10) != str(min5)
+                    or sites10 != sites5
+                ),
+                "min_sites_q10": min10,
+                "min_sites_q5": min5,
+                "coverage_q10": cov10,
+                "coverage_q5": cov5,
+                "sites_q10": sites10,
+                "sites_q5": sites5,
+            }
         )
-        decision_changes.append((scen, changed, ra.place_min_sites, rb.place_min_sites))
 
-    lines.extend(["", "## Infrastructure decision changes (q=10 vs q=5)", ""])
-    for scen, changed, s10, s5 in decision_changes:
+    lines.extend(
+        [
+            "",
+            "## Distinct change fields (q=10 vs q=5)",
+            "",
+            "Coverage / feasibility-class changes are **not** infrastructure installation changes.",
+            "",
+            "| Scenario | feasibility_class_changed | coverage_changed | minimum_site_count_changed | optimal_site_set_changed |",
+            "| --- | --- | --- | --- | --- |",
+        ]
+    )
+    for fr in field_rows:
         lines.append(
-            f"- **{scen}**: decision_changed={changed} "
-            f"(min_sites q10={s10}, q5={s5})"
+            f"| {fr['scenario']} | {fr['feasibility_class_changed']} | "
+            f"{fr['coverage_changed']} | {fr['minimum_site_count_changed']} | "
+            f"{fr['optimal_site_set_changed']} |"
+        )
+        lines.append(
+            f"  - detail: coverage {fr['coverage_q10']}→{fr['coverage_q5']}; "
+            f"min_sites {fr['min_sites_q10']}→{fr['min_sites_q5']}; "
+            f"sites {fr['sites_q10']}→{fr['sites_q5']}"
         )
 
-    any_decision = any(c for _, c, _, _ in decision_changes)
+    any_site_decision = any(
+        fr["minimum_site_count_changed"] or fr["optimal_site_set_changed"]
+        for fr in field_rows
+    )
+    any_coverage = any(fr["coverage_changed"] for fr in field_rows)
     any_false_neg = not false_negs.empty
 
     lines.extend(
@@ -362,32 +402,45 @@ def write_report(df: pd.DataFrame) -> None:
             "",
         ]
     )
-    if any_false_neg and any_decision:
+    if any_false_neg and any_site_decision:
         verdict = (
             "**CONDITIONAL evidence only:** discrete false-negative feasibility exists "
-            "and coarser grids can change infrastructure decisions on at least one scenario. "
-            "This supports a **certification-aware diagnostic** claim, **not** a new continuous "
-            "adaptive optimizer theorem, and not superiority over Vidotte Plaza et al."
+            "and coarser grids can change **site installation decisions** on at least one "
+            "scenario. This supports a **certification-aware diagnostic** claim, **not** a "
+            "new continuous adaptive optimizer theorem."
         )
         go = "CONDITIONAL_DIAGNOSTIC_ONLY"
-    elif any_false_neg and not any_decision:
+    elif any_false_neg and any_coverage and not any_site_decision:
+        verdict = (
+            "**NO-GO for infrastructure-design optimizer claim:** a discrete false-negative "
+            "**coverage/feasibility** label changed, but **minimum site counts and optimal "
+            "site sets did not**. Protocol is a conditional coarse-to-fine retry, not a "
+            "proved selective-refinement algorithm. Keep as numerical-reliability finding."
+        )
+        go = "NO_GO_COVERAGE_ONLY_NOT_SITE_DECISION"
+    elif any_false_neg and not any_site_decision:
         verdict = (
             "**NO-GO for infrastructure-refinement contribution:** a discrete false-negative "
-            "routing label was observed, but **optimal site sets / min site counts did not change** "
-            "on the tested portfolios. Withdraw methods claim; keep as numerical hygiene note."
+            "routing label was observed, but **optimal site sets / min site counts did not "
+            "change**. Withdraw methods claim; keep as numerical hygiene note."
         )
         go = "NO_GO_INFRASTRUCTURE_METHODS"
     else:
         verdict = (
             "**NO-GO for adaptive refinement contribution on these instances:** "
             "no discrete false-negative feasibility that alters planning was demonstrated "
-            "beyond prior Task 08 diagnosis. Northbound Case A remains physically "
-            "peak-motor / model-limited under assumed power."
+            "beyond prior Task 08 diagnosis."
         )
         go = "NO_GO"
 
     lines.append(verdict)
     lines.append(f"\n`novelty_decision: {go}`\n")
+    # Persist machine-readable field splits beside CSV consumers
+    import json as _json
+
+    (ROOT / "results/pass2_refinement_change_fields.json").write_text(
+        _json.dumps(field_rows, indent=2, default=str), encoding="utf-8"
+    )
     lines.extend(
         [
             "",

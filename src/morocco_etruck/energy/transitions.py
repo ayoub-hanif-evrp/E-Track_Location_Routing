@@ -9,7 +9,10 @@ from typing import Literal
 from morocco_etruck.energy.refrigeration import RefrigerationParams, refrigeration_energy_j
 from morocco_etruck.energy.simulator import EdgeInput, J_PER_KWH
 from morocco_etruck.energy.terrain import TerrainSample, edge_dz_from_profile
-from morocco_etruck.energy.traction import segment_traction_energy
+from morocco_etruck.energy.traction import (
+    max_power_feasible_speed_mps,
+    segment_traction_energy,
+)
 from morocco_etruck.energy.vehicle import VehicleParams, mass_from_gcm, validate_gcm
 from morocco_etruck.energy.weather import (
     CorridorWeatherDay,
@@ -41,6 +44,8 @@ class DriveTransitionResult:
     soc_feasible: bool
     trailer_soc_feasible: bool
     violation_reason: str | None
+    speed_mps_used: float | None = None
+    speed_adapted: bool = False
 
 
 def apply_drive(
@@ -57,19 +62,28 @@ def apply_drive(
     s_cursor_m: float,
     speed_mps: float | None = None,
     accel_mps2: float = 0.0,
+    adapt_speed_to_peak_power: bool = False,
+    adapt_speed_to_continuous_power: bool = False,
+    min_adapt_speed_mps: float = 1.0 / 3.6,
 ) -> DriveTransitionResult:
     """
     Apply one DRIVE edge starting from an existing energy state.
 
     Unlike evaluate_route(), does not reset SOC to vehicle.soc_initial.
+
+    Optional speed adaptation (research / PASS correction): if the commanded
+    cruise exceeds peak (and optionally continuous) motor ratings, reduce speed
+    to the largest feasible value ≥ min_adapt_speed_mps. Does **not** retune
+    manufacturer power ratings. Peak is never treated as unlimited-duration
+    continuous capability when ``adapt_speed_to_continuous_power`` is True.
     """
     validate_gcm(gcm_kg, vehicle)
     mass = mass_from_gcm(gcm_kg)
-    v = vehicle.cruise_mps if speed_mps is None else float(speed_mps)
+    v_cmd = vehicle.cruise_mps if speed_mps is None else float(speed_mps)
     L = edge.length_m
     if L <= 0:
         raise ValueError("zero-length edge is invalid")
-    if v <= 0:
+    if v_cmd <= 0:
         raise ValueError("speed must be positive")
 
     coords = list(edge.geometry.coords)
@@ -85,7 +99,7 @@ def apply_drive(
     if terrain.source != "flat" and not math.isfinite(dz):
         return DriveTransitionResult(
             next_state=state,
-            dt_s=L / v,
+            dt_s=L / v_cmd,
             length_m=L,
             E_traction_j=0.0,
             E_aux_j=0.0,
@@ -97,7 +111,49 @@ def apply_drive(
             soc_feasible=False,
             trailer_soc_feasible=True,
             violation_reason="missing_elevation",
+            speed_mps_used=v_cmd,
+            speed_adapted=False,
         )
+
+    v = v_cmd
+    speed_adapted = False
+    if adapt_speed_to_peak_power or adapt_speed_to_continuous_power:
+        limit = float(vehicle.peak_power_w)
+        if adapt_speed_to_continuous_power:
+            limit = min(limit, float(vehicle.continuous_power_w))
+        v_star, _p = max_power_feasible_speed_mps(
+            length_m=L,
+            dz_m=0.0 if terrain.source == "flat" else float(dz),
+            mass_kg=mass,
+            wind_along_travel_mps=wind_along,
+            rho_kg_m3=rho,
+            vehicle=vehicle,
+            power_limit_w=limit,
+            v_hi_mps=v_cmd,
+            v_lo_mps=float(min_adapt_speed_mps),
+            accel_mps2=accel_mps2,
+        )
+        if v_star is None:
+            return DriveTransitionResult(
+                next_state=state,
+                dt_s=L / max(v_cmd, min_adapt_speed_mps),
+                length_m=L,
+                E_traction_j=0.0,
+                E_aux_j=0.0,
+                E_refrig_j=0.0,
+                E_net_tractor_j=0.0,
+                E_trailer_refrig_j=0.0,
+                power_feasible_peak=False,
+                power_feasible_continuous=False,
+                soc_feasible=False,
+                trailer_soc_feasible=True,
+                violation_reason="peak_motor_power_exceeded",
+                speed_mps_used=float(min_adapt_speed_mps),
+                speed_adapted=True,
+            )
+        if v_star + 1e-9 < v_cmd:
+            speed_adapted = True
+        v = float(v_star)
 
     soc = state.soc
     trailer_soc = state.trailer_soc
@@ -166,6 +222,8 @@ def apply_drive(
         soc_feasible=soc_ok,
         trailer_soc_feasible=trailer_ok,
         violation_reason=reason,
+        speed_mps_used=v,
+        speed_adapted=speed_adapted,
     )
 
 

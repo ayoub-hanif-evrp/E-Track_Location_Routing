@@ -197,6 +197,101 @@ def segment_traction_energy(
     )
 
 
+def wheel_power_at_speed_w(
+    *,
+    length_m: float,
+    dz_m: float,
+    mass_kg: float,
+    v_mps: float,
+    wind_along_travel_mps: float,
+    rho_kg_m3: float,
+    vehicle: VehicleParams,
+    accel_mps2: float = 0.0,
+) -> float:
+    """Required wheel power (W) at commanded speed (uncapped)."""
+    theta = grade_angle_rad(dz_m, length_m)
+    v_air = relative_air_speed_mps(v_mps, wind_along_travel_mps)
+    forces = compute_forces(
+        mass_kg=mass_kg,
+        theta_rad=theta,
+        v_mps=v_mps,
+        v_air_mps=v_air,
+        rho_kg_m3=rho_kg_m3,
+        vehicle=vehicle,
+        accel_mps2=accel_mps2,
+    )
+    return forces.F_trac_n * v_mps
+
+
+def max_power_feasible_speed_mps(
+    *,
+    length_m: float,
+    dz_m: float,
+    mass_kg: float,
+    wind_along_travel_mps: float,
+    rho_kg_m3: float,
+    vehicle: VehicleParams,
+    power_limit_w: float,
+    v_hi_mps: float,
+    v_lo_mps: float = 1.0 / 3.6,
+    accel_mps2: float = 0.0,
+    n_bisect: int = 40,
+) -> tuple[float | None, float]:
+    """
+    Largest speed in [v_lo, v_hi] with required wheel power ≤ power_limit_w.
+
+    Returns (v_feasible_or_None, P_wheel_at_returned_or_v_lo).
+    None means even v_lo exceeds the power limit (gradeability / floor).
+    """
+    if v_hi_mps < v_lo_mps:
+        v_hi_mps, v_lo_mps = v_lo_mps, v_hi_mps
+    p_lo = wheel_power_at_speed_w(
+        length_m=length_m,
+        dz_m=dz_m,
+        mass_kg=mass_kg,
+        v_mps=v_lo_mps,
+        wind_along_travel_mps=wind_along_travel_mps,
+        rho_kg_m3=rho_kg_m3,
+        vehicle=vehicle,
+        accel_mps2=accel_mps2,
+    )
+    if p_lo > power_limit_w + 1e-6:
+        return None, p_lo
+    p_hi = wheel_power_at_speed_w(
+        length_m=length_m,
+        dz_m=dz_m,
+        mass_kg=mass_kg,
+        v_mps=v_hi_mps,
+        wind_along_travel_mps=wind_along_travel_mps,
+        rho_kg_m3=rho_kg_m3,
+        vehicle=vehicle,
+        accel_mps2=accel_mps2,
+    )
+    if p_hi <= power_limit_w + 1e-6:
+        return v_hi_mps, p_hi
+    lo, hi = v_lo_mps, v_hi_mps
+    best = v_lo_mps
+    best_p = p_lo
+    for _ in range(n_bisect):
+        mid = 0.5 * (lo + hi)
+        p_mid = wheel_power_at_speed_w(
+            length_m=length_m,
+            dz_m=dz_m,
+            mass_kg=mass_kg,
+            v_mps=mid,
+            wind_along_travel_mps=wind_along_travel_mps,
+            rho_kg_m3=rho_kg_m3,
+            vehicle=vehicle,
+            accel_mps2=accel_mps2,
+        )
+        if p_mid <= power_limit_w + 1e-6:
+            best, best_p = mid, p_mid
+            lo = mid
+        else:
+            hi = mid
+    return best, best_p
+
+
 # Backwards-compatible alias used by older tests (regen path only semantics changed).
 def battery_traction_power_w(
     P_wheel_w: float,
