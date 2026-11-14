@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from morocco_etruck.energy.refrigeration import refrigeration_energy_j
@@ -28,6 +28,14 @@ class MultirouteReplayExtras:
     charge_kwh_total: float = 0.0
     charge_duration_s: float = 0.0
     min_soc: float = 1.0
+    arrival_soc: float | None = None
+    drive_duration_s: float = 0.0
+    wait_duration_s: float = 0.0
+    # Authoritative physical trace (P0.1)
+    trace_complete: bool = False
+    action_trace: list[dict[str, Any]] = field(default_factory=list)
+    micro_trace: list[dict[str, Any]] = field(default_factory=list)
+    incomplete_reason: str | None = None
 
 
 def continuous_replay_multiroute(
@@ -38,6 +46,7 @@ def continuous_replay_multiroute(
     discrete_cost: int | None = None,
     discrete_t: int | None = None,
     discrete_E_truck: int | None = None,
+    emit_trace: bool = False,
 ) -> tuple[ContinuousReplayReport, MultirouteReplayExtras]:
     """
     Replay DRIVE/CHARGE/WAIT with Task 02B continuous physics on geometry-owned macros.
@@ -52,6 +61,10 @@ def continuous_replay_multiroute(
       - delivery deadline
       - DEM-mode: refuse silent flat substitution
       - synthetic weather ⇒ not historical certification (weather_assumed)
+
+    When ``emit_trace=True``, records a single authoritative DRIVE/CHARGE/WAIT
+    action+microsegment trace. Incomplete missions are labelled
+    ``trace_complete=False`` and must not feed complete-trip publication stats.
     """
     usable = float(ctx.vehicle.usable_kwh)
     soc = inst.E_truck_init / usable
@@ -65,6 +78,39 @@ def continuous_replay_multiroute(
     length_m = 0.0
     charges: list[dict[str, Any]] = []
     deadline_s = float(inst.deadline_steps) * ctx.time_step_min * 60.0
+    action_trace: list[dict[str, Any]] = []
+    micro_trace: list[dict[str, Any]] = []
+    drive_dur = 0.0
+    wait_dur = 0.0
+    charge_dur = 0.0
+
+    def _extras(
+        *,
+        complete: bool = False,
+        incomplete_reason: str | None = None,
+    ) -> MultirouteReplayExtras:
+        return MultirouteReplayExtras(
+            osm_path,
+            arc_ids,
+            length_m,
+            charges,
+            E_traction_kwh=e_trac,
+            E_aux_drive_kwh=e_aux_d,
+            E_refrig_drive_kwh=e_ref_d,
+            E_regen_credit_kwh=e_regen,
+            E_aux_stationary_kwh=e_aux_s,
+            E_refrig_stationary_kwh=e_ref_s,
+            charge_kwh_total=charge_kwh,
+            charge_duration_s=charge_dur,
+            min_soc=min_soc,
+            arrival_soc=soc,
+            drive_duration_s=drive_dur,
+            wait_duration_s=wait_dur,
+            trace_complete=complete,
+            action_trace=list(action_trace) if emit_trace else [],
+            micro_trace=list(micro_trace) if emit_trace else [],
+            incomplete_reason=incomplete_reason,
+        )
 
     def _fail(reason: str) -> tuple[ContinuousReplayReport, MultirouteReplayExtras]:
         return (
@@ -81,17 +127,11 @@ def continuous_replay_multiroute(
                 None,
                 min_soc,
             ),
-            MultirouteReplayExtras(
-                osm_path,
-                arc_ids,
-                length_m,
-                charges,
-                min_soc=min_soc,
-            ),
+            _extras(complete=False, incomplete_reason=reason),
         )
 
     e_trac = e_aux_d = e_ref_d = e_regen = e_aux_s = e_ref_s = 0.0
-    charge_kwh = charge_dur = 0.0
+    charge_kwh = 0.0
 
     if ctx.terrain_mode == "dem" and not ctx.dem_complete:
         return _fail("dem_incomplete")
@@ -132,6 +172,10 @@ def continuous_replay_multiroute(
             pn = [int(x) for x in macro.path_nodes]
             if last_v_nid is not None and pn and int(pn[0]) != int(last_v_nid):
                 return _fail("directed_continuity_break")
+            soc_before = soc
+            t_before = t_s
+            d_before = length_m
+            micro_buf: list[dict[str, Any]] | None = micro_trace if emit_trace else None
             ok, dt, soc, trailer_soc, reason, ecomp = simulate_drive_from_soc(
                 macro.micro_edges,
                 macro.terrain,
@@ -152,15 +196,41 @@ def continuous_replay_multiroute(
                 min_adapt_speed_mps=float(
                     getattr(ctx, "min_adapt_speed_mps", 1.0 / 3.6)
                 ),
+                micro_trace=micro_buf,
+                arc_id=str(aid),
+                cum_distance0_m=d_before,
+                time0_s=t_before,
             )
             e_trac += float(ecomp.get("E_traction_kwh", 0.0))
             e_aux_d += float(ecomp.get("E_aux_kwh", 0.0))
             e_ref_d += float(ecomp.get("E_refrig_kwh", 0.0))
             e_regen += float(ecomp.get("E_regen_credit_kwh", 0.0))
             t_s += dt
+            drive_dur += dt
             min_soc = min(min_soc, soc)
             arc_ids.append(str(aid))
             length_m += float(macro.length_m)
+            if emit_trace:
+                action_trace.append(
+                    {
+                        "action_type": "DRIVE",
+                        "arc_id": str(aid),
+                        "u": u,
+                        "v": v,
+                        "length_m": float(macro.length_m),
+                        "cum_distance_m": length_m,
+                        "t_start_s": t_before,
+                        "t_end_s": t_s,
+                        "dt_s": dt,
+                        "soc_before": soc_before,
+                        "soc_after": soc,
+                        "E_traction_kwh": float(ecomp.get("E_traction_kwh", 0.0)),
+                        "E_aux_kwh": float(ecomp.get("E_aux_kwh", 0.0)),
+                        "E_refrig_kwh": float(ecomp.get("E_refrig_kwh", 0.0)),
+                        "E_regen_credit_kwh": float(ecomp.get("E_regen_credit_kwh", 0.0)),
+                        "violation": None if ok else reason,
+                    }
+                )
             if not osm_path:
                 osm_path.extend(pn)
             else:
@@ -188,6 +258,8 @@ def continuous_replay_multiroute(
             if st is None or not st.compatible:
                 return _fail("incompatible_charger")
             de = float(act["delta_e_kwh"])
+            soc_before = soc
+            t_before = t_s
             if "steps" in act:
                 dt = int(act["steps"]) * ctx.time_step_min * 60.0
             else:
@@ -217,12 +289,31 @@ def continuous_replay_multiroute(
             E_tr = min(usable * ctx.vehicle.soc_max, E_tr)
             soc = E_tr / usable
             t_s += dt
+            charge_dur += dt
             e_aux_s += e_aux_kwh
             e_ref_s += e_ref_kwh
             charge_kwh += de
-            charge_dur += dt
             charges.append({"node": node, "delta_e_kwh": de, "dt_s": dt})
             min_soc = min(min_soc, soc)
+            if emit_trace:
+                action_trace.append(
+                    {
+                        "action_type": "CHARGE",
+                        "arc_id": None,
+                        "node": node,
+                        "site": node,
+                        "cum_distance_m": length_m,
+                        "t_start_s": t_before,
+                        "t_end_s": t_s,
+                        "dt_s": dt,
+                        "soc_before": soc_before,
+                        "soc_after": soc,
+                        "charge_kwh": de,
+                        "E_aux_kwh": e_aux_kwh,
+                        "E_refrig_kwh": e_ref_kwh,
+                        "violation": None,
+                    }
+                )
             if t_s > deadline_s + 1e-9:
                 return _fail("deadline")
             if soc < ctx.vehicle.soc_min - 1e-9:
@@ -234,6 +325,8 @@ def continuous_replay_multiroute(
         elif typ == "WAIT":
             steps = int(act["steps"])
             dt = steps * ctx.time_step_min * 60.0
+            soc_before = soc
+            t_before = t_s
             mid = next(iter(ctx.weather.points.values()))
             e_aux = ctx.vehicle.P_aux_w * dt
             e_ref = refrigeration_energy_j(
@@ -251,9 +344,27 @@ def continuous_replay_multiroute(
                         trailer_soc * ctx.fridge.trailer_usable_kwh - e_ref / 3.6e6
                     ) / ctx.fridge.trailer_usable_kwh
             t_s += dt
+            wait_dur += dt
             e_aux_s += e_aux / 3.6e6
             e_ref_s += e_ref / 3.6e6
             min_soc = min(min_soc, soc)
+            if emit_trace:
+                action_trace.append(
+                    {
+                        "action_type": "WAIT",
+                        "arc_id": None,
+                        "node": current_node,
+                        "cum_distance_m": length_m,
+                        "t_start_s": t_before,
+                        "t_end_s": t_s,
+                        "dt_s": dt,
+                        "soc_before": soc_before,
+                        "soc_after": soc,
+                        "E_aux_kwh": e_aux / 3.6e6,
+                        "E_refrig_kwh": e_ref / 3.6e6,
+                        "violation": None,
+                    }
+                )
             if t_s > deadline_s + 1e-9:
                 return _fail("deadline")
             if soc < ctx.vehicle.soc_min - 1e-9:
@@ -288,19 +399,62 @@ def continuous_replay_multiroute(
             dT,
             min_soc,
         ),
-        MultirouteReplayExtras(
-            osm_path,
-            arc_ids,
-            length_m,
-            charges,
-            E_traction_kwh=e_trac,
-            E_aux_drive_kwh=e_aux_d,
-            E_refrig_drive_kwh=e_ref_d,
-            E_regen_credit_kwh=e_regen,
-            E_aux_stationary_kwh=e_aux_s,
-            E_refrig_stationary_kwh=e_ref_s,
-            charge_kwh_total=charge_kwh,
-            charge_duration_s=charge_dur,
-            min_soc=min_soc,
-        ),
+        _extras(complete=True, incomplete_reason=None),
     )
+
+
+def summarize_complete_trace(extras: MultirouteReplayExtras) -> dict[str, Any]:
+    """Publication metrics from an authoritative complete replay trace only."""
+    if not extras.trace_complete:
+        return {
+            "trace_status": "INCOMPLETE",
+            "incomplete_reason": extras.incomplete_reason,
+            "usable_for_complete_trip_stats": False,
+        }
+    micros = extras.micro_trace
+    speeds = [float(m["speed_kmh"]) for m in micros if m.get("speed_kmh") is not None]
+    mway = [
+        float(m["speed_kmh"])
+        for m in micros
+        if "motorway" in str(m.get("highway") or "").lower()
+    ]
+    powers = [float(m["P_wheel_kw"]) for m in micros if m.get("P_wheel_kw") is not None]
+
+    def _pct(xs: list[float], p: float) -> float | None:
+        if not xs:
+            return None
+        ys = sorted(xs)
+        i = min(len(ys) - 1, max(0, int(round(p / 100.0 * (len(ys) - 1)))))
+        return ys[i]
+
+    return {
+        "trace_status": "COMPLETE",
+        "usable_for_complete_trip_stats": True,
+        "length_m": extras.length_m,
+        "drive_duration_s": extras.drive_duration_s,
+        "charge_duration_s": extras.charge_duration_s,
+        "wait_duration_s": extras.wait_duration_s,
+        "total_duration_s": (
+            extras.drive_duration_s + extras.charge_duration_s + extras.wait_duration_s
+        ),
+        "min_soc": extras.min_soc,
+        "arrival_soc": extras.arrival_soc,
+        "charge_kwh_total": extras.charge_kwh_total,
+        "E_traction_kwh": extras.E_traction_kwh,
+        "E_aux_drive_kwh": extras.E_aux_drive_kwh,
+        "E_refrig_drive_kwh": extras.E_refrig_drive_kwh,
+        "E_regen_credit_kwh": extras.E_regen_credit_kwh,
+        "speed_mean_kmh": (sum(speeds) / len(speeds)) if speeds else None,
+        "speed_min_kmh": min(speeds) if speeds else None,
+        "speed_p05_kmh": _pct(speeds, 5),
+        "motorway_min_kmh": min(mway) if mway else None,
+        "n_motorway_below_60": sum(1 for s in mway if s + 1e-9 < 60.0),
+        "P_wheel_max_kw": max(powers) if powers else None,
+        "P_wheel_p95_kw": _pct(powers, 95),
+        "n_drive_actions": sum(1 for a in extras.action_trace if a.get("action_type") == "DRIVE"),
+        "n_charge_actions": sum(
+            1 for a in extras.action_trace if a.get("action_type") == "CHARGE"
+        ),
+        "n_microsegments": len(micros),
+        "accel_decel_modeled": False,
+    }

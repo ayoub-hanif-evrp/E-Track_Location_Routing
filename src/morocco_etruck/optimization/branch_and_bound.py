@@ -86,10 +86,11 @@ def _next_branch_site(undecided: frozenset[str]) -> str:
 
 
 def _lex_better(cand: SubsetEvaluation, incumbent: SubsetEvaluation | None) -> bool:
-    if incumbent is None:
-        return cand.certified  # only accept certified incumbents for proved search
-    if not cand.certified:
+    """Incumbents require routing certification AND budget feasibility."""
+    if not cand.certified or not cand.budget_ok:
         return False
+    if incumbent is None:
+        return True
     return LexScore.from_parts(
         cand.coverage_serviceable, cand.secondary_cost, cand.certified
     ) < LexScore.from_parts(

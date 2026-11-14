@@ -365,7 +365,12 @@ def evaluate_multiroute_subset(
     weight_serviceable = sum(weight_by_id.get(i, 0.0) for i in (serviceable_ids or set()))
     weight_total = sum(m.weight for m in missions)
     var = 0.0
-    certified = ok_budget and all(not r.uncertified for r in results)
+    # Routing certification is independent of the installation budget.
+    # Budget-relaxed coverage UBs (installed ∪ undecided) may exceed B; they
+    # remain eligible as certified upper bounds when all mission evaluations
+    # are resolved. Incumbents still require budget_ok (enforced in B&B leaves).
+    routing_certified = all(not r.uncertified for r in results)
+    certified = routing_certified
     for r in results:
         if r.served and r.objective_cents is not None:
             var += weight_by_id[r.mission_id] * float(r.objective_cents) * cfg.cents_to_currency

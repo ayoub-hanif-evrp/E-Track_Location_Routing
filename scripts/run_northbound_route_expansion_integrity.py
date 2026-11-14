@@ -55,6 +55,7 @@ from morocco_etruck.optimization.multiroute_placement_evaluation import (  # noq
 )
 from morocco_etruck.optimization.multiroute_replay import (  # noqa: E402
     continuous_replay_multiroute,
+    summarize_complete_trace,
 )
 from morocco_etruck.optimization.replay import replay_solution  # noqa: E402
 
@@ -133,6 +134,7 @@ def _solve_both(prep, cfg, allowed: frozenset[str] | None = None):
             discrete_cost=sol.objective,
             discrete_t=None,
             discrete_E_truck=None,
+            emit_trace=True,
         )
     return {
         "status": sol.status.value,
@@ -254,107 +256,25 @@ def _quantize_loss_along_path(prep, path_nodes: list[str], q: int) -> dict[str, 
     return {"total_rounding_loss_kwh": lost, "n_drive_steps": len(steps), "steps": steps}
 
 
-def _speed_power_profile(prep, actions: list[dict]) -> dict[str, Any]:
-    """Continuous micro profile along DRIVE actions for publication metrics."""
-    from morocco_etruck.energy.transitions import EnergyState, apply_drive
-    from morocco_etruck.energy.traction import wheel_power_at_speed_w
-    from morocco_etruck.energy.terrain import edge_dz_from_profile
-    from morocco_etruck.energy.weather import heading_deg, wind_along_travel_mps
-    from morocco_etruck.energy.vehicle import mass_from_gcm
-
-    usable = float(prep.ctx.vehicle.usable_kwh)
-    soc = prep.template.E_truck_init / usable
-    mass = mass_from_gcm(prep.ctx.gcm_kg)
-    speeds = []
-    powers = []
-    motorway_speeds = []
-    dt_drive = 0.0
-    length = 0.0
-    min_soc = soc
-    for act in actions:
-        if act.get("type") != "DRIVE":
-            continue
-        aid = str(act.get("arc_id") or "")
-        macro = prep.ctx.macros_by_arc_id.get(aid)
-        if macro is None:
-            continue
-        state = EnergyState(soc=soc, trailer_soc=None)
-        s_cursor = 0.0
-        for edge in macro.micro_edges:
-            r = apply_drive(
-                state,
-                edge,
-                vehicle=prep.ctx.vehicle,
-                weather=prep.ctx.weather,
-                fridge_cfg=prep.ctx.fridge,
-                gcm_kg=prep.ctx.gcm_kg,
-                refrigeration_on=prep.ctx.refrigeration_on,
-                power_source=prep.ctx.power_source,  # type: ignore[arg-type]
-                terrain=macro.terrain,
-                s_cursor_m=s_cursor,
-                speed_mps=edge.speed_mps,
-                adapt_speed_to_peak_power=prep.ctx.adapt_speed_to_peak_power,
-                adapt_speed_to_continuous_power=prep.ctx.adapt_speed_to_continuous_power,
-                min_adapt_speed_mps=prep.ctx.min_adapt_speed_mps,
-            )
-            v = float(r.speed_mps_used or edge.speed_mps or 0.0)
-            speeds.append(v * 3.6)
-            hw = str(getattr(edge, "highway", "") or "").lower()
-            if "motorway" in hw:
-                motorway_speeds.append(v * 3.6)
-            dz = float(edge_dz_from_profile(macro.terrain, s_cursor, edge.length_m))
-            coords = list(edge.geometry.coords)
-            mid_lat = 0.5 * (coords[0][1] + coords[-1][1])
-            mid_lon = 0.5 * (coords[0][0] + coords[-1][0])
-            wp = prep.ctx.weather.nearest(mid_lat, mid_lon)
-            rho = wp.air_density_kg_m3(prep.ctx.vehicle.air_density_default_kg_m3)
-            head = heading_deg(coords[0][0], coords[0][1], coords[-1][0], coords[-1][1])
-            wind_along = wind_along_travel_mps(
-                wp.wind_speed_mean_mps, wp.wind_dir_mean_deg, head
-            )
-            p = wheel_power_at_speed_w(
-                length_m=edge.length_m,
-                dz_m=dz,
-                mass_kg=mass,
-                v_mps=v,
-                wind_along_travel_mps=wind_along,
-                rho_kg_m3=rho,
-                vehicle=prep.ctx.vehicle,
-            )
-            powers.append(p / 1000.0)
-            dt_drive += r.dt_s
-            length += edge.length_m
-            s_cursor += edge.length_m
-            if r.violation_reason:
-                break
-            state = r.next_state
-        soc = state.soc
-        min_soc = min(min_soc, soc)
-    def _pct(xs, p):
-        if not xs:
-            return None
-        ys = sorted(xs)
-        i = min(len(ys) - 1, max(0, int(round(p / 100.0 * (len(ys) - 1)))))
-        return ys[i]
-
-    return {
-        "drive_length_m": length,
-        "drive_duration_s": dt_drive,
-        "speed_mean_kmh": (sum(speeds) / len(speeds)) if speeds else None,
-        "speed_min_kmh": min(speeds) if speeds else None,
-        "speed_p05_kmh": _pct(speeds, 5),
-        "speed_p50_kmh": _pct(speeds, 50),
-        "speed_p95_kmh": _pct(speeds, 95),
-        "motorway_min_kmh": min(motorway_speeds) if motorway_speeds else None,
-        "n_motorway_below_60": sum(1 for s in motorway_speeds if s + 1e-9 < 60.0),
-        "P_wheel_max_kw": max(powers) if powers else None,
-        "P_wheel_p95_kw": _pct(powers, 95),
-        "peak_rating_kw": prep.ctx.vehicle.peak_power_w / 1000.0,
-        "cont_rating_kw": prep.ctx.vehicle.continuous_power_w / 1000.0,
-        "arrival_soc": soc,
-        "min_soc_drive_segments": min_soc,
-        "accel_decel_modeled": False,
-    }
+def _authoritative_profile(extras) -> dict[str, Any]:
+    """Publication metrics from full DRIVE/CHARGE/WAIT continuous replay only."""
+    summary = summarize_complete_trace(extras)
+    if not summary.get("usable_for_complete_trip_stats"):
+        return {
+            "trace_status": summary.get("trace_status", "INCOMPLETE"),
+            "incomplete_reason": summary.get("incomplete_reason")
+            or extras.incomplete_reason,
+            "usable_for_complete_trip_stats": False,
+        }
+    summary["peak_rating_kw"] = None
+    summary["cont_rating_kw"] = None
+    summary["charge_events"] = list(extras.charge_events)
+    summary["charge_kwh_replay"] = extras.charge_kwh_total
+    summary["min_soc_replay"] = extras.min_soc
+    summary["journey_length_m"] = extras.length_m
+    summary["disc_ok"] = True
+    summary["cont_ok"] = True
+    return summary
 
 
 def main() -> int:
@@ -450,32 +370,43 @@ def main() -> int:
         profile = {}
         if reb2["status"] == "OPTIMAL" and reb2["sol"].path_nodes:
             round_info = _quantize_loss_along_path(prep2, reb2["sol"].path_nodes, q)
-            # Also estimate loss if same node sequence forced onto canonical4 macros
             round_info_4 = _quantize_loss_along_path(prep4, reb2["sol"].path_nodes, q)
             round_info["canonical4_same_nodes_rounding_loss_kwh"] = round_info_4.get(
                 "total_rounding_loss_kwh"
             )
             round_info["canonical4_same_nodes_n_steps"] = round_info_4.get("n_drive_steps")
-            profile = _speed_power_profile(prep2, reb2["sol"].actions or [])
-            # charge events
-            charge_events = [
-                a for a in (reb2["sol"].actions or []) if a.get("type") == "CHARGE"
-            ]
-            profile["charge_events"] = charge_events
-            profile["cont_ok"] = reb2["cont_ok"]
+            # Re-emit authoritative profile from extras already computed in _solve_both
+            # (emit_trace=True). Fall back to a fresh traced replay if needed.
+            _, ex_prof = continuous_replay_multiroute(
+                prep2.ctx,
+                reb2["inst"],
+                reb2["sol"].actions or [],
+                emit_trace=True,
+            )
+            profile = _authoritative_profile(ex_prof)
+            profile["peak_rating_kw"] = prep2.ctx.vehicle.peak_power_w / 1000.0
+            profile["cont_rating_kw"] = prep2.ctx.vehicle.continuous_power_w / 1000.0
             profile["disc_ok"] = reb2["disc_ok"]
-            profile["charge_kwh_replay"] = reb2["charge_kwh"]
-            profile["charge_duration_s"] = reb2["charge_duration_s"]
-            profile["journey_length_m"] = reb2["length_m"]
-            profile["min_soc_replay"] = reb2["min_soc"]
+            profile["cont_ok"] = reb2["cont_ok"]
 
-        # If mask2/full4 optimal, profile that too
         if full4["status"] == "OPTIMAL":
-            profile4 = _speed_power_profile(prep4, full4["sol"].actions or [])
+            _, ex4 = continuous_replay_multiroute(
+                prep4.ctx,
+                full4["inst"],
+                full4["sol"].actions or [],
+                emit_trace=True,
+            )
+            profile4 = _authoritative_profile(ex4)
             profile4["source"] = "canonical4_full"
             profile["canonical4_full"] = profile4
         if m2["status"] == "OPTIMAL":
-            profile_m = _speed_power_profile(prep4, m2["sol"].actions or [])
+            _, exm = continuous_replay_multiroute(
+                prep4.ctx,
+                m2["inst"],
+                m2["sol"].actions or [],
+                emit_trace=True,
+            )
+            profile_m = _authoritative_profile(exm)
             profile_m["source"] = "canonical4_mask2"
             profile["canonical4_mask2"] = profile_m
 
@@ -813,28 +744,39 @@ def _write_md(summary, results, containment, place_rows) -> None:
             "",
         ]
     )
-    if prof and prof.get("drive_length_m"):
+    auth_len = prof.get("length_m") or prof.get("journey_length_m") or prof.get("drive_length_m")
+    if prof and auth_len and prof.get("usable_for_complete_trip_stats", True):
         lines.extend(
             [
-                f"- Road distance (drive micros): **{prof['drive_length_m']/1000:.1f} km**",
-                f"- Driving time: **{prof['drive_duration_s']/3600:.2f} h** "
-                f"(excl. charge/wait unless included in replay length)",
-                f"- Speed mean/min/p05: {prof.get('speed_mean_kmh'):.1f} / "
-                f"{prof.get('speed_min_kmh'):.1f} / {prof.get('speed_p05_kmh')} km/h",
+                f"- Authoritative road distance (full DRIVE/CHARGE/WAIT replay): "
+                f"**{float(auth_len)/1000:.1f} km** "
+                f"(historical defective DRIVE-only profile ~353.6 km is SUPERSEDED)",
+                f"- Trace status: **{prof.get('trace_status', 'COMPLETE')}**",
+                f"- Driving time: **{float(prof.get('drive_duration_s') or 0)/3600:.2f} h**",
+                f"- Speed mean/min/p05: {prof.get('speed_mean_kmh')} / "
+                f"{prof.get('speed_min_kmh')} / {prof.get('speed_p05_kmh')} km/h",
                 f"- Motorway min speed: {prof.get('motorway_min_kmh')} km/h; "
                 f"segments below 60 km/h: {prof.get('n_motorway_below_60')} "
                 f"(Decree 2-10-420 Art.18 normal min — flagged, not asserted illegal)",
-                f"- Max / p95 wheel power: {prof.get('P_wheel_max_kw'):.1f} / "
+                f"- Max / p95 wheel power: {prof.get('P_wheel_max_kw')} / "
                 f"{prof.get('P_wheel_p95_kw')} kW "
                 f"(ratings peak {prof.get('peak_rating_kw')} / cont {prof.get('cont_rating_kw')})",
-                f"- Charge energy / duration (replay): {prof.get('charge_kwh_replay')} kWh / "
-                f"{(prof.get('charge_duration_s') or 0)/60:.1f} min",
-                f"- Min SOC (replay) / arrival SOC (profile): {prof.get('min_soc_replay')} / "
+                f"- Charge energy / duration (replay): {prof.get('charge_kwh_replay') or prof.get('charge_kwh_total')} kWh / "
+                f"{float(prof.get('charge_duration_s') or 0)/60:.1f} min",
+                f"- Min SOC / arrival SOC: {prof.get('min_soc_replay') or prof.get('min_soc')} / "
                 f"{prof.get('arrival_soc')}",
                 f"- Discrete replay OK: {prof.get('disc_ok')}; continuous replay OK: "
                 f"{prof.get('cont_ok')}",
                 "- Acceleration/deceleration between micro speeds: **not modeled** "
                 "(limitation).",
+                "",
+            ]
+        )
+    elif prof and not prof.get("usable_for_complete_trip_stats", True):
+        lines.extend(
+            [
+                f"- Trace status: **INCOMPLETE** — excluded from complete-trip stats "
+                f"({prof.get('incomplete_reason')})",
                 "",
             ]
         )

@@ -373,24 +373,35 @@ def simulate_drive_from_soc(
     adapt_speed_to_peak_power: bool = False,
     adapt_speed_to_continuous_power: bool = False,
     min_adapt_speed_mps: float = 1.0 / 3.6,
+    micro_trace: list[dict[str, Any]] | None = None,
+    arc_id: str | None = None,
+    cum_distance0_m: float = 0.0,
+    time0_s: float = 0.0,
 ) -> tuple[bool, float, float, float | None, str | None, dict[str, float]]:
     """
     Continuous micro-profile simulation.
 
     Returns (ok, dt_s, soc_end, trailer_soc_end, reason, energy_kwh).
     energy_kwh keys: E_traction, E_aux, E_refrig, E_regen_credit (negative traction sum).
+
+    If ``micro_trace`` is provided, append per-microsegment records (authoritative
+    DRIVE physics only — callers must still apply CHARGE/WAIT in the mission
+    replay). Incomplete traces are the caller's responsibility to mark.
     """
+    from morocco_etruck.energy.terrain import edge_dz_from_profile
+    from morocco_etruck.energy.traction import wheel_power_at_speed_w
+    from morocco_etruck.energy.vehicle import mass_from_gcm
+    from morocco_etruck.energy.weather import heading_deg, wind_along_travel_mps
+
     state = EnergyState(soc=soc0, trailer_soc=trailer_soc0)
     s_cursor = 0.0
     dt_total = 0.0
     e_trac = e_aux = e_ref = e_regen = 0.0
-    empty = {
-        "E_traction_kwh": 0.0,
-        "E_aux_kwh": 0.0,
-        "E_refrig_kwh": 0.0,
-        "E_regen_credit_kwh": 0.0,
-    }
-    for edge in micro_edges:
+    cum_d = float(cum_distance0_m)
+    t_abs = float(time0_s)
+    mass = mass_from_gcm(gcm_kg)
+    for mi, edge in enumerate(micro_edges):
+        soc_before = state.soc
         r = apply_drive(
             state,
             edge,
@@ -413,6 +424,56 @@ def simulate_drive_from_soc(
         e_regen += max(0.0, -float(r.E_traction_j)) / 3.6e6
         e_aux += float(r.E_aux_j) / 3.6e6
         e_ref += float(r.E_refrig_j) / 3.6e6
+        if micro_trace is not None:
+            v_used = float(r.speed_mps_used if r.speed_mps_used is not None else (edge.speed_mps or 0.0))
+            dz = float(edge_dz_from_profile(terrain, s_cursor - edge.length_m, edge.length_m))
+            coords = list(edge.geometry.coords)
+            mid_lat = 0.5 * (coords[0][1] + coords[-1][1])
+            mid_lon = 0.5 * (coords[0][0] + coords[-1][0])
+            wp = weather.nearest(mid_lat, mid_lon)
+            rho = wp.air_density_kg_m3(vehicle.air_density_default_kg_m3)
+            head = heading_deg(coords[0][0], coords[0][1], coords[-1][0], coords[-1][1])
+            wind_along = wind_along_travel_mps(
+                wp.wind_speed_mean_mps, wp.wind_dir_mean_deg, head
+            )
+            p_w = wheel_power_at_speed_w(
+                length_m=edge.length_m,
+                dz_m=dz,
+                mass_kg=mass,
+                v_mps=max(v_used, 1e-9),
+                wind_along_travel_mps=wind_along,
+                rho_kg_m3=rho,
+                vehicle=vehicle,
+            )
+            micro_trace.append(
+                {
+                    "action_type": "DRIVE_MICRO",
+                    "arc_id": arc_id,
+                    "micro_index": mi,
+                    "length_m": float(edge.length_m),
+                    "cum_distance_m": cum_d + float(edge.length_m),
+                    "t_start_s": t_abs,
+                    "t_end_s": t_abs + float(r.dt_s),
+                    "dt_s": float(r.dt_s),
+                    "soc_before": soc_before,
+                    "soc_after": (
+                        state.soc if r.violation_reason else r.next_state.soc
+                    ),
+                    "speed_mps": v_used,
+                    "speed_kmh": v_used * 3.6,
+                    "speed_adapted": bool(r.speed_adapted),
+                    "highway": str(getattr(edge, "highway", "") or ""),
+                    "dz_m": dz,
+                    "P_wheel_kw": p_w / 1000.0,
+                    "E_traction_kwh": max(0.0, float(r.E_traction_j)) / 3.6e6,
+                    "E_regen_credit_kwh": max(0.0, -float(r.E_traction_j)) / 3.6e6,
+                    "E_aux_kwh": float(r.E_aux_j) / 3.6e6,
+                    "E_refrig_kwh": float(r.E_refrig_j) / 3.6e6,
+                    "violation": r.violation_reason,
+                }
+            )
+        cum_d += float(edge.length_m)
+        t_abs += float(r.dt_s)
         if r.violation_reason:
             return (
                 False,
@@ -439,9 +500,7 @@ def simulate_drive_from_soc(
             "E_aux_kwh": e_aux,
             "E_refrig_kwh": e_ref,
             "E_regen_credit_kwh": e_regen,
-        }
-        if True
-        else empty,
+        },
     )
 
 

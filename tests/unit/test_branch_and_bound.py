@@ -272,3 +272,91 @@ def test_mrls_limit_reached_style_uncertified_blocks_certified_optimal():
     )
     assert res.optimality_status != OptimalityStatus.CERTIFIED_OPTIMAL
     assert res.optimality_status == OptimalityStatus.INCUMBENT_UNPROVED
+
+
+def test_budget_relaxed_superset_routing_certified_supports_ub_not_incumbent():
+    """
+    P0.4: over-budget installed∪undecided may be routing-certified (UB) while
+    budget_ok=False, and must never become the incumbent.
+    """
+    from morocco_etruck.optimization.placement_bounds import coverage_upper_bound
+
+    crf = 0.1
+    capex = {"A": 100.0, "B": 100.0}
+
+    def evaluate_fn(installed: set[str]) -> SubsetEvaluation:
+        infra = sum(capex[s] for s in installed)
+        budget = infra <= 100.0 + 1e-9
+        # Both sites together: higher coverage, routing certified, over budget
+        if installed == {"A", "B"}:
+            return SubsetEvaluation(
+                site_ids=frozenset(installed),
+                budget_ok=False,
+                certified=True,  # routing resolved
+                coverage_total=2.0,
+                coverage_serviceable=2.0,
+                weight_total=2.0,
+                weight_serviceable=2.0,
+                infra_capex=infra,
+                infra_annual=infra * crf,
+                variable_cost=1.0,
+                secondary_cost=infra * crf + 1.0,
+                missions=[],
+            )
+        cov = 1.0 if installed else 0.0
+        return SubsetEvaluation(
+            site_ids=frozenset(installed),
+            budget_ok=budget,
+            certified=True,
+            coverage_total=cov,
+            coverage_serviceable=cov,
+            weight_total=2.0,
+            weight_serviceable=2.0,
+            infra_capex=infra,
+            infra_annual=infra * crf,
+            variable_cost=2.0 if installed else 0.0,
+            secondary_cost=infra * crf + (2.0 if installed else 0.0),
+            missions=[],
+        )
+
+    ub = coverage_upper_bound(
+        installed=set(),
+        undecided={"A", "B"},
+        evaluate_fn=evaluate_fn,
+    )
+    assert ub.ub_certified is True
+    assert ub.ub_coverage == 2.0
+
+    res = run_branch_and_bound_core(
+        site_ids=["A", "B"],
+        capex=capex,
+        max_capex=100.0,
+        crf=crf,
+        evaluate_fn=evaluate_fn,
+    )
+    assert res.incumbent is not None
+    assert res.incumbent.budget_ok is True
+    assert res.incumbent.site_ids in (frozenset({"A"}), frozenset({"B"}))
+    assert res.incumbent.site_ids != frozenset({"A", "B"})
+
+
+def test_over_budget_subset_never_incumbent_even_if_routing_certified():
+    from morocco_etruck.optimization.branch_and_bound import _lex_better
+
+    crf = 0.1
+    capex = {"A": 200.0}
+    over = SubsetEvaluation(
+        site_ids=frozenset({"A"}),
+        budget_ok=False,
+        certified=True,
+        coverage_total=5.0,
+        coverage_serviceable=5.0,
+        weight_total=5.0,
+        weight_serviceable=5.0,
+        infra_capex=200.0,
+        infra_annual=20.0,
+        variable_cost=0.0,
+        secondary_cost=20.0,
+        missions=[],
+    )
+    assert _lex_better(over, None) is False
