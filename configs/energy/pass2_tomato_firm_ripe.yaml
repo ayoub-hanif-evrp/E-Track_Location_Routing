@@ -1,0 +1,52 @@
+model_id: refrigeration_ua_cop_approx
+disclaimer: >
+  PASS 2A commodity-specific refrigeration scenario. Setpoint from UNECE good-practice
+  guidance for firm-ripe tomatoes (approx 8–10 °C), mid-band 9 °C. Not measured Moroccan
+  trailer setpoints. UA/COP remain assumed research parameters. Do not claim empirical TRU validation.
+commodity: firm_ripe_fresh_tomatoes
+commodity_note: >
+  Category-level chilled produce for Case A northbound agricultural proxy.
+  Not an observed SKU mix. Cite UNECE ECE_TRADE_470 tomato handling guidance.
+setpoint_c: 9.0
+setpoint_band_c: [8.0, 10.0]
+setpoint_source: >
+  UNECE good practice for tomatoes — firm-ripe approx 8–10 °C
+  (https://unece.org/sites/default/files/2023-07/ECE_TRADE_470_E_web.pdf).
+  Interpreted as category reference guidance, not Moroccan operator logs.
+setpoint_note: firm-ripe tomato band mid-point; not universal +2 °C
+cargo_precooled: true
+cargo_precooled_note: Assumed precooled load at setpoint on departure (research assumption)
+UA_w_per_k: 80.0
+UA_provenance: assumed
+UA_sensitivity_w_per_k:
+- 50.0
+- 120.0
+UA_note: Order-of-magnitude insulated semi-trailer; not Thermo King calibrated
+infiltration_w: 0.0
+infiltration_note: Door/infiltration = 0 unless a justified duty is added; do not inflate for charger drama
+cop:
+  cop_at_delta_0: 2.8
+  cop_at_delta_40: 1.2
+  cop_min: 1.0
+  cop_max: 3.2
+  provenance: assumed
+  note: "Tabulated linear COP(ΔT) with hard bounds; engineering guess"
+power_source:
+  A:
+    draws_from: tractor_battery
+    description: TRU energy deducted from tractor usable pack
+    compatibility: unverified_tractor_to_tru
+  B:
+    draws_from: trailer_battery
+    description: Independent trailer pack; tractor SOC unaffected by TRU
+    trailer_usable_kwh: 30.0
+    trailer_usable_provenance: assumed
+    trailer_usable_sensitivity_kwh:
+    - 20.0
+    - 40.0
+    trailer_soc_initial: 1.0
+    trailer_soc_min: 0.1
+citation_inspiration: >
+  Bank et al. (2025) DOI 10.1016/j.ijrefrig.2025.04.026 — methodological inspiration only;
+  parameters here are NOT a calibrated reproduction.
+pass2_scenario_id: tomato_firm_ripe_unece

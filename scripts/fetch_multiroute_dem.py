@@ -47,6 +47,23 @@ def main() -> int:
     )
     p.add_argument("--step-m", type=float, default=150.0)
     p.add_argument("--skip-download", action="store_true", help="Only use existing local tiles")
+    p.add_argument(
+        "--od-ids",
+        type=str,
+        default="",
+        help="Comma-separated OD ids (default: pilot_od_pairs from config)",
+    )
+    p.add_argument(
+        "--merge-meta",
+        action="store_true",
+        help="Merge into existing dem_sampling_meta.json (preserve other OD arcs)",
+    )
+    p.add_argument(
+        "--max-alts",
+        type=int,
+        default=None,
+        help="Override max_alternatives_for_union for this DEM pass",
+    )
     args = p.parse_args()
 
     cfg = load_multiroute_pilot_config(args.config, root=ROOT)
@@ -57,8 +74,18 @@ def main() -> int:
 
     G = load_graph_from_csv(cfg.nodes_csv, cfg.edges_csv)
     path_rows = pd.read_csv(cfg.path_alternatives_csv).to_dict(orient="records")
-    pilot = list(cfg.raw.get("pilot_od_pairs") or ["casa_marrakech", "casa_agadir", "marrakech_agadir"])
-    max_alts = int((cfg.raw.get("physics") or {}).get("max_alternatives_for_union") or 2)
+    if args.od_ids.strip():
+        pilot = [x.strip() for x in args.od_ids.split(",") if x.strip()]
+    else:
+        pilot = list(
+            cfg.raw.get("pilot_od_pairs")
+            or ["casa_marrakech", "casa_agadir", "marrakech_agadir"]
+        )
+    max_alts = int(
+        args.max_alts
+        if args.max_alts is not None
+        else ((cfg.raw.get("physics") or {}).get("max_alternatives_for_union") or 2)
+    )
 
     try:
         import rasterio  # noqa: F401
@@ -68,14 +95,33 @@ def main() -> int:
         rasterio_ok = False
 
     session = requests.Session()
-    meta: dict = {
-        "attribution": "Copernicus DEM DOI 10.5270/ESA-c5d3d65; AWS Open Data",
-        "note": "Per-macro geometry-owned DEM; not A3 corridor distance profiles.",
-        "arcs": {},
-        "blockers": [],
-    }
+    meta_path = out_dir / "dem_sampling_meta.json"
+    if args.merge_meta and meta_path.exists():
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        meta.setdefault("arcs", {})
+        meta.setdefault("blockers", [])
+        meta["note"] = (
+            "Per-macro geometry-owned DEM; not A3 corridor distance profiles. "
+            "Merged updates must not reverse southbound elevation arrays."
+        )
+    else:
+        meta = {
+            "attribution": "Copernicus DEM DOI 10.5270/ESA-c5d3d65; AWS Open Data",
+            "note": "Per-macro geometry-owned DEM; not A3 corridor distance profiles.",
+            "arcs": {},
+            "blockers": [],
+        }
     if not rasterio_ok:
         meta["blockers"].append("rasterio not installed")
+
+    # When merging, only rewrite arcs belonging to the requested ODs.
+    if args.merge_meta:
+        for aid, rec in list(meta.get("arcs", {}).items()):
+            if str(rec.get("od_id")) in pilot:
+                meta["arcs"].pop(aid, None)
+        meta["blockers"] = [
+            b for b in meta.get("blockers", []) if not any(od in str(b) for od in pilot)
+        ]
 
     seen_arcs: set[str] = set()
     for od_id in pilot:
@@ -199,10 +245,18 @@ def main() -> int:
                 flush=True,
             )
 
-    meta_path = out_dir / "dem_sampling_meta.json"
     meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
     n_ok = sum(1 for a in meta["arcs"].values() if a.get("profile"))
-    print(f"Wrote {meta_path}; dem_profiles={n_ok}/{len(meta['arcs'])}", flush=True)
+    n_od = sum(
+        1
+        for a in meta["arcs"].values()
+        if a.get("profile") and str(a.get("od_id")) in pilot
+    )
+    print(
+        f"Wrote {meta_path}; dem_profiles={n_ok}/{len(meta['arcs'])} "
+        f"(this_pass_ods={pilot} ok={n_od})",
+        flush=True,
+    )
     return 0
 
 

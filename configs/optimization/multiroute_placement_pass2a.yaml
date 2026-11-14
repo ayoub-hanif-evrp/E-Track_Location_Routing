@@ -1,0 +1,101 @@
+multiroute_pilot_config: configs/optimization/multiroute_pilot.yaml
+disclaimer: >
+  PASS 2A northbound Moroccan refrigerated agricultural proxy (Agadir→Casablanca).
+  Tanger Med motivates Souss-Massa export logistics; this OD is a corridor research proxy,
+  not an observed shipment dataset. Weights illustrative. Chargers hypothetical.
+  Legal status: gross_mass_within_limit_axle_unverified. No reverse Amskroud.
+sites:
+- id: y_settat_ac
+  direction: agadir_to_casablanca
+  station_key: settat_ac
+  label: Settat (Agadir→Casablanca carriageway)
+  evidence_class: hypothetical_future_truck_site
+- id: y_benguerir_ac
+  direction: agadir_to_casablanca
+  station_key: benguerir_ac
+  label: Benguerir (Agadir→Casablanca carriageway)
+  evidence_class: hypothetical_future_truck_site
+# amskroud_ac intentionally omitted — unresolved / unavailable; do not fabricate.
+capex_scenarios:
+  equal:
+    note: illustrative equal CAPEX (normalized research units)
+    site_capex:
+      y_settat_ac: 100.0
+      y_benguerir_ac: 100.0
+annualization:
+  interest_rate: 0.08
+  lifetime_years: 15
+cents_to_currency: 0.01
+road_cost_per_km_cents: 100.0
+cargo_payload_kg: 5300.0
+budgets:
+- name: B0
+  max_capex: 0.0
+- name: B1
+  max_capex: 100.0
+- name: B2
+  max_capex: 200.0
+- name: Ball
+  max_capex: null
+price_modes:
+- uniform
+demand_scenarios:
+  # Primary Case A — northbound agricultural refrigerated proxy
+  A_nb_tomato_p5300_soc08:
+    note: >
+      Case A proxy: firm-ripe tomatoes Agadir→Casablanca; illustrative weight 1.0.
+      Not observed shipment frequency. SOC 0.8 baseline informative.
+    missions:
+    - id: M_agadir_casa
+      od_id: agadir_casa
+      weight: 1.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      commodity: firm_ripe_fresh_tomatoes
+      legal_mass_status: gross_mass_within_limit_axle_unverified
+      od_evidence_class: corridor_research_proxy
+  A_nb_tomato_p5300_soc05:
+    note: Case A challenging departure SOC 0.5; same cargo/service.
+    missions:
+    - id: M_agadir_casa
+      od_id: agadir_casa
+      weight: 1.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.5
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      commodity: firm_ripe_fresh_tomatoes
+      legal_mass_status: gross_mass_within_limit_axle_unverified
+      od_evidence_class: corridor_research_proxy
+  A_nb_tomato_p15000_soc08:
+    note: >
+      Case A heavier cargo 15 t under 40 t Moroccan gross screen (~35 t GCM with assumed empty).
+      Axle unverified. Used for sensitivity / discretization tests.
+    missions:
+    - id: M_agadir_casa
+      od_id: agadir_casa
+      weight: 1.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 15000.0
+      commodity: firm_ripe_fresh_tomatoes
+      legal_mass_status: gross_mass_within_limit_axle_unverified
+      od_evidence_class: corridor_research_proxy
+outputs:
+  enumeration_csv: results/pass2_northbound_placement.csv
+  branch_bound_csv: results/pass2_northbound_placement_bb.csv
+solver:
+  max_seconds: 90.0
+  max_expansions: 120000
