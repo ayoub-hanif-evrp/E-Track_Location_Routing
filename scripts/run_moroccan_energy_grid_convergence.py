@@ -8,19 +8,24 @@ import hashlib
 import json
 import sys
 import time
+import tracemalloc
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 import morocco_etruck.optimization.multiroute_placement_evaluation as mpe  # noqa: E402
+from morocco_etruck.optimization.arc_preprocessing import simulate_drive_from_soc  # noqa: E402
+from morocco_etruck.optimization.label_setting import SolverStatus, solve_mrls  # noqa: E402
 from morocco_etruck.optimization.multiroute_adapter import (  # noqa: E402
+    clone_physics_instance_for_subset,
     load_multiroute_pilot_config,
 )
 from morocco_etruck.optimization.multiroute_placement import (  # noqa: E402
     load_multiroute_placement_config,
 )
 from morocco_etruck.optimization.multiroute_placement_evaluation import (  # noqa: E402
+    active_keys_for_installed,
     all_optimal_site_sets,
     evaluate_multiroute_mission,
     prepare_multiroute_placement_context,
@@ -28,6 +33,8 @@ from morocco_etruck.optimization.multiroute_placement_evaluation import (  # noq
     run_multiroute_enumeration,
 )
 from morocco_etruck.optimization.quantization_audit import (  # noqa: E402
+    audit_action_rounding,
+    drive_path_floor_loss,
     summarize_quantization_policy,
 )
 
@@ -51,6 +58,54 @@ def _patch(sp):
 
     mpe.load_multiroute_pilot_config = wrapped
     return orig
+
+
+def _enrich_ball_metrics(prep, cfg, ball, q: int) -> dict:
+    """Quantization loss, MRLS state counts, path macro segmentation for Ball."""
+    out: dict = {
+        "cum_drive_rounding_loss_kwh": None,
+        "cum_charge_wait_rounding_loss_kwh": None,
+        "n_drive_floor_steps": None,
+        "n_macros": len(prep.template.arcs),
+        "mrls_labels_generated": None,
+        "mrls_labels_expanded": None,
+        "mrls_labels_dominated": None,
+        "arrival_soc_disc": None,
+    }
+    if not ball.served or ball.status != "OPTIMAL":
+        return out
+    installed = {s.id for s in cfg.sites}
+    active = active_keys_for_installed(cfg.sites, installed, prep.template)
+    inst = clone_physics_instance_for_subset(prep.template, active_stations=active)
+    sol = solve_mrls(
+        inst,
+        max_seconds=cfg.solver_max_seconds,
+        max_expansions=cfg.solver_max_expansions,
+    )
+    out["mrls_labels_generated"] = sol.stats.get("labels_generated")
+    out["mrls_labels_expanded"] = sol.stats.get("labels_expanded")
+    out["mrls_labels_dominated"] = sol.stats.get("labels_dominated")
+    if sol.status != SolverStatus.OPTIMAL:
+        return out
+    drive_loss = drive_path_floor_loss(
+        path_nodes=list(sol.path_nodes),
+        arcs=list(prep.template.arcs),
+        E_truck_init=int(prep.template.E_truck_init),
+        energy_quantum_kwh=q,
+        simulate_drive_fn=simulate_drive_from_soc,
+        prep_ctx=prep.ctx,
+    )
+    out["cum_drive_rounding_loss_kwh"] = drive_loss["total_rounding_loss_kwh"]
+    out["n_drive_floor_steps"] = drive_loss["n_drive_steps"]
+    chg = audit_action_rounding(inst, sol.actions or [])
+    # Charge/WAIT only
+    cw = [s for s in chg["steps"] if s.action in ("CHARGE", "WAIT")]
+    out["cum_charge_wait_rounding_loss_kwh"] = sum(s.rounding_loss_kwh for s in cw)
+    out["n_charge_wait_audited"] = len(cw)
+    if sol.final_label is not None:
+        usable = float(prep.ctx.vehicle.usable_kwh)
+        out["arrival_soc_disc"] = float(sol.final_label.E_truck) / usable
+    return out
 
 
 def _run_panel(
@@ -77,6 +132,7 @@ def _run_panel(
         cfg = load_multiroute_placement_config(cfg_path, root=ROOT)
         for q in qs:
             t0 = time.perf_counter()
+            tracemalloc.start()
             try:
                 context = prepare_multiroute_placement_context(
                     cfg,
@@ -91,6 +147,7 @@ def _run_panel(
                     max_alternatives_for_union=max_alts,
                 )
             except Exception as exc:  # noqa: BLE001
+                tracemalloc.stop()
                 rows.append(
                     {
                         "panel": label,
@@ -110,6 +167,7 @@ def _run_panel(
                 max_seconds=cfg.solver_max_seconds,
                 max_expansions=cfg.solver_max_expansions,
             )
+            enrich = _enrich_ball_metrics(prep, cfg, ball, q)
             place = {}
             try:
                 enum_rows, e_inc, _ = run_multiroute_enumeration(
@@ -151,9 +209,13 @@ def _run_panel(
                     "bb_enum_agree": agree,
                     "optimality": bb.optimality_status.value,
                     "secondary_cost": None if b_inc is None else b_inc.secondary_cost,
+                    "bb_nodes_visited": bb.stats.nodes_visited,
+                    "bb_mrls_calls": bb.stats.mrls_calls,
                 }
             except Exception as exc:  # noqa: BLE001
                 place = {"place_error": str(exc)}
+            _current, peak = tracemalloc.get_traced_memory()
+            tracemalloc.stop()
             rows.append(
                 {
                     "panel": label,
@@ -169,14 +231,18 @@ def _run_panel(
                     "objective_cents": ball.objective_cents,
                     "reason": ball.reason,
                     "sec": time.perf_counter() - t0,
+                    "peak_traced_memory_mib": peak / (1024 * 1024),
                     "vehicle": str(vehicle.relative_to(ROOT)),
                     "demand": demand,
+                    **enrich,
                     **place,
                 }
             )
             print(
                 f"{label} q={q}: ball={ball.status} served={ball.served} "
-                f"sites={place.get('best_sites')} sec={rows[-1]['sec']:.1f}",
+                f"sites={place.get('best_sites')} "
+                f"drive_loss={enrich.get('cum_drive_rounding_loss_kwh')} "
+                f"sec={rows[-1]['sec']:.1f}",
                 flush=True,
             )
     finally:
@@ -186,7 +252,6 @@ def _run_panel(
 
 def main() -> int:
     rows: list[dict] = []
-    # Primary: canonical 4-alt northbound eActros peak-adapt
     rows.extend(
         _run_panel(
             label="northbound_eactros_canonical4_peakadapt",
@@ -199,7 +264,6 @@ def main() -> int:
             adapt=True,
         )
     )
-    # q=1 attempt on same graph (may be heavy)
     rows.extend(
         _run_panel(
             label="northbound_eactros_canonical4_peakadapt",
@@ -212,7 +276,6 @@ def main() -> int:
             adapt=True,
         )
     )
-    # Southbound heavy q-sensitive counterexample (Task 08 H80)
     rows.extend(
         _run_panel(
             label="southbound_H80_volvo_maxalts2",
@@ -258,6 +321,8 @@ def main() -> int:
         "",
         f"- Novel algorithm claim: `{pol['novel_algorithm_claim']}`",
         f"- Adopted representation change: `{pol['adopted_correction']}`",
+        f"- Alternatives decision: adopted=`{pol['alternatives_decision']['adopted']}`; "
+        f"safe_within_scope=`{pol['alternatives_decision']['safe_within_scope']}`",
         f"- Rationale: {pol['rationale']}",
         "",
         "Unit proof that CHARGE can yield zero discrete gain: "
@@ -265,16 +330,17 @@ def main() -> int:
         "",
         "## Northbound canonical max_alts=4 (eActros, peak-adapt)",
         "",
-        "| q | Ball status | Served | Best sites (Ball) | Opt sets | B&B↔enum | Cont replay | sec |",
-        "| --- | --- | --- | --- | --- | --- | --- | ---: |",
+        "| q | Ball | Sites | Drive floor loss kWh | Charge/WAIT loss kWh | "
+        "MRLS gen/exp | Peak MiB | sec |",
+        "| --- | --- | --- | ---: | ---: | --- | ---: | ---: |",
     ]
     for r in nb:
         lines.append(
-            f"| {r.get('q')} | {r.get('ball_status')} | {r.get('ball_served')} | "
-            f"{r.get('best_sites')} | {r.get('opt_sets')} | {r.get('bb_enum_agree')} | "
-            f"{r.get('cont_ok')} | {r.get('sec'):.1f} |"
-            if r.get("sec") is not None
-            else f"| {r.get('q')} | {r.get('status', r.get('ball_status'))} | — | — | — | — | — | — |"
+            f"| {r.get('q')} | {r.get('ball_status')} | {r.get('best_sites')} | "
+            f"{r.get('cum_drive_rounding_loss_kwh')} | "
+            f"{r.get('cum_charge_wait_rounding_loss_kwh')} | "
+            f"{r.get('mrls_labels_generated')}/{r.get('mrls_labels_expanded')} | "
+            f"{(r.get('peak_traced_memory_mib') or 0):.1f} | {r.get('sec'):.1f} |"
         )
     sb = [r for r in rows if r["panel"].startswith("southbound")]
     lines.extend(
@@ -288,13 +354,14 @@ def main() -> int:
             "",
             "## Southbound H80 counterexample (Task 08)",
             "",
-            "| q | Ball status | Served | Best sites |",
-            "| --- | --- | --- | --- |",
+            "| q | Ball status | Served | Best sites | Drive floor loss |",
+            "| --- | --- | --- | --- | ---: |",
         ]
     )
     for r in sb:
         lines.append(
-            f"| {r.get('q')} | {r.get('ball_status')} | {r.get('ball_served')} | {r.get('best_sites')} |"
+            f"| {r.get('q')} | {r.get('ball_status')} | {r.get('ball_served')} | "
+            f"{r.get('best_sites')} | {r.get('cum_drive_rounding_loss_kwh')} |"
         )
     lines.extend(
         [

@@ -95,3 +95,24 @@ def test_quantization_policy_does_not_claim_novel_algorithm():
     pol = summarize_quantization_policy()
     assert pol["novel_algorithm_claim"] is False
     assert pol["adopted_correction"] is None
+    assert pol["alternatives_decision"]["adopted"] is False
+    assert pol["alternatives_decision"]["safe_within_scope"] == "finer_fixed_grids_only"
+
+
+def test_removing_floor_would_be_optimistic_vs_conservative_discrete():
+    """
+    Negative control: continuous post-charge energy rounded up (or kept unfloored)
+    yields a discrete state above the conservative lattice — unsafe for certificates.
+    """
+    cont = 309.75
+    q = 10
+    conservative = _floor_to_quantum(cont, q)
+    optimistic = int(cont)  # trunc toward zero still above floor here... actually 309
+    # Explicit ceil-style optimism
+    import math
+
+    optimistic_ceil = int(math.ceil(cont / q) * q)
+    assert conservative == 300
+    assert optimistic_ceil == 310
+    assert optimistic_ceil > conservative
+    # A search that accepted 310 would claim more energy than the floored model.

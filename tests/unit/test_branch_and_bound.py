@@ -360,3 +360,151 @@ def test_over_budget_subset_never_incumbent_even_if_routing_certified():
         missions=[],
     )
     assert _lex_better(over, None) is False
+
+
+def test_dedicated_budget_relaxed_ub_fn_used_for_coverage_bound():
+    """Coverage UB must call evaluate_coverage_ub_fn, not the budgeted leaf evaluator."""
+    crf = 0.1
+    capex = {"A": 100.0, "B": 100.0}
+    calls = {"leaf": 0, "ub": 0}
+
+    def leaf_fn(installed: set[str]) -> SubsetEvaluation:
+        calls["leaf"] += 1
+        infra = sum(capex[s] for s in installed)
+        return SubsetEvaluation(
+            site_ids=frozenset(installed),
+            budget_ok=infra <= 100.0 + 1e-9,
+            certified=True,
+            coverage_total=1.0 if installed else 0.0,
+            coverage_serviceable=1.0 if installed else 0.0,
+            weight_total=2.0,
+            weight_serviceable=2.0,
+            infra_capex=infra,
+            infra_annual=infra * crf,
+            variable_cost=1.0,
+            secondary_cost=infra * crf + 1.0,
+            missions=[],
+        )
+
+    def ub_fn(installed: set[str]) -> SubsetEvaluation:
+        calls["ub"] += 1
+        infra = sum(capex[s] for s in installed)
+        # Superset A∪B: higher coverage, budget relaxed → budget_ok True
+        cov = 2.0 if installed == {"A", "B"} else (1.0 if installed else 0.0)
+        return SubsetEvaluation(
+            site_ids=frozenset(installed),
+            budget_ok=True,
+            certified=True,
+            coverage_total=cov,
+            coverage_serviceable=cov,
+            weight_total=2.0,
+            weight_serviceable=2.0,
+            infra_capex=infra,
+            infra_annual=infra * crf,
+            variable_cost=0.5,
+            secondary_cost=infra * crf + 0.5,
+            missions=[],
+        )
+
+    res = run_branch_and_bound_core(
+        site_ids=["A", "B"],
+        capex=capex,
+        max_capex=100.0,
+        crf=crf,
+        evaluate_fn=leaf_fn,
+        evaluate_coverage_ub_fn=ub_fn,
+    )
+    assert calls["ub"] > 0
+    assert res.incumbent is not None
+    assert res.incumbent.budget_ok is True
+    assert len(res.incumbent.site_ids) <= 1
+
+
+def test_bb_matches_exhaustive_across_tight_and_all_sites_budgets():
+    """B&B agrees with exhaustive best subset under B=0, tight, and Ball."""
+    import itertools
+
+    crf = 0.1
+    sites = ["A", "B", "C"]
+    capex = {"A": 100.0, "B": 100.0, "C": 100.0}
+    # Coverage: A alone 1, B alone 1, C alone 0, A+B 2, A+C 1, B+C 1, A+B+C 2
+    # Secondary var: cheaper with fewer sites when coverage ties
+    var = {
+        frozenset(): 0.0,
+        frozenset({"A"}): 5.0,
+        frozenset({"B"}): 6.0,
+        frozenset({"C"}): 9.0,
+        frozenset({"A", "B"}): 3.0,
+        frozenset({"A", "C"}): 5.0,
+        frozenset({"B", "C"}): 6.0,
+        frozenset({"A", "B", "C"}): 2.5,
+    }
+    cov = {
+        frozenset(): 0.0,
+        frozenset({"A"}): 1.0,
+        frozenset({"B"}): 1.0,
+        frozenset({"C"}): 0.0,
+        frozenset({"A", "B"}): 2.0,
+        frozenset({"A", "C"}): 1.0,
+        frozenset({"B", "C"}): 1.0,
+        frozenset({"A", "B", "C"}): 2.0,
+    }
+
+    def evaluate_fn(installed: set[str]) -> SubsetEvaluation:
+        key = frozenset(installed)
+        infra = sum(capex[s] for s in installed)
+        return SubsetEvaluation(
+            site_ids=key,
+            budget_ok=True,  # budget checked by B&B / enum filter
+            certified=True,
+            coverage_total=cov[key],
+            coverage_serviceable=cov[key],
+            weight_total=2.0,
+            weight_serviceable=2.0,
+            infra_capex=infra,
+            infra_annual=infra * crf,
+            variable_cost=var[key],
+            secondary_cost=infra * crf + var[key],
+            missions=[],
+        )
+
+    def exhaustive_best(max_capex: float | None) -> SubsetEvaluation | None:
+        best = None
+        for r in range(len(sites) + 1):
+            for combo in itertools.combinations(sites, r):
+                s = set(combo)
+                infra = sum(capex[x] for x in s)
+                if max_capex is not None and infra > float(max_capex) + 1e-9:
+                    continue
+                ev = evaluate_fn(s)
+                if best is None:
+                    best = ev
+                    continue
+                from morocco_etruck.optimization.placement_problem import LexScore
+
+                if LexScore.from_parts(
+                    ev.coverage_serviceable, ev.secondary_cost, True
+                ) < LexScore.from_parts(
+                    best.coverage_serviceable, best.secondary_cost, True
+                ):
+                    best = ev
+        return best
+
+    for B in (0.0, 100.0, 200.0, None):
+        enum = exhaustive_best(B)
+        bb = run_branch_and_bound_core(
+            site_ids=sites,
+            capex=capex,
+            max_capex=B,
+            crf=crf,
+            evaluate_fn=evaluate_fn,
+            evaluate_coverage_ub_fn=evaluate_fn,
+        )
+        if enum is None:
+            assert bb.incumbent is None
+        else:
+            assert bb.incumbent is not None
+            assert bb.incumbent.site_ids == enum.site_ids
+            assert abs(bb.incumbent.coverage_serviceable - enum.coverage_serviceable) < 1e-12
+            assert abs(bb.incumbent.secondary_cost - enum.secondary_cost) < 1e-9
+            assert bb.optimality_status == OptimalityStatus.CERTIFIED_OPTIMAL

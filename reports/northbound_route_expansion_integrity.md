@@ -43,13 +43,14 @@ On the **canonical 4-alt graph** at q=10, the 2-alt edge mask is also INFEASIBLE
 
 ## eActros feasible route metrics (rebuild max_alts=2, q=10, if OPTIMAL)
 
-- Road distance (drive micros): **353.6 km**
-- Driving time: **4.42 h** (excl. charge/wait unless included in replay length)
-- Speed mean/min/p05: 79.7 / 50.0 / 80.0 km/h
+- Authoritative road distance (full DRIVE/CHARGE/WAIT replay): **429.2 km** (historical defective DRIVE-only profile ~353.6 km is SUPERSEDED)
+- Trace status: **COMPLETE**
+- Driving time: **5.37 h**
+- Speed mean/min/p05: 79.75331555401483 / 50.0 / 80.0 km/h
 - Motorway min speed: 50.0 km/h; segments below 60 km/h: 33 (Decree 2-10-420 Art.18 normal min — flagged, not asserted illegal)
-- Max / p95 wheel power: 600.0 / 309.52133585416635 kW (ratings peak 600.0 / cont 400.0)
+- Max / p95 wheel power: 600.0000000009384 / 278.6566112302732 kW (ratings peak 600.0 / cont 400.0)
 - Charge energy / duration (replay): 240.0 kWh / 45.0 min
-- Min SOC (replay) / arrival SOC (profile): 0.23530976814106477 / 0.10000813173406403
+- Min SOC / arrival SOC: 0.23530976814106477 / 0.36513475973661347
 - Discrete replay OK: True; continuous replay OK: True
 - Acceleration/deceleration between micro speeds: **not modeled** (limitation).
 

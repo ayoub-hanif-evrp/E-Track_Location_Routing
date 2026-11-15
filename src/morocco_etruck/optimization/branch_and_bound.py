@@ -105,6 +105,7 @@ def run_branch_and_bound_core(
     max_capex: float | None,
     crf: float,
     evaluate_fn: Callable[[set[str]], SubsetEvaluation],
+    evaluate_coverage_ub_fn: Callable[[set[str]], SubsetEvaluation] | None = None,
     memo: PlacementMemo | None = None,
     node_limit: int | None = None,
     time_limit_sec: float | None = None,
@@ -117,10 +118,16 @@ def run_branch_and_bound_core(
     bounds never prune. Search terminates CERTIFIED_OPTIMAL only if every open
     node is resolved / pruned by proved bounds and no LIMIT_REACHED remains.
 
+    ``evaluate_fn`` evaluates leaves / incumbents under the true installation budget.
+    ``evaluate_coverage_ub_fn`` (optional) is the dedicated budget-relaxed path for
+    coverage upper bounds on ``installed ∪ undecided``; it must not inherit the
+    original budget cut. Defaults to ``evaluate_fn`` for backwards compatibility.
+
     ``install_first`` is a search heuristic only (child stack order).
     """
     t0 = time.perf_counter()
     stats = BranchAndBoundStats()
+    ub_evaluate = evaluate_coverage_ub_fn or evaluate_fn
     root = BBNode(
         installed=frozenset(),
         excluded=frozenset(),
@@ -166,11 +173,11 @@ def run_branch_and_bound_core(
                 N.status = NodeStatus.LEAF_EVALUATED
             continue
 
-        # Coverage UB on installed ∪ undecided (budget relaxed)
+        # Coverage UB on installed ∪ undecided via dedicated budget-relaxed path
         ub = coverage_upper_bound(
             installed=set(N.installed),
             undecided=set(N.undecided),
-            evaluate_fn=evaluate_fn,
+            evaluate_fn=ub_evaluate,
         )
         if not ub.ub_certified:
             stats.uncertified_bounds += 1

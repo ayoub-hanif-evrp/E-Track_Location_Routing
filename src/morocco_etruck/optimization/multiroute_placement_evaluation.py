@@ -339,8 +339,16 @@ def evaluate_multiroute_subset(
     memo: PlacementMemo | None = None,
     structural_ids: set[str] | None = None,
     serviceable_ids: set[str] | None = None,
+    relax_budget: bool = False,
 ) -> SubsetEvaluation:
-    ok_budget = budget_ok(installed, capex, max_capex)
+    """
+    Evaluate installed sites for routing coverage / cost.
+
+    When ``relax_budget=True`` (coverage-UB path), ``budget_ok`` is forced True so
+    the evaluation does not inherit the original installation budget. Leaves and
+    incumbents must call with ``relax_budget=False`` (default).
+    """
+    ok_budget = True if relax_budget else budget_ok(installed, capex, max_capex)
     results: list[MissionSolveResult] = []
     for m in missions:
         results.append(
@@ -638,6 +646,22 @@ def run_multiroute_branch_and_bound(
             memo=context["memo"],
             structural_ids=context["structural_ids"],
             serviceable_ids=context["serviceable_ids"],
+            relax_budget=False,
+        )
+
+    def evaluate_coverage_ub_fn(installed: set[str]) -> SubsetEvaluation:
+        # Dedicated budget-relaxed path: installed ∪ undecided may exceed B.
+        return evaluate_multiroute_subset(
+            installed,
+            cfg=cfg,
+            prepared=context["prepared"],
+            missions=context["missions"],
+            capex=capex,
+            max_capex=None,
+            memo=context["memo"],
+            structural_ids=context["structural_ids"],
+            serviceable_ids=context["serviceable_ids"],
+            relax_budget=True,
         )
 
     core = run_branch_and_bound_core(
@@ -646,6 +670,7 @@ def run_multiroute_branch_and_bound(
         max_capex=max_c_f,
         crf=cfg.crf,
         evaluate_fn=evaluate_fn,
+        evaluate_coverage_ub_fn=evaluate_coverage_ub_fn,
         memo=context["memo"],
         node_limit=cfg.node_limit,
         time_limit_sec=cfg.time_limit_sec,
