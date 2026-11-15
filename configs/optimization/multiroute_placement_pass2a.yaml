@@ -75,6 +75,25 @@ demand_scenarios:
       commodity: firm_ripe_fresh_tomatoes
       legal_mass_status: gross_mass_within_limit_axle_unverified
       od_evidence_class: corridor_research_proxy
+  A_nb_tomato_p5300_soc10:
+    note: >
+      Explicit full-battery departure SOC 1.0 (same cargo/service as soc08).
+      Use this demand for q=5 and q=2 so departure SOC is identical across grids;
+      do not rebuild from soc08 with a post-hoc force_soc override.
+    missions:
+    - id: M_agadir_casa
+      od_id: agadir_casa
+      weight: 1.0
+      E_truck_init: 0
+      E_init_soc_frac: 1.0
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      commodity: firm_ripe_fresh_tomatoes
+      legal_mass_status: gross_mass_within_limit_axle_unverified
+      od_evidence_class: corridor_research_proxy
   A_nb_tomato_p15000_soc08:
     note: >
       Case A heavier cargo 15 t under 40 t Moroccan gross screen (~35 t GCM with assumed empty).

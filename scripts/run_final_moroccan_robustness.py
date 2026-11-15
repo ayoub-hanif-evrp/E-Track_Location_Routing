@@ -44,7 +44,7 @@ SCENARIOS = [
     # baseline
     dict(id="B0_baseline_soc08_p5300_peak_q5", soc=0.8, payload=5300.0, adapt_peak=True, adapt_cont=False, fridge=FRIDGE, charger_kw=350.0, q=5, demand="A_nb_tomato_p5300_soc08"),
     dict(id="F1_soc05_q5", soc=0.5, payload=5300.0, adapt_peak=True, adapt_cont=False, fridge=FRIDGE, charger_kw=350.0, q=5, demand="A_nb_tomato_p5300_soc05"),
-    dict(id="F1_soc10_q5", soc=1.0, payload=5300.0, adapt_peak=True, adapt_cont=False, fridge=FRIDGE, charger_kw=350.0, q=5, demand="A_nb_tomato_p5300_soc08", force_soc=1.0),
+    dict(id="F1_soc10_q5", soc=1.0, payload=5300.0, adapt_peak=True, adapt_cont=False, fridge=FRIDGE, charger_kw=350.0, q=5, demand="A_nb_tomato_p5300_soc10"),
     dict(id="F2_payload15t_q5", soc=0.8, payload=15000.0, adapt_peak=True, adapt_cont=False, fridge=FRIDGE, charger_kw=350.0, q=5, demand="A_nb_tomato_p15000_soc08"),
     dict(id="F3_cont_power_q5", soc=0.8, payload=5300.0, adapt_peak=False, adapt_cont=True, fridge=FRIDGE, charger_kw=350.0, q=5, demand="A_nb_tomato_p5300_soc08"),
     dict(id="F3_fixed_speed_q5", soc=0.8, payload=5300.0, adapt_peak=False, adapt_cont=False, fridge=FRIDGE, charger_kw=350.0, q=5, demand="A_nb_tomato_p5300_soc08"),
@@ -109,10 +109,7 @@ def main() -> int:
                 max_alternatives_for_union=4,
             )
             prep = next(iter(context["prepared"].values()))
-            if sc.get("force_soc") is not None:
-                # rebuild init energy on template
-                usable = float(prep.ctx.vehicle.usable_kwh)
-                prep.template.E_truck_init = int(round(float(sc["force_soc"]) * usable))
+            # Departure SOC comes only from the named demand scenario (no force_soc).
             installed = {s.id for s in cfg.sites}
             ball = evaluate_multiroute_mission(
                 prep,

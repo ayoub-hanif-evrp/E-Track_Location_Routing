@@ -218,10 +218,39 @@ def audit_solved_actions_exact(
             E_after = int(ent.E_end_truck)
             # Table end should equal floored continuous under same physics
             note = "drive_ok"
+            tol = max(1, q)
             if not ok:
-                note = f"cont_sim_violation:{reason}"
-            if abs(E_after - E_floor) > max(1, q):
-                note = f"table_vs_floor_gap:{E_after}-vs-{E_floor}"
+                return ActionAuditResult(
+                    ok=False,
+                    steps=steps,
+                    cumulative_floor_loss_kwh=floor_loss,
+                    cumulative_cap_truncation_kwh=cap_trunc,
+                    n_drive=n_drive,
+                    n_charge=n_charge,
+                    n_wait=n_wait,
+                    n_zero_net_charge=n_zero,
+                    E_final_disc=E_disc,
+                    failure_reason=f"cont_sim_violation:{aid}:{reason}",
+                    n_actions_input=len(actions),
+                    n_actions_audited=len(steps),
+                )
+            if abs(E_after - E_floor) > tol:
+                return ActionAuditResult(
+                    ok=False,
+                    steps=steps,
+                    cumulative_floor_loss_kwh=floor_loss,
+                    cumulative_cap_truncation_kwh=cap_trunc,
+                    n_drive=n_drive,
+                    n_charge=n_charge,
+                    n_wait=n_wait,
+                    n_zero_net_charge=n_zero,
+                    E_final_disc=E_disc,
+                    failure_reason=(
+                        f"table_vs_floor_gap:{aid}:table={E_after} floor={E_floor} tol={tol}"
+                    ),
+                    n_actions_input=len(actions),
+                    n_actions_audited=len(steps),
+                )
             steps.append(
                 QuantizationStep(
                     action="DRIVE",

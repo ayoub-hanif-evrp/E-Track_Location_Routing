@@ -201,6 +201,144 @@ def test_audit_requires_exact_arc_id_and_accounts_all_actions():
     assert "missing_exact_arc_id" in (bad.failure_reason or "")
 
 
+def test_audit_fails_on_continuous_sim_violation():
+    """Adversarial: simulated DRIVE failure must set audit_ok=False."""
+    vehicle = load_vehicle(ROOT / "configs/vehicles/eactros_600.yaml")
+    fridge = load_refrigeration(ROOT / "configs/energy/pass2_tomato_firm_ripe.yaml")
+    weather = _weather()
+    macro = _macro_grade("a1")
+    E0 = 300
+    E_end = 250
+    arc = ArcData(
+        u="O",
+        v="D",
+        dt_steps=1,
+        dE_truck_kwh=0,
+        dE_trailer_kwh=0,
+        road_cost=100,
+        drive_table={(E0, None): DriveTableEntry(True, 1, E_end, None, None)},
+        arc_id="a1",
+    )
+    inst = RoutingInstance(
+        name="toy_sim_fail",
+        nodes=["O", "D"],
+        arcs=[arc],
+        origin="O",
+        destination="D",
+        deadline_steps=1000,
+        E_truck_cap=600,
+        E_truck_min=50,
+        E_truck_init=E0,
+        E_trailer_cap=None,
+        E_trailer_min=None,
+        E_trailer_init=None,
+        stations={},
+        active_stations=set(),
+        power_source="A",
+        refrigeration_on=False,
+        aux_w=2000.0,
+        tru_mean_w=0.0,
+        wait_max_steps=2,
+        time_step_min=5,
+        energy_quantum_kwh=10,
+    )
+
+    class Ctx:
+        pass
+
+    ctx = Ctx()
+    ctx.vehicle = vehicle
+    ctx.weather = weather
+    ctx.fridge = fridge
+    ctx.gcm_kg = 25000.0
+    ctx.refrigeration_on = False
+    ctx.power_source = "A"
+    ctx.adapt_speed_to_peak_power = True
+    ctx.adapt_speed_to_continuous_power = False
+    ctx.min_adapt_speed_mps = 1.0 / 3.6
+    ctx.macros_by_arc_id = {"a1": macro}
+
+    def boom_sim(*_a, **_k):
+        return False, 0.0, 0.0, None, "adversarial_peak_power", {}
+
+    res = audit_solved_actions_exact(
+        inst,
+        [{"type": "DRIVE", "u": "O", "v": "D", "arc_id": "a1"}],
+        prep_ctx=ctx,
+        simulate_drive_fn=boom_sim,
+    )
+    assert res.ok is False
+    assert "cont_sim_violation" in (res.failure_reason or "")
+
+
+def test_audit_fails_on_table_vs_floor_gap():
+    """Adversarial: drive-table vs floored continuous beyond tolerance → audit_ok=False."""
+    vehicle = load_vehicle(ROOT / "configs/vehicles/eactros_600.yaml")
+    fridge = load_refrigeration(ROOT / "configs/energy/pass2_tomato_firm_ripe.yaml")
+    weather = _weather()
+    macro = _macro_grade("a1")
+    E0 = 300
+    # Deliberately wrong table end energy far from continuous floor.
+    E_end_wrong = 10
+    arc = ArcData(
+        u="O",
+        v="D",
+        dt_steps=1,
+        dE_truck_kwh=0,
+        dE_trailer_kwh=0,
+        road_cost=100,
+        drive_table={(E0, None): DriveTableEntry(True, 1, E_end_wrong, None, None)},
+        arc_id="a1",
+    )
+    inst = RoutingInstance(
+        name="toy_gap",
+        nodes=["O", "D"],
+        arcs=[arc],
+        origin="O",
+        destination="D",
+        deadline_steps=1000,
+        E_truck_cap=600,
+        E_truck_min=50,
+        E_truck_init=E0,
+        E_trailer_cap=None,
+        E_trailer_min=None,
+        E_trailer_init=None,
+        stations={},
+        active_stations=set(),
+        power_source="A",
+        refrigeration_on=False,
+        aux_w=2000.0,
+        tru_mean_w=0.0,
+        wait_max_steps=2,
+        time_step_min=5,
+        energy_quantum_kwh=10,
+    )
+
+    class Ctx:
+        pass
+
+    ctx = Ctx()
+    ctx.vehicle = vehicle
+    ctx.weather = weather
+    ctx.fridge = fridge
+    ctx.gcm_kg = 25000.0
+    ctx.refrigeration_on = False
+    ctx.power_source = "A"
+    ctx.adapt_speed_to_peak_power = True
+    ctx.adapt_speed_to_continuous_power = False
+    ctx.min_adapt_speed_mps = 1.0 / 3.6
+    ctx.macros_by_arc_id = {"a1": macro}
+
+    res = audit_solved_actions_exact(
+        inst,
+        [{"type": "DRIVE", "u": "O", "v": "D", "arc_id": "a1"}],
+        prep_ctx=ctx,
+        simulate_drive_fn=simulate_drive_from_soc,
+    )
+    assert res.ok is False
+    assert "table_vs_floor_gap" in (res.failure_reason or "")
+
+
 def test_replay_min_soc_uses_microsegment_when_emit_trace():
     vehicle = load_vehicle(ROOT / "configs/vehicles/eactros_600.yaml")
     fridge = load_refrigeration(ROOT / "configs/energy/pass2_tomato_firm_ripe.yaml")

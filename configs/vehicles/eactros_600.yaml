@@ -61,9 +61,15 @@ soc:
   soc_min_note: "Assumed operating floor (10%); not a manufacturer warranty limit"
 
 charging:
-  # Research: MCS/CCS capability not fully specified in this pack; no vehicle-side cap.
-  ccs_max_charge_kw: null
-  note: "No manufacturer CCS acceptance curve in this pack; charger power alone applies"
+  # Mercedes-Benz Trucks eActros page: CCS2 charging at up to 400 kW
+  # (ISO/SAE 12906 framework; typical DC station 500 A). Not a full OEM SOC curve.
+  ccs_max_charge_kw: 400.0
+  ccs_max_charge_provenance: manufacturer_public_web
+  ccs_max_charge_source: "https://www.mercedes-benz-trucks.com/int/en/trucks/eactros.html"
+  note: >
+    Vehicle-side CCS acceptance cap 400 kW. Effective charge power = min(charger_kw, 400).
+    Full SOC-dependent acceptance curve not published here; constant-envelope assumption.
+    MCS megawatt charging is future capability and not used in current experiments.
 
 refrigeration:
   power_source_default: A
