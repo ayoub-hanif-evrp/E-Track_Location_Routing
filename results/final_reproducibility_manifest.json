@@ -1,0 +1,23 @@
+{
+  "commit": "ce3bf8653553d693cae57d4ca03793122f0732cc",
+  "review_anchor": "ce3bf8653553d693cae57d4ca03793122f0732cc",
+  "utc": "2026-11-15T23:48:54Z",
+  "primary_metric": "operational_coverage",
+  "primary_vehicle": "eactros_600",
+  "files_sha256": {
+    "results/final_operational_coverage_vs_budget.csv": "736c8039fa9f19cbc0505c6f405e871ae94097ff3842803f894151876bc3d3ec",
+    "results/final_operational_mission_comparison.csv": "0f8e7a551ac68832bd6b5e30e21c8d366c8bb22fcfd4d7c99321ff09006a4125",
+    "results/final_charging_rest_traces.csv": "45b09f37e374440695b16c1badd0d37fda568b0ed1be5bf61be8bc2c9ad95344",
+    "results/final_physics_robustness.csv": "ad3d0d3424c2c5ec561e11b1dcf7661fb220df03b9804e6ab6496288f88d45aa",
+    "results/final_operational_coverage_vs_budget_volvo_475.csv": "d77886456e44616a2d888ac5b2a02474b98d41f8d5a273795764797860ab270f",
+    "results/final_operational_mission_comparison_volvo_475.csv": "4139e53bffd42bd3807375b0f0573ef9d67260d2e59af4ec4383ffa675842ce1",
+    "results/final_charging_rest_traces_volvo_475.csv": "71ea9843e223f3c4570fee3c4b3910097830afefefed691c1401fe9a6fd9d8ba",
+    "reports/FINAL_HIGH_IMPACT_RESULTS_AND_VALIDATION.md": "d1f2fe95f94623c06e15134edd3b2c68569e18800ccd4aa7c62a0bfa821569ca",
+    "results/figures/final_operational_coverage_vs_budget.png": "5c507de6309b7cbff2c9f295a909cc8213f17d2ef54e3a8948eb65875dfa380a",
+    "results/figures/final_route_flexibility.png": "b7692f0d75a2106dfc997b8e252b7d89b936195d9d8c6a5749cd457a97fc0998",
+    "paper/manuscript.pdf": "5d31466696ac3e163533670ecd3d94698fc0a748a37195c9513632fcd5f857e8",
+    "paper/claims_to_results_crosswalk.csv": "aeed4cefd6904d091c45f0164cf1fb80ed11e6a5f3e63d846194e0db7d42016e"
+  },
+  "tests": "17 unit tests passed",
+  "manuscript": "paper/manuscript.pdf via tectonic"
+}

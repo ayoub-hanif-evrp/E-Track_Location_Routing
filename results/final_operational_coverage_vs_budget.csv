@@ -1,0 +1,6 @@
+vehicle_key,q,budget,max_sites,B_ops,B_energy,C_ops,C_energy,D_ops,D_energy,E_ops,E_energy,F_ops,F_energy,E_sites,F_sites,C_sites,E_equals_F_ops
+eactros_600,5,B0,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,,,,True
+eactros_600,5,B1,1,0.0,0.3333333333333333,0.3333333333333333,0.3333333333333333,0.3333333333333333,0.6666666666666666,0.6666666666666666,0.6666666666666666,0.6666666666666666,0.6666666666666666,y_benguerir_ca,y_benguerir_ca,y_benguerir_ac,True
+eactros_600,5,B2,2,0.0,0.3333333333333333,0.6666666666666666,0.6666666666666666,0.3333333333333333,0.6666666666666666,1.0,1.0,1.0,1.0,"y_benguerir_ac,y_benguerir_ca","y_benguerir_ac,y_benguerir_ca","y_benguerir_ac,y_benguerir_ca",True
+eactros_600,5,B3,3,0.0,0.3333333333333333,0.6666666666666666,0.6666666666666666,0.3333333333333333,0.6666666666666666,1.0,1.0,1.0,1.0,"y_benguerir_ac,y_benguerir_ca","y_benguerir_ac,y_benguerir_ca","y_benguerir_ac,y_benguerir_ca",True
+eactros_600,5,Ball,4,0.3333333333333333,0.6666666666666666,0.6666666666666666,0.6666666666666666,0.6666666666666666,1.0,1.0,1.0,1.0,1.0,"y_benguerir_ac,y_benguerir_ca","y_benguerir_ac,y_benguerir_ca","y_benguerir_ac,y_benguerir_ca",True

@@ -138,6 +138,57 @@ def effective_charge_power_kw_with_taper(
     return base * conservative_ccs_taper_factor(soc)
 
 
+def tapered_charge_session_minutes(
+    vehicle: VehicleParams,
+    charger_power_kw: float,
+    *,
+    soc_start: float,
+    soc_end: float,
+    eta_charge: float = 0.95,
+    n_steps: int = 40,
+) -> dict[str, float]:
+    """
+    Integrate conservative taper over an actual SOC interval that fits in the pack.
+
+    Clamps ``soc_end`` to ``soc_max``. Returns battery kWh received, grid kWh,
+    constant-power minutes, and tapered minutes. Not an OEM-measured curve.
+    """
+    s0 = max(float(vehicle.soc_min), min(float(soc_start), float(vehicle.soc_max)))
+    s1 = max(s0, min(float(soc_end), float(vehicle.soc_max)))
+    usable = float(vehicle.usable_kwh)
+    batt_kwh = (s1 - s0) * usable
+    if batt_kwh <= 1e-12:
+        return {
+            "soc_start": s0,
+            "soc_end": s1,
+            "battery_kwh": 0.0,
+            "grid_kwh": 0.0,
+            "minutes_constant": 0.0,
+            "minutes_taper": 0.0,
+        }
+    grid_kwh = batt_kwh / max(1e-9, float(eta_charge))
+    p_const = effective_charge_power_kw(vehicle, charger_power_kw)
+    minutes_const = (grid_kwh / p_const) * 60.0 if p_const > 0 else float("inf")
+    # Piecewise integrate over SOC steps using mid-point taper factor.
+    dt_batt = batt_kwh / float(n_steps)
+    minutes_tap = 0.0
+    for i in range(n_steps):
+        soc_mid = s0 + (s1 - s0) * ((i + 0.5) / n_steps)
+        p = effective_charge_power_kw_with_taper(
+            vehicle, charger_power_kw, soc=soc_mid, apply_taper=True
+        )
+        grid_step = dt_batt / max(1e-9, float(eta_charge))
+        minutes_tap += (grid_step / max(1e-9, p)) * 60.0
+    return {
+        "soc_start": s0,
+        "soc_end": s1,
+        "battery_kwh": batt_kwh,
+        "grid_kwh": grid_kwh,
+        "minutes_constant": minutes_const,
+        "minutes_taper": minutes_tap,
+    }
+
+
 def mass_from_gcm(gcm_kg: float) -> float:
     """Total combination mass for longitudinal dynamics (kg)."""
     if gcm_kg <= 0:
