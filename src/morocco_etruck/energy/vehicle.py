@@ -102,6 +102,42 @@ def effective_charge_power_kw(vehicle: VehicleParams, charger_power_kw: float) -
     return min(p_chg, float(vehicle.ccs_max_charge_kw))
 
 
+def conservative_ccs_taper_factor(soc: float) -> float:
+    """
+    Conservative SOC-dependent CCS acceptance envelope (research assumption).
+
+    Exact OEM eActros/Volvo taper curves are not publicly available. This piecewise
+    factor derates constant acceptance above 60% SOC and more strongly above 80%:
+      SOC ≤ 0.60 → 1.00
+      0.60–0.80  → linear 1.00 → 0.70
+      0.80–0.95  → linear 0.70 → 0.35
+      SOC ≥ 0.95 → 0.20
+    Use only for sensitivity; default planning remains constant-power.
+    """
+    s = float(soc)
+    if s <= 0.60:
+        return 1.0
+    if s <= 0.80:
+        return 1.0 - 0.30 * (s - 0.60) / 0.20
+    if s <= 0.95:
+        return 0.70 - 0.35 * (s - 0.80) / 0.15
+    return 0.20
+
+
+def effective_charge_power_kw_with_taper(
+    vehicle: VehicleParams,
+    charger_power_kw: float,
+    *,
+    soc: float,
+    apply_taper: bool = True,
+) -> float:
+    """Effective charge power with optional conservative SOC taper."""
+    base = effective_charge_power_kw(vehicle, charger_power_kw)
+    if not apply_taper:
+        return base
+    return base * conservative_ccs_taper_factor(soc)
+
+
 def mass_from_gcm(gcm_kg: float) -> float:
     """Total combination mass for longitudinal dynamics (kg)."""
     if gcm_kg <= 0:

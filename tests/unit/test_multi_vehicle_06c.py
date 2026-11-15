@@ -31,7 +31,8 @@ def test_load_eactros_and_volvo_distinct():
     assert v460.usable_kwh == 460.0
     assert v475.vehicle_id != e.vehicle_id
     assert v475.ccs_max_charge_kw == 350.0
-    assert e.ccs_max_charge_kw is None
+    # Mercedes public CCS2 acceptance up to 400 kW (constant envelope).
+    assert e.ccs_max_charge_kw == 400.0
 
 
 def test_derive_energy_bounds_never_exceeds_usable():

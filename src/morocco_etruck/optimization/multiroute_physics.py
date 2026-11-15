@@ -386,7 +386,11 @@ def drive_table_for_macro(
     sp = speed_policy or {}
     adapt_peak = bool(sp.get("adapt_speed_to_peak_power", False))
     adapt_cont = bool(sp.get("adapt_speed_to_continuous_power", False))
-    min_adapt = float(sp.get("min_adapt_speed_mps", 1.0 / 3.6))
+    # Prefer an operational floor in km/h (motorway realism). Legacy key is m/s.
+    if sp.get("min_adapt_speed_kmh") is not None:
+        min_adapt = float(sp["min_adapt_speed_kmh"]) / 3.6
+    else:
+        min_adapt = float(sp.get("min_adapt_speed_mps", 1.0 / 3.6))
     table = build_drive_table(
         macro,
         vehicle=vehicle,
@@ -606,7 +610,11 @@ def build_path_union_routing_instance(
         weather_assumed=weather_assumed,
         adapt_speed_to_peak_power=bool(sp.get("adapt_speed_to_peak_power", False)),
         adapt_speed_to_continuous_power=bool(sp.get("adapt_speed_to_continuous_power", False)),
-        min_adapt_speed_mps=float(sp.get("min_adapt_speed_mps", 1.0 / 3.6)),
+        min_adapt_speed_mps=(
+            float(sp["min_adapt_speed_kmh"]) / 3.6
+            if sp.get("min_adapt_speed_kmh") is not None
+            else float(sp.get("min_adapt_speed_mps", 1.0 / 3.6))
+        ),
         speed_policy=dict(sp) if sp else None,
     )
     return inst, ctx

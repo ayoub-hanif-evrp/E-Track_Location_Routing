@@ -66,3 +66,23 @@ def test_wait_plus_charge_can_form_qualifying_break():
     assert res.ok
     assert res.charging_rest_overlap_min == 20.0
     assert res.extra_rest_beyond_charge_min == 0.0
+
+
+def test_physical_dt_s_preferred_over_discrete_steps():
+    # Discrete overstates first leg (54*5=270) vs physical 240 min.
+    actions = [
+        {"type": "DRIVE", "dt_steps": 54, "dt_s": 240 * 60.0},
+        {"type": "CHARGE", "steps": 9, "dt_s": 45 * 60.0, "delta_e_kwh": 50},
+        {"type": "DRIVE", "dt_steps": 12, "dt_s": 50 * 60.0},
+    ]
+    disc = validate_operational_schedule(actions, time_step_min=5)
+    phys = validate_operational_schedule(
+        actions, time_step_min=5, use_physical_times=True
+    )
+    assert abs(disc.driving_min - 330.0) < 1e-9  # 54*5 + 12*5
+    assert abs(phys.driving_min - 290.0) < 1e-9  # 240 + 50
+    assert phys.time_basis == "physical_dt_s"
+    assert phys.physical_vs_discrete_drive_delta_min is not None
+    assert abs(phys.physical_vs_discrete_drive_delta_min - (-40.0)) < 1e-9
+    assert phys.ok
+    assert disc.ok

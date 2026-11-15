@@ -150,6 +150,13 @@ speed_policy:
     trunk: 70
     primary: 60
     default: 50
+  # Peak-power adaptation: if a microsegment cannot be climbed at cruise under
+  # peak motor power, slow down only down to min_adapt_speed_kmh; below that
+  # the arc is power-infeasible (do NOT crawl at walking speed on a motorway).
+  # Experiments that enable adapt_speed_to_peak_power should set this floor.
+  adapt_speed_to_peak_power: false
+  adapt_speed_to_continuous_power: false
+  min_adapt_speed_kmh: 40
 
 # Scientific pilot portfolio (Stage 6)
 pilot_od_pairs:

@@ -1,0 +1,107 @@
+multiroute_pilot_config: configs/optimization/multiroute_pilot.yaml
+disclaimer: >
+  HIGH-IMPACT corridor portfolio: equal-weight research missions on the ADM
+  Casablanca–Agadir motorway corridor. Direction-specific candidate sites only
+  (verified OSM entrance/exit). Hypothetical HGV CCS installations — not observed
+  freight weights, not grid-capacity claims, not investment advice.
+sites:
+- id: y_settat_ca
+  direction: casablanca_to_agadir
+  station_key: settat_ca
+  label: Settat (Casablanca→Agadir carriageway)
+  evidence_class: hypothetical_future_truck_site
+- id: y_benguerir_ca
+  direction: casablanca_to_agadir
+  station_key: benguerir_ca
+  label: Benguerir (Casablanca→Agadir carriageway)
+  evidence_class: hypothetical_future_truck_site
+- id: y_settat_ac
+  direction: agadir_to_casablanca
+  station_key: settat_ac
+  label: Settat (Agadir→Casablanca carriageway)
+  evidence_class: hypothetical_future_truck_site
+- id: y_benguerir_ac
+  direction: agadir_to_casablanca
+  station_key: benguerir_ac
+  label: Benguerir (Agadir→Casablanca carriageway)
+  evidence_class: hypothetical_future_truck_site
+capex_scenarios:
+  equal:
+    note: illustrative equal CAPEX (normalized research units); one site = 100
+    site_capex:
+      y_settat_ca: 100.0
+      y_benguerir_ca: 100.0
+      y_settat_ac: 100.0
+      y_benguerir_ac: 100.0
+annualization:
+  interest_rate: 0.08
+  lifetime_years: 15
+cents_to_currency: 0.01
+road_cost_per_km_cents: 100.0
+cargo_payload_kg: 5300.0
+budgets:
+- name: B0
+  max_capex: 0.0
+- name: B1
+  max_capex: 100.0
+- name: B2
+  max_capex: 200.0
+- name: B3
+  max_capex: 300.0
+- name: Ball
+  max_capex: null
+price_modes:
+- uniform
+demand_scenarios:
+  # Equal-weight eActros portfolio — fixed before viewing outcomes.
+  corridor_eactros_equal:
+    note: >
+      Equal weight 1.0 per mission. Southbound SOC0.5 refrigerated tomato proxy;
+      northbound SOC0.8 refrigerated tomato proxy. Not observed shipment counts.
+    missions:
+    - id: M_casa_marrakech_s05
+      od_id: casa_marrakech
+      weight: 1.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.5
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      commodity: firm_ripe_fresh_tomatoes
+      legal_mass_status: gross_mass_within_limit_axle_unverified
+      od_evidence_class: corridor_research_proxy
+    - id: M_casa_agadir_s05
+      od_id: casa_agadir
+      weight: 1.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.5
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      commodity: firm_ripe_fresh_tomatoes
+      legal_mass_status: gross_mass_within_limit_axle_unverified
+      od_evidence_class: corridor_research_proxy
+    - id: M_agadir_casa_s08
+      od_id: agadir_casa
+      weight: 1.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      commodity: firm_ripe_fresh_tomatoes
+      legal_mass_status: gross_mass_within_limit_axle_unverified
+      od_evidence_class: corridor_research_proxy
+    # marrakech_casa omitted: DEM incomplete on verified path-union (dem_complete=False).
+outputs:
+  enumeration_csv: results/high_impact_corridor_enumeration.csv
+  branch_bound_csv: results/high_impact_corridor_bb.csv
+solver:
+  max_seconds: 120.0
+  max_expansions: 200000
