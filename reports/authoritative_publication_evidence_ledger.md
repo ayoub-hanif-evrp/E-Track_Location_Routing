@@ -136,3 +136,8 @@ Offline verification for this gate: `273 passed, 2 deselected` (`pytest -q -m "n
 ## F. Hard stops (unchanged)
 
 No nationwide OSM expansion; no new vehicle family; no generic capacity/queue model; no fabricated Moroccan data; no unproved continuous-optimality claims; no new algorithm solely for paper marketing.
+
+
+## Sprint update
+
+Use `SIMULATION_REPLAY_VALIDATED` instead of unqualified `PHYSICALLY_VERIFIED` for simulated routes. Prior path-node rounding losses are SUPERSEDED by `audit_solved_actions_exact`.

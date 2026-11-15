@@ -1,0 +1,24 @@
+claim_id,manuscript_location,claim_text_short,result_file_path,evidence_status,notes
+C001,Abstract,coverage sensitivity vehicle SOC payload,results/task08_soc_payload_comparison.csv,pending,TBD_FROM_CSV
+C002,Abstract; Sec. Morocco,authoritative Agadir-Casa 429.15 km COMPLETE,results/final_action_rounding_audit.csv,verified,SIMULATION_REPLAY_VALIDATED; auth_length_m≈429153
+C003,Sec. discretization,q10 infeasible q5-2-1 optimal northbound,results/moroccan_energy_grid_convergence.csv,pending,q=5/2/1 detail in action audit CSV
+C004,Sec. discretization,Ball site y_benguerir_ac stable q in 5 2 1,results/final_action_rounding_audit.csv,verified,not universal optimality
+C005,Sec. discretization,discrete charge kWh 175/110/94 not converged,results/final_action_rounding_audit.csv,verified,grade B+C; not continuous energy estimate
+C006,Sec. discretization,action-exact floor loss 94.45/30.11/14.11 kWh,results/final_action_rounding_audit.csv,verified,drive_path 42/14/7 SUPERSEDED
+C007,Sec. discretization,same 25 DRIVE arc sequence audit_ok,results/final_action_rounding_audit.csv,verified,drive_arc_ids identical across q
+C008,Sec. discretization,charge drop 81 kWh vs floor-loss drop 80.3 kWh,results/final_action_rounding_audit.csv,verified,classification numerical not route change
+C009,Sec. Morocco,microsegment min SOC e.g. q5≈0.235,results/final_action_rounding_audit.csv,verified,auth_min_soc from DRIVE_MICRO
+C010,Sec. B&B,certified optimal enum agreement Task08,results/task08_algorithm_benchmarks.csv,pending,TBD_FROM_CSV
+C011,Sec. B&B,relaxed bound before after synthetic,results/bb_relaxed_bound_before_after.csv,pending,not Moroccan traffic
+C012,Sec. baselines,routing baseline objective ladder,results/task07c_matched_routing_baselines.csv,pending,TBD_FROM_CSV
+C013,Sec. baselines,placement robustness Volvo two-site gap,results/task07b_placement_robustness.csv,pending,conditional not universal
+C014,Sec. sensitivity,Task07C final sensitivity panel,results/task07c_final_sensitivity.csv,pending,TBD_FROM_CSV
+C015,Sec. sensitivity,heavy Volvo feasibility diagnosis,results/final_heavy_vehicle_feasibility_diagnosis.csv,pending,reports/final_heavy_vehicle_feasibility_diagnosis.md
+C016,Sec. economics,illustrative placement economics,results/task08_placement_economics.csv,pending,NORMALIZED ILLUSTRATIVE only
+C017,Sec. refrigeration,thermal ladder ablation,results/task07b_physical_sensitivity.csv,pending,TBD_FROM_CSV
+C018,Sec. nesting,multi-route vs fixed shortest,results/pass2_refinement_comparison.csv,pending,same-graph nesting only
+C019,Fig. 01,corridor map,reports/figures/morocco_routing_corridor_map.geojson,pending,export to paper/figures/fig01_corridor_map.png
+C020,Fig. 02,energy grid convergence plot,results/final_action_rounding_audit.csv,verified,charge 175/110/94; site stable
+C021,Fig. 03,SOC payload heatmap,results/task08_soc_payload_comparison.csv,pending,generate fig03_soc_payload_matrix.png
+C022,Fig. 04,baseline comparison bars,results/task07c_matched_routing_baselines.csv,pending,generate fig04_routing_baselines.png
+C023,Fig. 05,action-exact floor loss vs q,results/final_action_rounding_audit.csv,verified,supersedes northbound_route_expansion diagnostics for 42/14/7

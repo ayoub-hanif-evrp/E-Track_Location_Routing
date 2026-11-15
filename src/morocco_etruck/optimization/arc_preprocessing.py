@@ -399,6 +399,7 @@ def simulate_drive_from_soc(
     e_trac = e_aux = e_ref = e_regen = 0.0
     cum_d = float(cum_distance0_m)
     t_abs = float(time0_s)
+    soc_min_along = float(soc0)
     mass = mass_from_gcm(gcm_kg)
     for mi, edge in enumerate(micro_edges):
         soc_before = state.soc
@@ -474,6 +475,8 @@ def simulate_drive_from_soc(
             )
         cum_d += float(edge.length_m)
         t_abs += float(r.dt_s)
+        soc_end_micro = state.soc if r.violation_reason else r.next_state.soc
+        soc_min_along = min(soc_min_along, float(soc_before), float(soc_end_micro))
         if r.violation_reason:
             return (
                 False,
@@ -486,6 +489,7 @@ def simulate_drive_from_soc(
                     "E_aux_kwh": e_aux,
                     "E_refrig_kwh": e_ref,
                     "E_regen_credit_kwh": e_regen,
+                    "soc_min_along": soc_min_along,
                 },
             )
         state = r.next_state
@@ -500,6 +504,7 @@ def simulate_drive_from_soc(
             "E_aux_kwh": e_aux,
             "E_refrig_kwh": e_ref,
             "E_regen_credit_kwh": e_regen,
+            "soc_min_along": soc_min_along,
         },
     )
 

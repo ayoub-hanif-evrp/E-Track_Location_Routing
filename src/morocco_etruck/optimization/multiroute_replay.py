@@ -36,6 +36,9 @@ class MultirouteReplayExtras:
     action_trace: list[dict[str, Any]] = field(default_factory=list)
     micro_trace: list[dict[str, Any]] = field(default_factory=list)
     incomplete_reason: str | None = None
+    min_soc_distance_m: float | None = None
+    min_soc_time_s: float | None = None
+    min_soc_action: str | None = None
 
 
 def continuous_replay_multiroute(
@@ -72,6 +75,9 @@ def continuous_replay_multiroute(
     if inst.E_trailer_init is not None:
         trailer_soc = inst.E_trailer_init / float(ctx.fridge.trailer_usable_kwh)
     min_soc = soc
+    min_soc_distance_m: float | None = 0.0
+    min_soc_time_s: float | None = 0.0
+    min_soc_action: str | None = "START"
     t_s = 0.0
     osm_path: list[int] = []
     arc_ids: list[str] = []
@@ -83,6 +89,14 @@ def continuous_replay_multiroute(
     drive_dur = 0.0
     wait_dur = 0.0
     charge_dur = 0.0
+
+    def _note_min(candidate: float, *, dist_m: float, time_s: float, action: str) -> None:
+        nonlocal min_soc, min_soc_distance_m, min_soc_time_s, min_soc_action
+        if candidate < min_soc - 1e-15:
+            min_soc = float(candidate)
+            min_soc_distance_m = float(dist_m)
+            min_soc_time_s = float(time_s)
+            min_soc_action = action
 
     def _extras(
         *,
@@ -110,6 +124,9 @@ def continuous_replay_multiroute(
             action_trace=list(action_trace) if emit_trace else [],
             micro_trace=list(micro_trace) if emit_trace else [],
             incomplete_reason=incomplete_reason,
+            min_soc_distance_m=min_soc_distance_m,
+            min_soc_time_s=min_soc_time_s,
+            min_soc_action=min_soc_action,
         )
 
     def _fail(reason: str) -> tuple[ContinuousReplayReport, MultirouteReplayExtras]:
@@ -176,6 +193,7 @@ def continuous_replay_multiroute(
             t_before = t_s
             d_before = length_m
             micro_buf: list[dict[str, Any]] | None = micro_trace if emit_trace else None
+            micro_start = len(micro_trace) if emit_trace else 0
             ok, dt, soc, trailer_soc, reason, ecomp = simulate_drive_from_soc(
                 macro.micro_edges,
                 macro.terrain,
@@ -207,9 +225,33 @@ def continuous_replay_multiroute(
             e_regen += float(ecomp.get("E_regen_credit_kwh", 0.0))
             t_s += dt
             drive_dur += dt
-            min_soc = min(min_soc, soc)
             arc_ids.append(str(aid))
             length_m += float(macro.length_m)
+            # Full-journey min SOC includes every microsegment, not only macro ends
+            if emit_trace:
+                for mrec in micro_trace[micro_start:]:
+                    _note_min(
+                        float(mrec.get("soc_before", soc)),
+                        dist_m=float(mrec.get("cum_distance_m", length_m))
+                        - float(mrec.get("length_m", 0.0)),
+                        time_s=float(mrec.get("t_start_s", t_s)),
+                        action=f"DRIVE_MICRO:{aid}",
+                    )
+                    _note_min(
+                        float(mrec.get("soc_after", soc)),
+                        dist_m=float(mrec.get("cum_distance_m", length_m)),
+                        time_s=float(mrec.get("t_end_s", t_s)),
+                        action=f"DRIVE_MICRO:{aid}",
+                    )
+            else:
+                soc_min_along = float(ecomp.get("soc_min_along", soc))
+                _note_min(
+                    soc_min_along,
+                    dist_m=length_m,
+                    time_s=t_s,
+                    action=f"DRIVE:{aid}",
+                )
+            _note_min(soc, dist_m=length_m, time_s=t_s, action=f"DRIVE:{aid}")
             if emit_trace:
                 action_trace.append(
                     {
@@ -224,6 +266,7 @@ def continuous_replay_multiroute(
                         "dt_s": dt,
                         "soc_before": soc_before,
                         "soc_after": soc,
+                        "soc_min_along": float(ecomp.get("soc_min_along", soc)),
                         "E_traction_kwh": float(ecomp.get("E_traction_kwh", 0.0)),
                         "E_aux_kwh": float(ecomp.get("E_aux_kwh", 0.0)),
                         "E_refrig_kwh": float(ecomp.get("E_refrig_kwh", 0.0)),
@@ -294,7 +337,8 @@ def continuous_replay_multiroute(
             e_ref_s += e_ref_kwh
             charge_kwh += de
             charges.append({"node": node, "delta_e_kwh": de, "dt_s": dt})
-            min_soc = min(min_soc, soc)
+            _note_min(soc_before, dist_m=length_m, time_s=t_before, action=f"CHARGE:{node}")
+            _note_min(soc, dist_m=length_m, time_s=t_s, action=f"CHARGE:{node}")
             if emit_trace:
                 action_trace.append(
                     {
@@ -347,7 +391,8 @@ def continuous_replay_multiroute(
             wait_dur += dt
             e_aux_s += e_aux / 3.6e6
             e_ref_s += e_ref / 3.6e6
-            min_soc = min(min_soc, soc)
+            _note_min(soc_before, dist_m=length_m, time_s=t_before, action="WAIT")
+            _note_min(soc, dist_m=length_m, time_s=t_s, action="WAIT")
             if emit_trace:
                 action_trace.append(
                     {
@@ -438,6 +483,9 @@ def summarize_complete_trace(extras: MultirouteReplayExtras) -> dict[str, Any]:
             extras.drive_duration_s + extras.charge_duration_s + extras.wait_duration_s
         ),
         "min_soc": extras.min_soc,
+        "min_soc_distance_m": extras.min_soc_distance_m,
+        "min_soc_time_s": extras.min_soc_time_s,
+        "min_soc_action": extras.min_soc_action,
         "arrival_soc": extras.arrival_soc,
         "charge_kwh_total": extras.charge_kwh_total,
         "E_traction_kwh": extras.E_traction_kwh,

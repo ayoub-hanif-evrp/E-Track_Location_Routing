@@ -145,7 +145,7 @@ def continuous_replay(
                 power_source=ctx.power_source,
             )
             t_s += dt
-            min_soc = min(min_soc, soc)
+            min_soc = min(min_soc, soc, float(_e.get("soc_min_along", soc)))
             if not ok:
                 return ContinuousReplayReport(
                     False, reason, discrete_cost, discrete_t, discrete_E_truck,
