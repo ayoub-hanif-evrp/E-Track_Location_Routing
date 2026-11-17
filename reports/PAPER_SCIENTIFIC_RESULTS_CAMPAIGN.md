@@ -1,16 +1,26 @@
 # PAPER_SCIENTIFIC_RESULTS_CAMPAIGN
 
-**Critical assessment first:** the campaign **strengthens** the paper’s mechanism story, but it also **narrows** where the joint multi-route advantage is real. Headline B2 coverage gaps **survive q=2**. Under realistic depot SOC (80%), Casablanca→Marrakech flexibility disappears because fixed-route also becomes ops-feasible. Northbound Agadir→Casablanca at **15 t / 80% SOC remains unserved** even with both AC chargers—chargers do not rescue every heavy dispatch; **100% depot SOC** does. On the expanded 6-OD depot portfolio, eActros shows **E=C=F** (no joint gap), while Volvo at q=2 retains a **+1/6** E−C gap.
+**Status:** revalidated after independent-rest HOS correction (executable frontier; not `restored_from_logs`).
 
-Primary metric: **operational coverage** = energy-feasible ∧ continuous replay ∧ schedule/HOS valid.  
+**Critical assessment:** the campaign supports **conditional** serviceability claims. Joint multi-route helps on a low-SOC headline pilot and on selected Volvo 6-OD depot cells; eActros 6-OD depot shows **E=C=F**. Northbound **15 t @ 80% SOC** remains unserved even with both AC chargers; **100% SOC** restores service. A prior q=2 false negative (5.3 t @ 100% SOC, no charge stop) was an **HOS validator artifact**, not a physical energy failure.
+
+Primary metric: **operational coverage** = energy-feasible ∧ continuous replay ∧ schedule/HOS valid (incl. independent rest at verified on-path ADM nodes when no charge is required).  
 Chargers = hypothetical HGV CCS. Scenario counts ≠ traffic samples.  
-Artifacts: `results/paper_campaign/`.
+Artifacts: `results/paper_campaign/` · publication extracts: `results/paper_campaign/publication_tables/`.
+
+---
+
+## Validation correction (rest / HOS)
+
+**Issue.** At fine energy quantum q=2, energy-optimal northbound itineraries at high SOC can skip charging. The prior validator only extended existing CHARGE/WAIT stops, so physically energy-feasible missions failed HOS with `no_verified_stop_before_continuous_limit` even when min SOC ≈ 16.8%.
+
+**Fix.** `propose_chronological_hos_plan` now inserts an **independent qualifying WAIT** at a topology-verified rest node the route already traverses (ADM/service-area graph node such as `benguerir_ac`), with auxiliary + refrigeration energy during the break, then re-replays.
+
+**Revalidation.** eActros Agadir→Casa 5.3 t @ 100% SOC: ops **True** at q=2 and q=1 with or without AC chargers (independent rest). 15 t @ 80% remains **False** at q=2 and q=1 — a real payload–SOC limit, not an artifact.
 
 ---
 
 ## Experiment 0 — DEM recovery
-
-Bounded COP-DEM GLO-30 sampling on verified OSM macros (`scripts/fetch_multiroute_dem.py --od-ids marrakech_casa,agadir_marrakech --max-alts 2 --merge-meta`):
 
 | OD | dem_complete | On-union stations | Amskroud CA on union? |
 |---|---|---|---|
@@ -21,164 +31,130 @@ Bounded COP-DEM GLO-30 sampling on verified OSM macros (`scripts/fetch_multirout
 | casa_marrakech | True | settat_ca, benguerir_ca | No |
 | marrakech_agadir | True | **amskroud_ca** | **Yes** |
 
-Source: `results/paper_campaign/od_dem_site_audit.csv`.
-
 ---
 
-## Table 1 — Headline E vs C vs F (q=2, 3-mission equal-weight)
+## Result A — Infrastructure value (coverage vs budget)
 
-Denominator: **3 equal-weight missions** (casa_marrakech SOC0.5, casa_agadir SOC0.5, agadir_casa SOC0.8; payload 5.3 t; cool tomato; 350 kW hyp. CCS; ops metric).
+### Table 1 — Headline 3-mission pilot (q=2; low-SOC mix)
+
+Denominator: 3 equal-weight missions (casa_marrakech SOC0.5, casa_agadir SOC0.5, agadir_casa SOC0.8; 5.3 t).
 
 | Vehicle | Budget | C ops | E ops | F ops | E−C | E=F? | E sites |
 |---|---|---:|---:|---:|---:|---|---|
-| eActros | B0 | 0.00 | 0.00 | 0.00 | 0.00 | Yes | — |
-| eActros | B1 | 0.33 | 0.67 | 0.67 | **+0.33** | Yes | benguerir_ca |
+| eActros | B1 | 0.33 | 0.67 | 0.67 | +0.33 | Yes | benguerir_ca |
 | eActros | **B2** | **0.67 (2/3)** | **1.00 (3/3)** | **1.00** | **+0.33** | Yes | both Benguerirs |
-| eActros | B3/Ball | 0.67 | 1.00 | 1.00 | +0.33 | Yes | both Benguerirs |
-| Volvo | B0 | 0.00 | 0.00 | 0.00 | 0.00 | Yes | — |
 | Volvo | B1 | 0.00 | 0.33 | 0.33 | +0.33 | Yes | settat_ca |
 | Volvo | **B2** | **0.33 (1/3)** | **0.67 (2/3)** | **0.67** | **+0.33** | Yes | settat_ca+benguerir_ca |
-| Volvo | B3/Ball | 0.33 | 0.67 | 0.67 | +0.33 | Yes | settat_ca+benguerir_ca |
 
-Source: `results/paper_campaign/q2_critical_portfolio.csv`.  
-**Do not claim E beats F** — they tie at every budget. Primary comparator = **C**.
+Source: `q2_critical_portfolio.csv` (re-run after HOS fix; unchanged). **Do not claim E beats F.**
 
----
+### Table 2 — Six-OD depot portfolio (SOC 80%, 5.3 t)
 
-## Table 2 — Expanded 6-OD depot portfolio (SOC 80%, 5.3 t)
+| Vehicle | q | Budget | C ops | E ops | F ops | E−C | Mechanism |
+|---|---:|---|---:|---:|---:|---:|---|
+| eActros | 2 | B0 | 0.67 (4/6) | 0.67 | 0.67 | **0** | no new chargers serve 4/6 |
+| eActros | 2 | B1 | 0.83 | 0.83 | 0.83 | **0** | +benguerir_ac |
+| eActros | 2 | B2+ | **1.00 (6/6)** | **1.00** | **1.00** | **0** | benguerir_ac+ca |
+| Volvo | 2 | B0 | 0.50 | **0.67** | 0.67 | **+0.17 (+1/6)** | route flexibility (zero sites) |
+| Volvo | 2 | B1–Ball | 0.67 | **0.83** | 0.83 | **+0.17** | +benguerir_ca |
 
-Demand: `realistic_depot_soc08_p5300` — six unique ODs (N+S panels), equal weight, depot SOC 80%.
+Source: `method_comparison_AF.csv`. Separate N agricultural vs S hypothetical ODs in mission CSVs.
 
-| Vehicle | q | Budget | C ops | E ops | F ops | E−C | E=F? | E sites |
-|---|---:|---|---:|---:|---:|---:|---|---|
-| eActros | 5 | B0 | 0.67 | 0.67 | 0.67 | 0.00 | Yes | — |
-| eActros | 5 | B1 | 0.83 | 0.83 | 0.83 | 0.00 | Yes | benguerir_ac |
-| eActros | 5 | B2+ | **1.00** | **1.00** | **1.00** | 0.00 | Yes | benguerir_ac+ca |
-| eActros | 2 | B0–Ball | same as q=5 | same | same | **0.00** | Yes | same |
-| Volvo | 5 | B0 | 0.33 | 0.33 | 0.33 | 0.00 | Yes | — |
-| Volvo | 5 | B1–Ball | 0.50 | 0.50 | 0.50 | 0.00 | Yes | benguerir_ca |
-| Volvo | **2** | B0 | 0.50 | **0.67** | 0.67 | **+0.17 (+1/6)** | Yes | — |
-| Volvo | **2** | B1–Ball | 0.67 | **0.83** | 0.83 | **+0.17** | Yes | benguerir_ca |
-
-Source: `results/paper_campaign/method_comparison_AF.csv`.
-
-**Interpretation:** under scheduled depot SOC, eActros joint placement adds **no** ops coverage vs optimized fixed-route (C catches up). Volvo’s q=2 gap is real but modest (+1 mission / 6). Headline E>C is therefore **stress-SOC / 3-mission-mix** specific, not a universal 6-OD depot result.
+**Mechanism split:** charger budgets raise eActros depot coverage 4/6→6/6 with **no** E−C gap; Volvo’s +1/6 is **route access**, not extra chargers at B0.
 
 ---
 
-## Table 3 — Efficiency / flexibility types
+## Result B — Payload–SOC operating frontier
 
-| Comparison type | eActros | Volvo | Total |
-|---|---:|---:|---:|
-| serviceability_gain (E yes, C no) | 5 | 9 | **14** |
-| matched_time (both feasible) | 60 | 36 | **96** |
-| neither_or_C_only | 10 | 30 | 40 |
+Executable q=5 frontier: **288** cells (not restored). Decisive q=2 subset: **91** cells.
 
-Source: `results/paper_campaign/operational_efficiency.csv` (refreshed from 6-OD + headline missions).  
-Matched Δtrip_min median = **0** when both are feasible — do not invent travel-time savings; lead with **serviceability**.
+### Agadir→Casablanca (best over AC ladder)
 
----
-
-## Table 4 — Payload × SOC frontier (q=5 screen; decisive q=2 confirms)
-
-Frontier: 288 cells (144 eActros + 144 Volvo) across 4 ODs × 3 payloads × 3 SOCs × infra ladders.  
-Decisive q=2 confirms: **143** cells; **97.2%** agree with q=5; **3** flips only (eActros `agadir_casa` 5.3 t @ SOC 100% with AC — borderline quantum effect, not a site-count headline).
-
-### 4a. Casablanca→Marrakech flexibility (both vehicles)
-
-| Payload | SOC 50% | SOC 80% | SOC 100% |
-|---|---|---|---|
-| 5.3 / 10 / 15 t | multi **Y**, fixed **N** (**flex**) | multi Y, fixed **Y** | multi Y, fixed Y |
-
-Flexibility ops-gains at SOC≥80%: only **2** cells overall (`marrakech_agadir` heavy), not Casa→Marrakech.  
-At SOC 50%: **6** flex cells, all Casa→Marrakech.
-
-### 4b. Agadir→Casablanca multi-route (best over AC ladder)
-
-| Vehicle | Payload | SOC 50% | SOC 80% | SOC 100% |
+| Vehicle | Payload | SOC 50% (stress) | SOC 80% | SOC 100% |
 |---|---|---|---|---|
-| eActros | 5.3 / 10 t | unserved | **served** (needs ≥1 AC) | served |
-| eActros | **15 t** | unserved | **unserved (both AC)** | **served** (needs charger) |
-| Volvo | 5.3 / 10 t | unserved | unserved | **served** (needs charger) |
+| eActros | 5.3 / 10 t | unserved | served (≥1 AC) | served (even **0 AC** after rest fix) |
+| eActros | **15 t** | unserved | **unserved (both AC)** | **served (≥1 AC)** |
+| Volvo | 5.3 / 10 t | unserved | unserved | served (≥1 AC) |
 | Volvo | 15 t | unserved | unserved | unserved |
 
-**Effect size (eActros):** 15 t northbound SOC 80%→100% flips ops **0→1** under identical sites; extra AC site cannot rescue 80%. Confirmed at q=2.
+**Not recoverable by more sites:** eActros 15 t @ 80% — confirmed at q=2 and q=1.  
+**Recoverable by SOC, not sites:** same load @ 100% + one AC.
 
-Sources: `payload_soc_frontier.csv`, `payload_soc_frontier_q2_confirm.csv`.
+Sources: `payload_soc_frontier.csv`, `critical_q1_confirms.csv`.
 
 ---
 
-## Robustness matrix (eActros, pre-registered)
+## Result C — Route flexibility
 
-Targets: Agadir→Casa multi with Benguerir AC (± Settat AC); Casa→Marrakech multi/fixed with Settat CA. q ∈ {5,2}.
-
-| Cell | Agadir→Casa ops (q=2, 1 AC) | Casa→Marrakech multi/fixed |
+| OD / case | Who benefits | Mechanism |
 |---|---|---|
-| base (5.3 t, SOC80%, 350 kW, cool, reserve10%) | **True** | True / True |
-| reserve 15% / 20% | True | True / True |
-| charger 250 / 150 kW | True | True / True |
-| hot weather | True | True / True |
-| Cd ×1.10 / Crr ×1.10 | True | True / True |
-| payload 10 t @ SOC80% | True | True / True |
-| **payload 15 t @ SOC80%** | **False** | True / True |
-| payload 15 t @ SOC100% | **True** | True / True |
+| Casa→Marrakech @ SOC **50%** | both vehicles, all 3 payloads | multi Y / fixed N (flex); **gone at SOC≥80%** |
+| Marrakech→Agadir | eActros 15 t @ 80%; Volvo 15 t @ 100%; Volvo 5.3 t @ 80% (q=2) | **zero new chargers**; alternative route |
+| Headline casa_marrakech SOC0.5 | both | drives E−C on 3-mission pilot |
 
-Source: `results/paper_campaign/robustness_matrix.csv` (88 rows; speed-policy patch applied).  
-**Survives** moderate kW / hot / aero / rolling / reserve shocks at light depot northbound. **Breaks** only at the pre-registered 15 t @ 80% stress — same frontier Finding C.
+Flex cells at SOC≥80%: **2** (marrakech_agadir heavy). At SOC 50%: **6** (all casa_marrakech).
+
+Matched-time Δtrip median = **0** when both C and E are feasible — report **serviceability**, not travel-time savings. E=F on all tabulated budgets.
+
+Source: `operational_efficiency.csv`, frontier summary table.
 
 ---
 
-## Infrastructure required / Amskroud CA
+## Result D — Robustness
 
-Headline eActros (ops, q=2): **0→0/3**, **1 site (benguerir_ca)→2/3**, **2 sites (both Benguerirs)→3/3** minimum for full headline coverage.
+Pre-registered eActros matrix (Agadir→Casa multi; Casa→Marrakech multi/fixed): reserve 10–20%, charger 150–350 kW, hot weather, Cd/Crr ×1.10, payload 10–15 t.
 
-6-OD depot eActros: same Benguerir AC+CA pair reaches **6/6** at B2.
-
-Amskroud CA on-union only for `casa_agadir` and `marrakech_agadir`. Marginal ops gain vs best non-Amskroud ladder: **1/27** cells (`casa_agadir`, 15 t, SOC 50%). Larger installs including Amskroud can **lose** ops vs Benguerir-only. Not a general coverage upgrade.
-
-Source: `amskroud_ca_value.csv`.
-
----
-
-## Charging / rest / refrigeration credibility
-
-- Chronological HOS pads at verified stops; traces in mission CSVs.
-- Firm-ripe tomato cool scenario retained (not inflated).
-- 350 kW hyp. station with vehicle CCS cap; taper = research envelope, not OEM-measured.
-- q=2 decisive confirms: **143** cells, **97.2%** q5 agreement; 3 borderline `agadir_casa` 5.3 t @ SOC100% flips only.
-
----
-
-## What generalizes vs case-specific?
-
-| Generalizes | Case-specific |
+| Finding | Survives? |
 |---|---|
-| Ops metric must include schedule | Headline SOC0.5 southbound mix |
-| E ties F on these candidate sets | Exact Benguerir pair as unique optimum |
-| Depot SOC is a first-order lever | 15 t @ 80% northbound failure |
-| Flexibility helps low-SOC Casa→Marrakech | Marrakech flex at SOC≥80% |
-| More sites ≠ always more ops | Amskroud-inclusive installs |
-| E>C on stress headline | E=C on 6-OD eActros depot portfolio |
+| Light/medium NB @ SOC80% + Benguerir AC | Yes under kW/hot/aero/roll/reserve |
+| Casa→Marrakech @ depot SOC with Settat CA | Yes (multi and fixed) |
+| **15 t NB @ SOC80%** | **No** (energy) |
+| 15 t NB @ SOC100% | Yes |
+
+Source: `robustness_matrix.csv`.
 
 ---
 
-## Stronger than the prior 3-mission pilot?
+## Corrected q=2 confirmation inventory
 
-**Yes for scientific honesty; mixed for coverage marketing.**
+Decisive subset (**91** cells; not all 288 screening cells):
 
-Completed: q=2 headline both vehicles; DEM recovery; full Volvo+eActros payload×SOC frontier (288) + decisive q=2 confirms (143); 6-OD A–F at q=5 and q=2; robustness matrix; Amskroud on-union test; figures refreshed.
+| Metric | Count |
+|---|---:|
+| Agree on multi-route status | **90 / 91** |
+| Agree on multi **and** fixed | **84 / 91** |
+| Any method change | **7** |
 
-Manuscript should lead with **conditional serviceability and infrastructure efficiency**, not a single 100% coverage slogan.
+### All 7 q5↔q2 changes
+
+| Vehicle | OD | Payload | SOC | Infra | Multi q5→q2 | Fixed q5→q2 | Class |
+|---|---|---:|---:|---|---|---|---|
+| eActros | marrakech_agadir | 15 t | 0.8 | none / amskroud / +settat | T→T | **F→T** | fixed_only |
+| Volvo | marrakech_agadir | 5.3 t | 0.8 | none | **F→T** | F→F | multi_only |
+| Volvo | marrakech_agadir | 15 t | 1.0 | none / amskroud / +settat | T→T | **F→T** | fixed_only |
+
+The previous “3 flips” claim is **withdrawn**; it omitted fixed-baseline changes and is obsolete after the HOS fix (the old eActros NB 5.3 t @ 100% multi Falses are gone).
+
+Critical q=1: agrees with q=2 on all tested northbound and Marrakech→Agadir cells above.
+
+Source: `payload_soc_frontier_q2_confirm.csv`, `publication_tables/table_q2_flip_inventory.csv`, `critical_q1_confirms.csv`.
 
 ---
 
-## Remaining barriers to journal submission
+## Amskroud / more sites
 
-1. No observed OD truck counts / charger uptime / grid capacity.  
-2. Axle compliance unverified; ADM HGV access unknown.  
-3. `agadir_marrakech` has DEM but no validated AC charger without inventing `amskroud_ac`.  
-4. CCS taper is a research envelope, not OEM-measured.  
-5. Equal / illustrative weights ≠ Moroccan traffic sample.
+On-union only for `casa_agadir` and `marrakech_agadir`. Marginal ops gain remains rare. After the rest fix, **availability** of extra AC sites no longer falsely fails no-charge high-SOC northbound witnesses. Cases where a larger install scores worse than a singleton in ladder tables still mean that **that particular install’s energy-optimal itinerary** can differ; operational coverage for budgeted placement uses best subset under the enum score (fewer sites preferred when coverage ties).
+
+---
+
+## Final scientific decision
+
+1. **Three strongest positives:** (i) headline q=2 E−C = +1/3 both vehicles; (ii) eActros 6-OD depot 4/6→6/6 with two directional Benguerirs; (iii) Volvo Marrakech→Agadir / 6-OD B0 route-flexibility gains with zero chargers; plus NB 15 t SOC 80%→100% flip.
+2. **Exact vs optimized fixed-route C:** headline +1/3; Volvo 6-OD q=2 +1/6; eActros 6-OD depot **parity**.
+3. **Survive 80–100% SOC & 10–15 t?** Casa→Marrakech flex: **no** at ≥80%. NB 10 t eActros @ 80%: **yes** with AC. NB 15 t @ 80%: **no**. NB 15 t @ 100%: **yes** with AC. Volvo heavier NB: limited.
+4. **Infrastructure:** headline eActros needs **2 Benguerirs** for 3/3; 6-OD eActros same pair for 6/6; many high-SOC light legs need **0–1** site; rest may use verified ADM nodes without charging.
+5. **Rest/grid artifacts:** independent-rest fix + q=1 agrees on critical cells; remaining flips are mostly **fixed-route improvements** at finer q on Marrakech→Agadir, not false infrastructure needs.
+6. **Journal readiness:** mechanism-level OR evidence is **credible for a serious transportation-research journal** as a **conditional corridor pilot**, but still needs stronger empirical freight-demand / vehicle / grid validation before national policy claims.
 
 ---
 
@@ -186,24 +162,21 @@ Manuscript should lead with **conditional serviceability and infrastructure effi
 
 | Item | Path |
 |---|---|
-| Table 1 Headline E/C/F | `results/paper_campaign/q2_critical_portfolio.csv` |
-| Table 2 Expanded 6-OD | `results/paper_campaign/method_comparison_AF.csv` |
-| Table 3 Efficiency | `results/paper_campaign/operational_efficiency.csv` |
-| Table 4 Frontier + q2 | `payload_soc_frontier.csv`, `payload_soc_frontier_q2_confirm.csv` |
-| Robustness | `results/paper_campaign/robustness_matrix.csv` |
-| Fig1 | `results/paper_campaign/figures/fig1_coverage_vs_budget_*.png` |
-| Fig2 | `results/paper_campaign/figures/fig2_payload_soc_*_*.png` |
-| Fig3–4 | `figures/fig3_flexibility_and_time.png`, `fig4_infra_robustness.png` |
-| Frozen registry | `results/paper_campaign/scenario_registry_frozen.csv` |
+| Coverage vs budget | `q2_critical_portfolio.csv`, `method_comparison_AF.csv` |
+| Payload–SOC | `payload_soc_frontier.csv`, `publication_tables/table_payload_soc_feasibility.csv` |
+| q2 flips | `publication_tables/table_q2_flip_inventory.csv` |
+| q1 critical | `critical_q1_confirms.csv` |
+| Robustness | `robustness_matrix.csv` |
+| Efficiency | `operational_efficiency.csv` |
+| Crosswalk | `publication_tables/evidence_crosswalk.json` |
+| Figures | `figures/fig1_*.png` … `fig4_*.png` |
 
 ---
 
 ## Bottom line for the manuscript
 
-**Keep:** q=2-confirmed +1 mission ops gap of joint/greedy vs optimized fixed-route on the equal-weight pilot; Benguerir-directed two-site minimum for 3/3 eActros; schedule-valid coverage as the service metric.
+**Keep:** q=2-confirmed +1/3 headline gap; Benguerir two-site minimum for full eActros headline/6-OD depot coverage; E=F ties; zero matched-time savings; 15 t @ 80% northbound limit.
 
-**Reframe:** Marrakech multi-route benefit as **stress-SOC dispatch**, not automatic at depot SOC; 6-OD depot eActros as **E=C=F**.
+**Add:** independent rest at verified ADM nodes; Volvo zero-charger Marrakech→Agadir flexibility; explicit 7-cell q2 change inventory.
 
-**Add:** northbound 15 t frontier + robustness — infrastructure alone insufficient without adequate departure SOC; Volvo q=2 6-OD gap (+1/6) as secondary, finer-grid result.
-
-**Do not claim:** E beats greedy; Amskroud as generally material; national freight coverage from this corridor pilot.
+**Do not claim:** E beats greedy; universal depot-SOC multi-route need; Amskroud as general upgrade; national freight coverage.

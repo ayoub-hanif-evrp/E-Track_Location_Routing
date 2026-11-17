@@ -1,0 +1,8 @@
+vehicle_key,od_id,payload_kg,soc_frac,infra_label,multi_ops_q5,multi_ops,fixed_ops_q5,fixed_ops,multi_min_soc,change_class,survives_q2
+eactros_600,marrakech_agadir,15000.0,0.8,none,True,True,False,True,0.1275894460496539,fixed_only,True
+eactros_600,marrakech_agadir,15000.0,0.8,amskroud_only,True,True,False,True,0.1275894460496539,fixed_only,True
+eactros_600,marrakech_agadir,15000.0,0.8,with_amskroud_settat,True,True,False,True,0.1275894460496539,fixed_only,True
+volvo_475,marrakech_agadir,5300.0,0.8,none,False,True,False,False,0.1453805584988982,multi_only,False
+volvo_475,marrakech_agadir,15000.0,1.0,none,True,True,False,True,0.1458967800049271,fixed_only,True
+volvo_475,marrakech_agadir,15000.0,1.0,amskroud_only,True,True,False,True,0.1458967800049271,fixed_only,True
+volvo_475,marrakech_agadir,15000.0,1.0,with_amskroud_settat,True,True,False,True,0.1458967800049271,fixed_only,True

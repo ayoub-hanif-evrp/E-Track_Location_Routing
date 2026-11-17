@@ -178,12 +178,15 @@ def evaluate_mission_operational(
     except Exception:  # noqa: BLE001
         pass
 
+    # Topology-verified on-graph ADM/service nodes (charging optional).
+    verified_rest = set(getattr(prep.template, "stations", {}) or {})
     hos = propose_chronological_hos_plan(
         extras.action_trace,
         P_aux_w=float(getattr(vehicle, "P_aux_w", 2500.0) or 2500.0),
         T_amb_c=mid_t,
         fridge_params=fridge,
         refrigeration_on=True,
+        verified_rest_nodes=verified_rest,
     )
     row["hos_ok"] = bool(hos.ok)
     row["pad_location"] = hos.pad_location
@@ -191,6 +194,7 @@ def evaluate_mission_operational(
     row["pad_aux_kwh"] = hos.aux_energy_kwh
     row["pad_refrig_kwh"] = hos.refrig_energy_kwh
     row["hos_notes"] = hos.notes
+    row["hos_independent_rest"] = bool(getattr(hos, "independent_rest", False))
 
     if hos.needed and hos.ok and hos.pad_location and hos.pad_duration_min > 1e-9:
         actions_adj = inject_wait_into_solver_actions(

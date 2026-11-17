@@ -1,0 +1,11 @@
+{
+  "frontier_rows": 288,
+  "confirm_rows": 91,
+  "agree_multi": 90,
+  "agree_both_methods": 84,
+  "n_flips_any_method": 7,
+  "frontier_git_sha_unique": [
+    "27d0c6668c58b88fdca48befac3ba059318c97a1"
+  ],
+  "restored_from_logs": false
+}
