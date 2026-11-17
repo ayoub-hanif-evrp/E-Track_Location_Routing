@@ -1,0 +1,22 @@
+{
+  "git_sha": "503fe27f8299153d2821630ad424612f8144aa86",
+  "utc": "2026-11-16T19:48:55Z",
+  "files_sha256": {
+    "results\\paper_campaign\\amskroud_ca_value.csv": "f5dce8c0c523a39c124c1e1b558281ed91fffc4922b88f5c188f2c3ac1e0816e",
+    "results\\paper_campaign\\od_dem_site_audit.csv": "0bc71a22c0f0a83879e05c7a459ac1212218b6b0c0930e6535296b8a46dfeef0",
+    "results\\paper_campaign\\operational_efficiency.csv": "f25ef3577f8d416db95d3dd67c24bf447cae92208aef1e200c21a3bd29a21673",
+    "results\\paper_campaign\\payload_soc_frontier.csv": "3b693d7df6036d7a84c643ae04292da846d06a28ca653b525c1c37e2801700d2",
+    "results\\paper_campaign\\payload_soc_frontier_q2_confirm.csv": "e901d9c6ba552bee6ce5bfdea2947ee0c53682996c5d5a13cb17daf9752d66ee",
+    "results\\paper_campaign\\q2_critical_missions.csv": "094678f7b7e1456dde132a4aeaaf48a35f70aded0c210815f6412a98d8d093b2",
+    "results\\paper_campaign\\q2_critical_portfolio.csv": "511bcb85cb35537541abbe86e5130c8beb61c2a78ae6efd16fa02e6ead666925",
+    "results\\paper_campaign\\scenario_registry_frozen.csv": "dcb91c0833e3fea92754784111f0916374126bd7ba0680be8d6e0a73d8e43012",
+    "results\\paper_campaign\\figures\\fig1_coverage_vs_budget_eactros_600.png": "9df2c674564ca29baae72fd1a494d56878f91efc6388ae04a2a317dbb4e2a96f",
+    "results\\paper_campaign\\figures\\fig1_coverage_vs_budget_volvo_475.png": "0f965a9b3aa963751589940a9cb3012b24fee0fc1396125d5616050a977d23d7",
+    "results\\paper_campaign\\figures\\fig2_payload_soc_eactros_600_agadir_casa.png": "e3e8a70673705600d84d5bd49a5df04e42afeaad7076467d2d269b76cdfe6d17",
+    "results\\paper_campaign\\figures\\fig2_payload_soc_eactros_600_casa_marrakech.png": "e653e5642d0bdf9e3989144f622ae4aa42194f8eb164afc0ebd8f0815cd7c53c",
+    "results\\paper_campaign\\figures\\fig3_flexibility_and_time.png": "07e33666a8b30486d23ed6e208d9395f1ae67987fe1490c864b5d513be532cbd",
+    "results\\paper_campaign\\figures\\fig4_infra_robustness.png": "d6ce9f946a06fa48a0dd90435573b44d0f926676c9c4feececa2aaa2401ad361",
+    "reports\\PAPER_SCIENTIFIC_RESULTS_CAMPAIGN.md": "1beed6a94cae45e448c7d2e3ea3d380d9364346b11103f018b2d1e4eb233f023"
+  },
+  "note": "eActros frontier complete; q2 confirm partial (76 cells); Volvo frontier deferred"
+}
