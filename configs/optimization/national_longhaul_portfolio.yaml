@@ -1,0 +1,163 @@
+# Frozen national long-haul OD portfolio (pre-registered before solve).
+# Illustrative research demand — not observed OD truck counts.
+# Charging model: ccs_soc_taper_research_envelope (default in MRLS/replay).
+
+multiroute_pilot_config: configs/optimization/multiroute_pilot.yaml
+charging_model: ccs_soc_taper_research_envelope
+disclaimer: >
+  National long-haul campaign under SOC CCS research taper. ODs span
+  Tangier–Rabat–Casablanca–Fès–Oujda–Marrakech–Agadir. OSM+COP-DEM+ADM
+  topology evidence only; not observed truck counts. Chargers hypothetical HGV CCS.
+  Taper is a research envelope, not an OEM-measured curve.
+
+# OD ids must match configs/multiroute_corridor.yaml od_pairs.
+od_ids_frozen:
+  - casa_agadir
+  - agadir_casa
+  - casa_marrakech
+  - marrakech_casa
+  - marrakech_agadir
+  - agadir_marrakech
+  - tangier_casa
+  - casa_tangier
+  - tangier_rabat
+  - rabat_tangier
+  - rabat_fes
+  - fes_rabat
+  - fes_oujda
+  - oujda_fes
+  - casa_oujda
+  - oujda_casa
+  - casa_rabat
+  - rabat_casa
+
+# Staged panels: solve north spine first if full set is intractable.
+panels:
+  south_retained:
+    od_ids: [casa_agadir, agadir_casa, casa_marrakech, marrakech_casa, marrakech_agadir, agadir_marrakech]
+  north_spine:
+    od_ids: [tangier_casa, casa_tangier, tangier_rabat, rabat_tangier, casa_rabat, rabat_casa]
+  east_spine:
+    od_ids: [rabat_fes, fes_rabat, fes_oujda, oujda_fes, casa_oujda, oujda_casa]
+
+capex_scenarios:
+  equal:
+    note: illustrative equal CAPEX (normalized research units); one site = 100
+
+annualization:
+  interest_rate: 0.08
+  lifetime_years: 15
+cents_to_currency: 0.01
+road_cost_per_km_cents: 100.0
+cargo_payload_kg: 5300.0
+
+budgets:
+- name: B0
+  max_capex: 0.0
+- name: B1
+  max_capex: 100.0
+- name: B2
+  max_capex: 200.0
+- name: B3
+  max_capex: 300.0
+- name: Ball
+  max_capex: null
+
+demand_scenarios:
+  headline_national_equal:
+    note: >
+      Equal-weight national headline mix: northbound agricultural Agadir→Casa,
+      north spine Tangier→Casa, east spine Fès→Oujda, plus southbound return stress.
+      SOC 0.8 depot except one southbound SOC 0.5 stress. Not observed volumes.
+    panel: mixed_headline
+    missions:
+    - id: M_agadir_casa_s08
+      od_id: agadir_casa
+      weight: 1.0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      commodity: firm_ripe_fresh_tomatoes
+      direction_panel: northbound_agricultural
+      od_evidence_class: national_research_proxy
+    - id: M_tangier_casa_s08
+      od_id: tangier_casa
+      weight: 1.0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      commodity: firm_ripe_fresh_tomatoes
+      direction_panel: north_spine
+      od_evidence_class: national_research_proxy
+    - id: M_fes_oujda_s08
+      od_id: fes_oujda
+      weight: 1.0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      commodity: firm_ripe_fresh_tomatoes
+      direction_panel: east_spine
+      od_evidence_class: national_research_proxy
+    - id: M_casa_marrakech_s05
+      od_id: casa_marrakech
+      weight: 1.0
+      E_init_soc_frac: 0.5
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      commodity: firm_ripe_fresh_tomatoes
+      direction_panel: southbound_return
+      od_evidence_class: national_research_proxy
+    - id: M_casa_agadir_s05
+      od_id: casa_agadir
+      weight: 1.0
+      E_init_soc_frac: 0.5
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      commodity: firm_ripe_fresh_tomatoes
+      direction_panel: southbound_return
+      od_evidence_class: national_research_proxy
+    - id: M_rabat_fes_s08
+      od_id: rabat_fes
+      weight: 1.0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      commodity: firm_ripe_fresh_tomatoes
+      direction_panel: east_spine
+      od_evidence_class: national_research_proxy
+
+  depot_soc08_national_unique:
+    note: Unique national ODs at depot SOC 0.8 / 5.3 t (DEM-complete gate required).
+    panel: unique_ods_depot
+    missions:
+    - {id: N_agadir_casa, od_id: agadir_casa, weight: 1.0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, direction_panel: northbound_agricultural}
+    - {id: N_tangier_casa, od_id: tangier_casa, weight: 1.0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, direction_panel: north_spine}
+    - {id: N_casa_tangier, od_id: casa_tangier, weight: 1.0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, direction_panel: north_spine}
+    - {id: N_rabat_fes, od_id: rabat_fes, weight: 1.0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, direction_panel: east_spine}
+    - {id: N_fes_oujda, od_id: fes_oujda, weight: 1.0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, direction_panel: east_spine}
+    - {id: N_casa_oujda, od_id: casa_oujda, weight: 1.0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, direction_panel: east_spine}
+    - {id: S_casa_marrakech, od_id: casa_marrakech, weight: 1.0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, direction_panel: southbound_return}
+    - {id: S_casa_agadir, od_id: casa_agadir, weight: 1.0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, direction_panel: southbound_return}
+    - {id: S_marrakech_agadir, od_id: marrakech_agadir, weight: 1.0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, direction_panel: southbound_return}
+
+solver:
+  max_seconds: 180.0
+  max_expansions: 250000

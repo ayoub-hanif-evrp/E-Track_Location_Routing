@@ -1,13 +1,16 @@
-# Pre-registered BEFORE solving (paper scientific results campaign).
-# Illustrative corridor demand — not observed OD truck counts.
+# Pre-registered BEFORE solving (national taper campaign).
+# Illustrative national demand — not observed OD truck counts.
 # Chargers are hypothetical HGV CCS at topology-validated ADM sites.
+# charging_model=ccs_soc_taper_research_envelope (default in MRLS/replay).
 
 multiroute_pilot_config: configs/optimization/multiroute_pilot.yaml
+national_portfolio: configs/optimization/national_longhaul_portfolio.yaml
+charging_model: ccs_soc_taper_research_envelope
 disclaimer: >
-  Paper scientific campaign. Northbound agricultural application is Agadir→Casablanca
-  refrigerated tomato proxy. Southbound/return panels are separate research scenarios.
-  National tomato exports contextualize the application only; they are not OD volumes.
-  All chargers hypothetical. Axle compliance unverified.
+  National long-haul scientific campaign under SOC CCS research taper.
+  Tangier–Rabat–Casablanca–Fès–Oujda–Marrakech–Agadir. OSM+COP-DEM+ADM
+  topology only; not observed truck counts. Taper is a research envelope,
+  not an OEM-measured curve. All chargers hypothetical.
 
 sites:
 - id: y_settat_ca
@@ -35,6 +38,26 @@ sites:
   station_key: benguerir_ac
   label: Benguerir (AC)
   evidence_class: hypothetical_future_truck_site
+- id: y_bouznika_cr
+  direction: casablanca_to_rabat
+  station_key: bouznika_cr
+  label: Bouznika (Casa→Rabat)
+  evidence_class: hypothetical_future_truck_site
+- id: y_bouznika_rc
+  direction: rabat_to_casablanca
+  station_key: bouznika_rc
+  label: Bouznika (Rabat→Casa)
+  evidence_class: hypothetical_future_truck_site
+- id: y_larache_rt
+  direction: rabat_to_tanger
+  station_key: larache_rt
+  label: Larache (Rabat→Tanger Med)
+  evidence_class: hypothetical_future_truck_site
+- id: y_assilah_tr
+  direction: tanger_to_rabat
+  station_key: assilah_tr
+  label: Assilah (Tanger Med→Rabat)
+  evidence_class: hypothetical_future_truck_site
 
 capex_scenarios:
   equal:
@@ -45,6 +68,10 @@ capex_scenarios:
       y_amskroud_ca: 100.0
       y_settat_ac: 100.0
       y_benguerir_ac: 100.0
+      y_bouznika_cr: 100.0
+      y_bouznika_rc: 100.0
+      y_larache_rt: 100.0
+      y_assilah_tr: 100.0
 
 annualization:
   interest_rate: 0.08
@@ -69,13 +96,52 @@ price_modes:
 - uniform
 
 demand_scenarios:
-  # Headline continuity: same 3-mission equal-weight portfolio as final correction.
-  headline_equal_3:
+  headline_national_equal:
     note: >
-      Continuity with final_operational_* at corrected ops metric. Southbound SOC0.5
-      stress; northbound SOC0.8 depot. Not observed shipment counts.
+      Equal-weight national headline: northbound Agadir→Casa, Tangier→Casa,
+      Rabat→Fès, plus southbound Casa→Marrakech / Casa→Agadir stress SOC 0.5.
+      Not observed shipment counts.
     panel: mixed_headline
     missions:
+    - id: M_agadir_casa_s08
+      od_id: agadir_casa
+      weight: 1.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      commodity: firm_ripe_fresh_tomatoes
+      od_evidence_class: national_research_proxy
+      direction_panel: northbound_agricultural
+    - id: M_tangier_casa_s08
+      od_id: tangier_casa
+      weight: 1.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      commodity: firm_ripe_fresh_tomatoes
+      od_evidence_class: national_research_proxy
+      direction_panel: north_spine
+    - id: M_rabat_fes_s08
+      od_id: rabat_fes
+      weight: 1.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      commodity: firm_ripe_fresh_tomatoes
+      od_evidence_class: national_research_proxy
+      direction_panel: east_spine
     - id: M_casa_marrakech_s05
       od_id: casa_marrakech
       weight: 1.0
@@ -87,7 +153,7 @@ demand_scenarios:
       gcm: light
       cargo_payload_kg: 5300.0
       commodity: firm_ripe_fresh_tomatoes
-      od_evidence_class: corridor_research_proxy
+      od_evidence_class: national_research_proxy
       direction_panel: southbound_return
     - id: M_casa_agadir_s05
       od_id: casa_agadir
@@ -100,10 +166,10 @@ demand_scenarios:
       gcm: light
       cargo_payload_kg: 5300.0
       commodity: firm_ripe_fresh_tomatoes
-      od_evidence_class: corridor_research_proxy
+      od_evidence_class: national_research_proxy
       direction_panel: southbound_return
-    - id: M_agadir_casa_s08
-      od_id: agadir_casa
+    - id: M_casa_rabat_s08
+      od_id: casa_rabat
       weight: 1.0
       E_truck_init: 0
       E_init_soc_frac: 0.8
@@ -113,17 +179,14 @@ demand_scenarios:
       gcm: light
       cargo_payload_kg: 5300.0
       commodity: firm_ripe_fresh_tomatoes
-      od_evidence_class: corridor_research_proxy
-      direction_panel: northbound_agricultural
+      od_evidence_class: national_research_proxy
+      direction_panel: north_spine
 
-  # Realistic depot-dispatch comparison panel (pre-registered; SOC 0.8).
-  realistic_depot_soc08_p5300:
-    note: >
-      Four DEM-complete unique ODs at scheduled-depot SOC 0.8 and 5.3 t.
-      Northbound agricultural vs southbound return kept distinguishable.
+  depot_soc08_national_unique:
+    note: Unique national ODs at depot SOC 0.8 / 5.3 t (DEM-complete gate required).
     panel: unique_ods_depot
     missions:
-    - id: N_agadir_casa_p53_s08
+    - id: N_agadir_casa
       od_id: agadir_casa
       weight: 1.0
       E_truck_init: 0
@@ -133,11 +196,10 @@ demand_scenarios:
       weather_id: cool
       gcm: light
       cargo_payload_kg: 5300.0
-      commodity: firm_ripe_fresh_tomatoes
       direction_panel: northbound_agricultural
-      od_evidence_class: corridor_research_proxy
-    - id: N_agadir_marrakech_p53_s08
-      od_id: agadir_marrakech
+      od_evidence_class: national_research_proxy
+    - id: N_tangier_casa
+      od_id: tangier_casa
       weight: 1.0
       E_truck_init: 0
       E_init_soc_frac: 0.8
@@ -146,11 +208,10 @@ demand_scenarios:
       weather_id: cool
       gcm: light
       cargo_payload_kg: 5300.0
-      commodity: firm_ripe_fresh_tomatoes
-      direction_panel: northbound_agricultural
-      od_evidence_class: corridor_research_proxy
-    - id: N_marrakech_casa_p53_s08
-      od_id: marrakech_casa
+      direction_panel: north_spine
+      od_evidence_class: national_research_proxy
+    - id: N_casa_tangier
+      od_id: casa_tangier
       weight: 1.0
       E_truck_init: 0
       E_init_soc_frac: 0.8
@@ -159,11 +220,10 @@ demand_scenarios:
       weather_id: cool
       gcm: light
       cargo_payload_kg: 5300.0
-      commodity: firm_ripe_fresh_tomatoes
-      direction_panel: northbound_agricultural
-      od_evidence_class: corridor_research_proxy
-    - id: S_casa_agadir_p53_s08
-      od_id: casa_agadir
+      direction_panel: north_spine
+      od_evidence_class: national_research_proxy
+    - id: N_rabat_fes
+      od_id: rabat_fes
       weight: 1.0
       E_truck_init: 0
       E_init_soc_frac: 0.8
@@ -172,10 +232,21 @@ demand_scenarios:
       weather_id: cool
       gcm: light
       cargo_payload_kg: 5300.0
-      commodity: firm_ripe_fresh_tomatoes
-      direction_panel: southbound_return
-      od_evidence_class: corridor_research_proxy
-    - id: S_casa_marrakech_p53_s08
+      direction_panel: east_spine
+      od_evidence_class: national_research_proxy
+    - id: N_casa_oujda
+      od_id: casa_oujda
+      weight: 1.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      direction_panel: east_spine
+      od_evidence_class: national_research_proxy
+    - id: S_casa_marrakech
       od_id: casa_marrakech
       weight: 1.0
       E_truck_init: 0
@@ -185,11 +256,10 @@ demand_scenarios:
       weather_id: cool
       gcm: light
       cargo_payload_kg: 5300.0
-      commodity: firm_ripe_fresh_tomatoes
       direction_panel: southbound_return
-      od_evidence_class: corridor_research_proxy
-    - id: S_marrakech_agadir_p53_s08
-      od_id: marrakech_agadir
+      od_evidence_class: national_research_proxy
+    - id: S_casa_agadir
+      od_id: casa_agadir
       weight: 1.0
       E_truck_init: 0
       E_init_soc_frac: 0.8
@@ -198,10 +268,21 @@ demand_scenarios:
       weather_id: cool
       gcm: light
       cargo_payload_kg: 5300.0
-      commodity: firm_ripe_fresh_tomatoes
       direction_panel: southbound_return
-      od_evidence_class: corridor_research_proxy
+      od_evidence_class: national_research_proxy
+    - id: S_casa_rabat
+      od_id: casa_rabat
+      weight: 1.0
+      E_truck_init: 0
+      E_init_soc_frac: 0.8
+      refrigeration_on: true
+      terrain_mode: dem
+      weather_id: cool
+      gcm: light
+      cargo_payload_kg: 5300.0
+      direction_panel: north_spine
+      od_evidence_class: national_research_proxy
 
 solver:
-  max_seconds: 120.0
-  max_expansions: 200000
+  max_seconds: 180.0
+  max_expansions: 250000

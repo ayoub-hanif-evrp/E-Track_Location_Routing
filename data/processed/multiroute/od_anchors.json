@@ -1,6 +1,10 @@
 {
   "city_anchors": {
+    "tangier": 12048817051,
+    "rabat": 5978429109,
     "casablanca": 1546253716,
+    "fes": 1585156377,
+    "oujda": 3269842256,
     "marrakech": 6820243611,
     "agadir": 3227750604,
     "settat": 6888450861
@@ -29,6 +33,54 @@
     "agadir_marrakech": {
       "origin": 3227750604,
       "destination": 6820243611
+    },
+    "tangier_casa": {
+      "origin": 6812095472,
+      "destination": 1546253716
+    },
+    "casa_tangier": {
+      "origin": 1546253716,
+      "destination": 12048817051
+    },
+    "tangier_rabat": {
+      "origin": 6812095472,
+      "destination": 5978429109
+    },
+    "rabat_tangier": {
+      "origin": 5978429109,
+      "destination": 12048817051
+    },
+    "rabat_fes": {
+      "origin": 5978429109,
+      "destination": 1585156377
+    },
+    "fes_rabat": {
+      "origin": 1585156377,
+      "destination": 5978429109
+    },
+    "fes_oujda": {
+      "origin": 1585156377,
+      "destination": 3269842256
+    },
+    "oujda_fes": {
+      "origin": 3269842256,
+      "destination": 1585156377
+    },
+    "casa_oujda": {
+      "origin": 1546253716,
+      "destination": 3269842256
+    },
+    "oujda_casa": {
+      "origin": 3269842256,
+      "destination": 1546253716
+    },
+    "casa_rabat": {
+      "origin": 1546253716,
+      "destination": 5978429109
+    },
+    "rabat_casa": {
+      "origin": 5978429109,
+      "destination": 1546253716
     }
   }
 }

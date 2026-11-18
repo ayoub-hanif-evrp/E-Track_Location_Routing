@@ -1,5 +1,5 @@
 {
-  "built_at_utc": "2026-11-09T20:15:16.604194+00:00",
+  "built_at_utc": "2026-11-18T16:17:40.073259+00:00",
   "task": "05B",
   "config": "configs/multiroute_corridor.yaml",
   "osm": {
@@ -16,22 +16,22 @@
   },
   "extract": {
     "bbox": [
-      -9.6,
-      30.25,
-      -7.4,
-      33.7
+      -9.8,
+      30.2,
+      -1.8,
+      35.9
     ],
-    "output": "data/raw/multiroute_casa_marrakech_agadir.osm.pbf",
+    "output": "data/raw/multiroute_national_longhaul.osm.pbf",
     "tool": "pyrosm-python-bbox-filter",
-    "marker": "data/raw/multiroute_casa_marrakech_agadir.osm.bbox.json",
+    "marker": "data/raw/multiroute_national_longhaul.osm.bbox.json",
     "source_pbf_for_filter": "data/raw/morocco-261106.osm.pbf"
   },
   "bbox": {
-    "west": -9.6,
-    "south": 30.25,
-    "east": -7.4,
-    "north": 33.7,
-    "description": "Buffered Casa\u2013Marrakech\u2013Agadir multi-route pilot"
+    "west": -9.8,
+    "south": 30.2,
+    "east": -1.8,
+    "north": 35.9,
+    "description": "National motorway envelope Tangier\u2013Rabat\u2013Casa\u2013F\u00e8s\u2013Oujda\u2013Marrakech\u2013Agadir"
   },
   "highway_classes": [
     "motorway",
@@ -41,23 +41,27 @@
     "primary",
     "primary_link"
   ],
-  "n_nodes": 98693,
-  "n_edges": 100261,
+  "n_nodes": 391653,
+  "n_edges": 397255,
   "n_isolates_removed": 232,
   "hgv_access_counts": {
-    "unknown": 100261
+    "unknown": 397255
   },
   "highway_class_counts": {
-    "primary": 49620,
-    "motorway_link": 5643,
-    "motorway": 17624,
-    "trunk": 21571,
-    "trunk_link": 3491,
-    "primary_link": 2312
+    "primary": 249554,
+    "primary_link": 5818,
+    "trunk": 76597,
+    "trunk_link": 7129,
+    "motorway_link": 14365,
+    "motorway": 43792
   },
   "n_hgv_no_rejected": 238,
   "anchors": {
+    "tangier": 12048817051,
+    "rabat": 5978429109,
     "casablanca": 1546253716,
+    "fes": 1585156377,
+    "oujda": 3269842256,
     "marrakech": 6820243611,
     "agadir": 3227750604,
     "settat": 6888450861,
@@ -72,16 +76,59 @@
     "marrakech_agadir__o": 6820243611,
     "marrakech_agadir__d": 1873981509,
     "agadir_marrakech__o": 3227750604,
-    "agadir_marrakech__d": 6820243611
+    "agadir_marrakech__d": 6820243611,
+    "tangier_casa__o": 6812095472,
+    "tangier_casa__d": 1546253716,
+    "casa_tangier__o": 1546253716,
+    "casa_tangier__d": 12048817051,
+    "tangier_rabat__o": 6812095472,
+    "tangier_rabat__d": 5978429109,
+    "rabat_tangier__o": 5978429109,
+    "rabat_tangier__d": 12048817051,
+    "rabat_fes__o": 5978429109,
+    "rabat_fes__d": 1585156377,
+    "fes_rabat__o": 1585156377,
+    "fes_rabat__d": 5978429109,
+    "fes_oujda__o": 1585156377,
+    "fes_oujda__d": 3269842256,
+    "oujda_fes__o": 3269842256,
+    "oujda_fes__d": 1585156377,
+    "casa_oujda__o": 1546253716,
+    "casa_oujda__d": 3269842256,
+    "oujda_casa__o": 3269842256,
+    "oujda_casa__d": 1546253716,
+    "casa_rabat__o": 1546253716,
+    "casa_rabat__d": 5978429109,
+    "rabat_casa__o": 5978429109,
+    "rabat_casa__d": 1546253716
   },
   "od_notes": [
     "Exact MRLS optimality is only over this selected path-union decision graph.",
     "Stations/chargers remain hypothetical unless independently verified.",
-    "Decision nodes are canonicalized to one label per OSM id (Task 05B)."
+    "Decision nodes are canonicalized to one label per OSM id (Task 05B).",
+    "casa_agadir: 2 routes",
+    "agadir_casa: 2 routes",
+    "casa_marrakech: 2 routes",
+    "marrakech_casa: 2 routes",
+    "marrakech_agadir: 2 routes",
+    "agadir_marrakech: 2 routes",
+    "tangier_casa: 2 routes",
+    "casa_tangier: 2 routes",
+    "tangier_rabat: 2 routes",
+    "rabat_tangier: 2 routes",
+    "rabat_fes: 2 routes",
+    "fes_rabat: 2 routes",
+    "fes_oujda: 2 routes",
+    "oujda_fes: 2 routes",
+    "casa_oujda: 2 routes",
+    "oujda_casa: 2 routes",
+    "casa_rabat: 2 routes",
+    "rabat_casa: 2 routes"
   ],
-  "n_path_records": 24,
-  "n_decision_nodes": 162,
-  "n_decision_arcs": 241,
+  "n_path_records": 36,
+  "n_decision_nodes": 198,
+  "n_decision_arcs": 293,
+  "n_arc_length_failures": 0,
   "attribution": {
     "osm": "\u00a9 OpenStreetMap contributors",
     "license": "ODbL",
@@ -89,12 +136,11 @@
   },
   "graph_audit": {
     "assume_pyrosm_pre_expanded": true,
-    "n_nodes": 98925,
-    "n_edges_multidigraph": 100499,
+    "n_nodes": 391885,
+    "n_edges_multidigraph": 397493,
     "parallel_uv_collisions_if_digraph": 0,
-    "unique_directed_uv_pairs": 100499,
+    "unique_directed_uv_pairs": 397493,
     "note": "parallel_uv_collisions_if_digraph counts additional edges that share the same (u,v) and would overwrite attributes in nx.DiGraph; MultiDiGraph preserves them."
   },
-  "sha256_national_pbf": "e26e8b7010cf78259469f166292b351de48609b3b1f420dd469f0d49f7d05a00",
-  "n_arc_length_failures": 0
+  "sha256_national_pbf": "e26e8b7010cf78259469f166292b351de48609b3b1f420dd469f0d49f7d05a00"
 }

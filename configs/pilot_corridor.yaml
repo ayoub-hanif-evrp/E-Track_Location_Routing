@@ -1,4 +1,4 @@
-# Pilot corridor configuration — Casablanca–Agadir (A3)
+# National motorway envelope for ADM candidate grounding + A3-compatible pilot build
 # Coordinate reference: EPSG:4326 (WGS84) for stored lon/lat.
 # Lengths are computed geodesically in metres (never Euclidean degrees).
 
@@ -8,35 +8,51 @@ crs:
 
 bbox:
   # Osmium order: west, south, east, north
-  west: -9.60
-  south: 30.25
-  east: -7.40
-  north: 33.70
-  description: "Buffered Casablanca–Agadir motorway corridor"
+  west: -9.80
+  south: 30.20
+  east: -1.80
+  north: 35.90
+  description: "National motorway envelope Tangier–Rabat–Casa–Fès–Oujda–Marrakech–Agadir"
 
 osm:
-  # Dated Geofabrik snapshot for reproducibility
   download_url: "https://download.geofabrik.de/africa/morocco-261106.osm.pbf"
   md5_url: "https://download.geofabrik.de/africa/morocco-261106.osm.pbf.md5"
   filename: "morocco-261106.osm.pbf"
   snapshot_label: "morocco-261106"
   data_timestamp_hint: "2026-11-07"
+  extract_filename: "national_motorway_envelope.osm.pbf"
   highway_classes:
     - motorway
     - motorway_link
-  # Extra classes for facility entrance/exit probing only (not baseline routing).
   facility_access_classes:
     - service
-  # Do not silently include trunk unless needed for connectivity; flagged in manifest if used.
   allow_trunk_fallback: false
 
 anchors:
-  # Approximate motorway-access search points near corridor ends (EPSG:4326).
-  # Used only to locate graph nodes for baseline routing — NOT service-area coordinates.
+  tangier:
+    lon: -5.81
+    lat: 35.76
+    label: "Tangier_access_search"
+  rabat:
+    lon: -6.84
+    lat: 34.02
+    label: "Rabat_access_search"
   casablanca:
     lon: -7.62
     lat: 33.45
     label: "Casablanca_A3_access_search"
+  fes:
+    lon: -5.00
+    lat: 34.03
+    label: "Fes_access_search"
+  oujda:
+    lon: -1.91
+    lat: 34.68
+    label: "Oujda_access_search"
+  marrakech:
+    lon: -8.01
+    lat: 31.63
+    label: "Marrakech_access_search"
   agadir:
     lon: -9.35
     lat: 30.45
@@ -46,7 +62,7 @@ anchors:
 service_areas:
   source_url: "https://www.adm.co.ma/fr/gares-de-peage-et-aires-de-services"
   a3_page_url: "https://www.adm.co.ma/fr/nos-autoroutes/a3-casablanca-agadir"
-  # Only ADM-directory corridor aires (Task 01 choice 1A)
+  # ADM-directory tokens: southern A3 + northern/eastern spine aires
   corridor_name_tokens:
     - amskroud
     - benguerir
@@ -56,10 +72,21 @@ service_areas:
     - "oum rbii"
     - "oum rbia"
     - settat
+    - mnasra
+    - assilah
+    - asilah
+    - larache
+    - narjiss
+    - msoun
+    - "laayoune"
+    - "laâyoune"
+    - jbilat
+    - imintanout
+    - bouznika
+    - "bir jdid"
+    - "bir j'did"
   max_match_distance_m: 1500
   max_connection_distance_m: 800
-  # Direction must be consistent with motorway carriageway orientation.
-  # Bearing of Casa→Agadir along A3 is generally south-westward.
   direction_bearing_tolerance_deg: 90
 
 paths:

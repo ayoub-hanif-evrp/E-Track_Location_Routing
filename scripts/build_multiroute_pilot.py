@@ -60,7 +60,11 @@ def main() -> int:
         config, root, skip_download=args.skip_download
     )
 
-    extract_path = raw_dir / "multiroute_casa_marrakech_agadir.osm.pbf"
+    extract_name = str(
+        (config.get("osm") or {}).get("extract_filename")
+        or "multiroute_national_longhaul.osm.pbf"
+    )
+    extract_path = raw_dir / extract_name
     print(f"Extracting bbox -> {extract_path}", flush=True)
     extract_info = extract_bbox_pbf(national_pbf, extract_path, config["bbox"], root=root)
     pbf_for_graph, bbox = resolve_extract_input(

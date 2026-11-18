@@ -21,6 +21,23 @@ logger = logging.getLogger(__name__)
 DIR_CASA_AGADIR = "Casablanca→Agadir"
 DIR_AGADIR_CASA = "Agadir→Casablanca"
 
+# Approximate city lon/lat for expected carriageway bearing on national spines.
+_CITY_LONLAT: dict[str, tuple[float, float]] = {
+    "casablanca": (-7.62, 33.45),
+    "agadir": (-9.35, 30.45),
+    "marrakech": (-8.01, 31.63),
+    "rabat": (-6.84, 34.02),
+    "tanger": (-5.81, 35.76),
+    "tangier": (-5.81, 35.76),
+    "tanger med": (-5.50, 35.88),
+    "fes": (-5.00, 34.03),
+    "fez": (-5.00, 34.03),
+    "oujda": (-1.91, 34.68),
+    "safi": (-9.23, 32.30),
+    "kenitra": (-6.58, 34.26),
+    "settat": (-7.62, 33.00),
+}
+
 # Field definitions (also documented in reports/task01b_scientific_audit.md):
 # location_match_status: matched_osm | unmatched
 # directed_access_status:
@@ -45,12 +62,44 @@ class AdmCandidate:
 
 def normalize_token(text: str) -> str:
     t = text.lower()
-    t = t.replace("é", "e").replace("è", "e").replace("ê", "e")
+    t = t.replace("é", "e").replace("è", "e").replace("ê", "e").replace("â", "a")
     t = re.sub(r"[^a-z0-9]+", " ", t)
     return re.sub(r"\s+", " ", t).strip()
 
 
+def _canon_city_label(raw: str) -> str:
+    n = normalize_token(raw)
+    aliases = {
+        "tanger med": "Tanger Med",
+        "tanger": "Tanger",
+        "tangier": "Tanger",
+        "casablanca": "Casablanca",
+        "agadir": "Agadir",
+        "rabat": "Rabat",
+        "fes": "Fès",
+        "fez": "Fès",
+        "oujda": "Oujda",
+        "marrakech": "Marrakech",
+        "safi": "Safi",
+        "kenitra": "Kénitra",
+        "settat": "Settat",
+    }
+    if n in aliases:
+        return aliases[n]
+    return " ".join(w.capitalize() for w in n.split())
+
+
 def parse_direction(name: str) -> str | None:
+    """Parse ADM 'de A --> B' (or arrow) into canonical travel_direction A→B."""
+    m = re.search(
+        r"de\s+(.+?)\s*(?:-->|->|→|–>|—>)\s*(.+)$",
+        name.strip(),
+        flags=re.IGNORECASE,
+    )
+    if m:
+        a = _canon_city_label(m.group(1))
+        b = _canon_city_label(m.group(2))
+        return f"{a}→{b}"
     n = name.lower()
     if "casablanca" in n and "agadir" in n:
         i_casa = n.find("casablanca")
@@ -59,6 +108,17 @@ def parse_direction(name: str) -> str | None:
             return DIR_CASA_AGADIR
         return DIR_AGADIR_CASA
     return None
+
+
+def opposite_travel_direction(travel_direction: str) -> str:
+    if "→" in travel_direction:
+        a, b = travel_direction.split("→", 1)
+        return f"{b}→{a}"
+    if travel_direction == DIR_CASA_AGADIR:
+        return DIR_AGADIR_CASA
+    if travel_direction == DIR_AGADIR_CASA:
+        return DIR_CASA_AGADIR
+    return travel_direction
 
 
 def corridor_token_match(name: str, tokens: list[str]) -> str | None:
@@ -138,8 +198,17 @@ def probe_adm_trafic() -> dict[str, Any]:
 
 
 def _expected_bearing_for_direction(direction: str) -> float:
+    """Rough corridor bearing from city anchors (research heuristic for carriageway side)."""
+    if "→" in direction:
+        a, b = direction.split("→", 1)
+        ca = _CITY_LONLAT.get(normalize_token(a))
+        cb = _CITY_LONLAT.get(normalize_token(b))
+        if ca is not None and cb is not None:
+            return bearing_deg(ca[0], ca[1], cb[0], cb[1])
     if direction == DIR_CASA_AGADIR:
         return 210.0
+    if direction == DIR_AGADIR_CASA:
+        return 30.0
     return 30.0
 
 
@@ -244,7 +313,7 @@ def opposite_motorway_nodes(
     travel_direction: str,
     bearing_tol: float,
 ) -> set[Any]:
-    opposite = DIR_AGADIR_CASA if travel_direction == DIR_CASA_AGADIR else DIR_CASA_AGADIR
+    opposite = opposite_travel_direction(travel_direction)
     return motorway_nodes_for_direction(G, opposite, bearing_tol)
 
 

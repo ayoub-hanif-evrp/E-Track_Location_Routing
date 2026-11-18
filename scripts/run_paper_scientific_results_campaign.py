@@ -62,12 +62,22 @@ CFG_PAPER = ROOT / "configs/optimization/paper_scientific_portfolio.yaml"
 CFG_HEADLINE = ROOT / "configs/optimization/multiroute_placement_corridor_portfolio.yaml"
 OUT_MD = ROOT / "reports/PAPER_SCIENTIFIC_RESULTS_CAMPAIGN.md"
 
-# Pre-registered frontier (frozen before solve).
+# Pre-registered frontier (frozen before solve). National DEM-complete ODs only.
+# East Oujda arcs with incomplete DEM are excluded (honesty gate).
 PAYLOADS = [5300.0, 10000.0, 15000.0]
 SOCS = [0.5, 0.8, 1.0]
 RESERVES_SCREEN = [0.10]  # full reserve ladder only on frontier flips
-# agadir_marrakech excluded from frontier: DEM ok but no on-union charger without amskroud_ac.
-FRONTIER_ODS = ["agadir_casa", "casa_marrakech", "casa_agadir", "marrakech_agadir"]
+CHARGING_MODEL = "ccs_soc_taper_research_envelope"
+FRONTIER_ODS = [
+    "agadir_casa",
+    "casa_marrakech",
+    "casa_agadir",
+    "marrakech_agadir",
+    "tangier_casa",
+    "casa_tangier",
+    "casa_rabat",
+    "rabat_fes",
+]
 INFRA_LADDERS = {
     "agadir_casa": [
         ("none", frozenset()),
@@ -92,6 +102,26 @@ INFRA_LADDERS = {
         ("none", frozenset()),
         ("amskroud_only", frozenset(["y_amskroud_ca"])),
         ("with_amskroud_settat", frozenset(["y_amskroud_ca", "y_settat_ca"])),
+    ],
+    "tangier_casa": [
+        ("none", frozenset()),
+        ("opt1_assilah", frozenset(["y_assilah_tr"])),
+        ("opt1_bouznika_rc", frozenset(["y_bouznika_rc"])),
+        ("opt2_assilah_bouznika", frozenset(["y_assilah_tr", "y_bouznika_rc"])),
+    ],
+    "casa_tangier": [
+        ("none", frozenset()),
+        ("opt1_bouznika_cr", frozenset(["y_bouznika_cr"])),
+        ("opt1_larache", frozenset(["y_larache_rt"])),
+        ("opt2_bouznika_larache", frozenset(["y_bouznika_cr", "y_larache_rt"])),
+    ],
+    "casa_rabat": [
+        ("none", frozenset()),
+        ("opt1_bouznika_cr", frozenset(["y_bouznika_cr"])),
+    ],
+    "rabat_fes": [
+        ("none", frozenset()),
+        # No entrance_and_exit ADM attach on east spine yet (Msoun/Laâyoune unmatched).
     ],
 }
 
@@ -181,6 +211,15 @@ def audit_dem_and_sites() -> pd.DataFrame:
             "casa_agadir",
             "casa_marrakech",
             "marrakech_agadir",
+            "tangier_casa",
+            "casa_tangier",
+            "casa_rabat",
+            "rabat_casa",
+            "rabat_fes",
+            "fes_rabat",
+            "tangier_rabat",
+            "rabat_tangier",
+            # casa_oujda / fes_oujda excluded until DEM complete
         ]
         for od in ods:
             demand["missions"].append(
@@ -540,6 +579,10 @@ def run_q2_headline() -> None:
                 "y_benguerir_ca",
                 "y_settat_ac",
                 "y_benguerir_ac",
+                "y_bouznika_cr",
+                "y_bouznika_rc",
+                "y_larache_rt",
+                "y_assilah_tr",
             ],
             tag=f"q2_headline_{veh}",
         )

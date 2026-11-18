@@ -1,17 +1,17 @@
-# Task 05A — Multi-route Moroccan corridor (separate from A3 Task 01 pilot)
-# Does NOT overwrite data/processed/road_*.csv
+# National long-haul multi-route envelope (Tangier–Rabat–Casa–Fès–Oujda–Marrakech–Agadir)
+# Does NOT overwrite data/processed/road_*.csv (A3 pilot tables)
 
 crs:
   storage_epsg: 4326
   length_method: geodesic_metres
 
 bbox:
-  # Includes Casablanca–Marrakech–Agadir triangle (same envelope as A3 pilot + Marrakech)
-  west: -9.60
-  south: 30.25
-  east: -7.40
-  north: 33.70
-  description: "Buffered Casa–Marrakech–Agadir multi-route pilot"
+  # Osmium order: west, south, east, north — national motorway spine envelope
+  west: -9.80
+  south: 30.20
+  east: -1.80
+  north: 35.90
+  description: "National motorway envelope Tangier–Rabat–Casa–Fès–Oujda–Marrakech–Agadir"
 
 osm:
   download_url: "https://download.geofabrik.de/africa/morocco-261106.osm.pbf"
@@ -19,6 +19,7 @@ osm:
   filename: "morocco-261106.osm.pbf"
   snapshot_label: "morocco-261106"
   data_timestamp_hint: "2026-11-07"
+  extract_filename: "multiroute_national_longhaul.osm.pbf"
   highway_classes:
     - motorway
     - motorway_link
@@ -26,15 +27,30 @@ osm:
     - trunk_link
     - primary
     - primary_link
-  # secondary only if an alternative requires it (off by default)
   include_secondary: false
   filter_hgv_no: true
 
 anchors:
+  tangier:
+    lon: -5.81
+    lat: 35.76
+    label: "Tangier_access_search"
+  rabat:
+    lon: -6.84
+    lat: 34.02
+    label: "Rabat_access_search"
   casablanca:
     lon: -7.62
     lat: 33.45
     label: "Casablanca_access_search"
+  fes:
+    lon: -5.00
+    lat: 34.03
+    label: "Fes_access_search"
+  oujda:
+    lon: -1.91
+    lat: 34.68
+    label: "Oujda_access_search"
   marrakech:
     lon: -8.01
     lat: 31.63
@@ -50,16 +66,14 @@ anchors:
   search_radius_m: 25000
 
 path_discovery:
-  max_alternatives: 4
-  # Accept alternative if edge Jaccard distance vs shortest >= this
+  # Staged national solve: keep path-union lean (max_alts=2)
+  max_alternatives: 2
   min_jaccard_distance: 0.25
-  # Or length at least this fraction longer
   min_length_ratio: 1.05
   penalty_factor: 3.0
   max_penalty_rounds: 8
 
 speed_policy:
-  # Scenario cruise (km/h) — NOT observed HGV speeds
   use_osm_maxspeed: true
   maxspeed_sane_min_kmh: 30
   maxspeed_sane_max_kmh: 120
@@ -82,6 +96,7 @@ paths:
   results_dir: "results"
 
 od_pairs:
+  # Southern retained
   - id: casa_agadir
     origin: casablanca
     destination: agadir
@@ -100,3 +115,40 @@ od_pairs:
   - id: agadir_marrakech
     origin: agadir
     destination: marrakech
+  # Northern / eastern long-haul
+  - id: tangier_casa
+    origin: tangier
+    destination: casablanca
+  - id: casa_tangier
+    origin: casablanca
+    destination: tangier
+  - id: tangier_rabat
+    origin: tangier
+    destination: rabat
+  - id: rabat_tangier
+    origin: rabat
+    destination: tangier
+  - id: rabat_fes
+    origin: rabat
+    destination: fes
+  - id: fes_rabat
+    origin: fes
+    destination: rabat
+  - id: fes_oujda
+    origin: fes
+    destination: oujda
+  - id: oujda_fes
+    origin: oujda
+    destination: fes
+  - id: casa_oujda
+    origin: casablanca
+    destination: oujda
+  - id: oujda_casa
+    origin: oujda
+    destination: casablanca
+  - id: casa_rabat
+    origin: casablanca
+    destination: rabat
+  - id: rabat_casa
+    origin: rabat
+    destination: casablanca

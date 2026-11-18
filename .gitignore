@@ -61,6 +61,9 @@ data/raw/dem/
 .DS_Store
 Thumbs.db
 
+# Ephemeral campaign solver configs (regenerated each run)
+results/paper_campaign/_tmp_cfgs/
+
 # IDE
 .idea/
 .vscode/

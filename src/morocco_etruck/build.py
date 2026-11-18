@@ -45,7 +45,10 @@ def run_build(config_path: Path, *, skip_download: bool = False) -> dict[str, An
         config, root, skip_download=skip_download
     )
 
-    extract_path = raw_dir / "a3_casa_agadir.osm.pbf"
+    extract_name = str(
+        (config.get("osm") or {}).get("extract_filename") or "national_motorway_envelope.osm.pbf"
+    )
+    extract_path = raw_dir / extract_name
     extract_info = extract_bbox_pbf(national_pbf, extract_path, config["bbox"], root=root)
     pbf_for_graph, bbox = resolve_extract_input(
         raw_dir, extract_info, national_pbf, root=root

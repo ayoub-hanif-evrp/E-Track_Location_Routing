@@ -3,13 +3,13 @@
 
 disclaimer: >
   Multi-route MRLS on a reduced decision graph built from verified OSM path
-  alternatives (Casa–Marrakech–Agadir). Not optimality over the full Moroccan
-  network. Scenario speeds are research defaults / OSM maxspeed when sane —
-  not observed HGV speeds. Chargers are direction-specific ADM candidates with
-  topology-verified on-union attach only (no proximity snap in baseline);
-  remain hypothetical (HGV access not certified). Fixed graph across charger
-  activation subsets. HGV legality from OSM tags is incomplete (unknown
-  retained; explicit no filtered at build). Discrete optimality ≠ continuous
+  alternatives on the national motorway envelope (Tangier–Rabat–Casa–Fès–Oujda–
+  Marrakech–Agadir). Not optimality over the full Moroccan network. Scenario
+  speeds are research defaults / OSM maxspeed when sane — not observed HGV
+  speeds. CHARGE uses SOC CCS research taper (not OEM-measured). Chargers are
+  direction-specific ADM candidates with topology-verified on-union attach only
+  (no proximity snap in baseline); remain hypothetical (HGV access not certified).
+  Fixed graph across charger activation subsets. Discrete optimality ≠ continuous
   physics certification ≠ empirical validation.
 
 vehicle_config: configs/vehicles/eactros_600.yaml
@@ -126,6 +126,52 @@ grounded_chargers:
       # No documented Agadir→Casablanca Amskroud entrance_and_exit in candidate_sites;
       # listed for unresolved-audit coverage only.
       osm_id: ""
+  # Northern spine (A5 / Casa–Rabat–Tanger Med). East A2 Msoun/Laâyoune unmatched → no invented attach.
+  casa_rabat:
+    - key: bouznika_cr
+      name_contains: BOUZNIKA
+      travel_direction: "Casablanca→Rabat"
+      osm_id: "1547395734"
+  rabat_casa:
+    - key: bouznika_rc
+      name_contains: BOUZNIKA
+      travel_direction: "Rabat→Casablanca"
+      osm_id: "1547395888"
+  casa_tangier:
+    - key: bouznika_cr
+      name_contains: BOUZNIKA
+      travel_direction: "Casablanca→Rabat"
+      osm_id: "1547395734"
+    - key: larache_rt
+      name_contains: LARACHE
+      travel_direction: "Rabat→Tanger Med"
+      osm_id: "456863498"
+  tangier_casa:
+    - key: assilah_tr
+      name_contains: ASSILAH
+      travel_direction: "Tanger Med→Rabat"
+      osm_id: "456863489"
+    - key: bouznika_rc
+      name_contains: BOUZNIKA
+      travel_direction: "Rabat→Casablanca"
+      osm_id: "1547395888"
+  tangier_rabat:
+    - key: assilah_tr
+      name_contains: ASSILAH
+      travel_direction: "Tanger Med→Rabat"
+      osm_id: "456863489"
+  rabat_tangier:
+    - key: larache_rt
+      name_contains: LARACHE
+      travel_direction: "Rabat→Tanger Med"
+      osm_id: "456863498"
+  # East spine: no entrance_and_exit Msoun/Laâyoune in current ADM×OSM match.
+  rabat_fes: []
+  fes_rabat: []
+  fes_oujda: []
+  oujda_fes: []
+  casa_oujda: []
+  oujda_casa: []
 
 solver:
   max_seconds: 90.0
@@ -160,11 +206,19 @@ speed_policy:
   adapt_speed_to_continuous_power: false
   min_adapt_speed_kmh: 40
 
-# Scientific pilot portfolio (Stage 6)
+# National long-haul path-union portfolio (DEM gate required per OD).
 pilot_od_pairs:
   - casa_marrakech
   - casa_agadir
   - marrakech_agadir
+  - agadir_casa
+  - tangier_casa
+  - casa_tangier
+  - rabat_fes
+  - fes_oujda
+  - casa_oujda
+  - casa_rabat
+  - rabat_casa
 
 od_pairs:
   - id: casa_agadir
@@ -173,3 +227,15 @@ od_pairs:
   - id: marrakech_casa
   - id: marrakech_agadir
   - id: agadir_marrakech
+  - id: tangier_casa
+  - id: casa_tangier
+  - id: tangier_rabat
+  - id: rabat_tangier
+  - id: rabat_fes
+  - id: fes_rabat
+  - id: fes_oujda
+  - id: oujda_fes
+  - id: casa_oujda
+  - id: oujda_casa
+  - id: casa_rabat
+  - id: rabat_casa
