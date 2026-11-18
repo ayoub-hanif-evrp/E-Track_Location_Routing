@@ -64,17 +64,16 @@ OUT_MD = ROOT / "reports/PAPER_SCIENTIFIC_RESULTS_CAMPAIGN.md"
 
 # Pre-registered frontier (frozen before solve). National DEM-complete ODs only.
 # East Oujda arcs with incomplete DEM are excluded (honesty gate).
-PAYLOADS = [5300.0, 10000.0, 15000.0]
-SOCS = [0.5, 0.8, 1.0]
+# Staged first-pass grid (expand PAYLOADS/SOCS for full 3×3 panel).
+PAYLOADS = [5300.0, 15000.0]
+SOCS = [0.8, 1.0]
 RESERVES_SCREEN = [0.10]  # full reserve ladder only on frontier flips
 CHARGING_MODEL = "ccs_soc_taper_research_envelope"
 FRONTIER_ODS = [
     "agadir_casa",
     "casa_marrakech",
     "casa_agadir",
-    "marrakech_agadir",
     "tangier_casa",
-    "casa_tangier",
     "casa_rabat",
     "rabat_fes",
 ]
@@ -574,15 +573,14 @@ def run_q2_headline() -> None:
             demand_name="corridor_eactros_equal",
             q=2,
             vehicle_key=veh,
+            # Keep enumeration tractable (2^5=32). Northern Assilah/Larache
+            # ladders remain in frontier INFRA_LADDERS / grounded audit.
             site_ids=[
                 "y_settat_ca",
                 "y_benguerir_ca",
                 "y_settat_ac",
                 "y_benguerir_ac",
-                "y_bouznika_cr",
                 "y_bouznika_rc",
-                "y_larache_rt",
-                "y_assilah_tr",
             ],
             tag=f"q2_headline_{veh}",
         )
@@ -1693,11 +1691,8 @@ def main() -> None:
     if args.phase in ("figures", "all"):
         write_figures()
     if args.phase in ("report", "all"):
-        # Prefer the curated scientific markdown; regenerate only if missing.
-        if not OUT_MD.exists():
-            write_report()
-        else:
-            print("Keeping curated", OUT_MD, flush=True)
+        # Always regenerate from current paper_campaign numerics after constant-power wipe.
+        write_report()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,6 @@
+{
+  "primary_table": "results/paper_campaign/q2_critical_portfolio.csv",
+  "manuscript": "paper/manuscript.tex",
+  "report": "reports/PAPER_SCIENTIFIC_RESULTS_CAMPAIGN.md",
+  "charging_model": "ccs_soc_taper_research_envelope"
+}

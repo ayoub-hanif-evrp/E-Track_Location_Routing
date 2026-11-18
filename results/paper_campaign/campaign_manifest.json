@@ -1,0 +1,12 @@
+{
+  "charging_model": "ccs_soc_taper_research_envelope",
+  "created": "2026-11-18T18:04:09Z",
+  "files_sha256": {
+    "results\\paper_campaign\\od_dem_site_audit.csv": "698dee9f358497e9",
+    "results\\paper_campaign\\operational_efficiency.csv": "d4cc8eb3df2d8011",
+    "results\\paper_campaign\\q2_critical_missions.csv": "300f6945b3e44029",
+    "results\\paper_campaign\\q2_critical_portfolio.csv": "da1129547ac49e76",
+    "results\\paper_campaign\\publication_tables\\table_coverage_vs_budget.csv": "da1129547ac49e76",
+    "results\\paper_campaign\\publication_tables\\table_od_dem_site_audit.csv": "698dee9f358497e9"
+  }
+}

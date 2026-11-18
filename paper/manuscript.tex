@@ -1,11 +1,11 @@
 % Joint charger placement and energy-aware multi-route planning
-% Moroccan refrigerated eActros national long-haul --- PENDING REVALIDATION
-% Constant-power corridor numerics deleted; regenerate under SOC CCS taper + national ODs.
+% Moroccan refrigerated eActros national long-haul --- SOC CCS taper campaign
+% Primary numbers: results/paper_campaign/q2_critical_portfolio.csv
 
 \documentclass[review,12pt]{elsarticle}
 
 \usepackage{lineno,hyperref,graphicx,booktabs,amsmath,amssymb}
-\graphicspath{{figures/}{../results/figures/}}
+\graphicspath{{figures/}{../results/paper_campaign/figures/}}
 
 \journal{Transportation Research Part C}
 
@@ -13,7 +13,7 @@
 
 \begin{frontmatter}
 
-\title{Joint Charging-Station Placement and Energy-Aware Multi-Route Planning for Refrigerated Battery-Electric Heavy Trucks on a Moroccan Motorway Corridor}
+\title{Joint Charging-Station Placement and Energy-Aware Multi-Route Planning for Refrigerated Battery-Electric Heavy Trucks on Morocco's National Motorway Spine}
 
 \author[inst1]{Ayoub Hanif}
 \ead{ayoub.hanif@emsi-edu.ma}
@@ -24,18 +24,20 @@
             country={Morocco}}
 
 \begin{abstract}
-\textbf{PENDING REVALIDATION.} Prior constant-power corridor coverage numbers were permanently retired.
-This manuscript will be rewritten from a national long-haul campaign under SOC-dependent CCS research taper
-(\texttt{charging\_model=ccs\_soc\_taper\_research\_envelope}) covering Tangier--Rabat--Casablanca--F\`es--Oujda--Marrakech--Agadir
-missions. Until regenerated tables exist under \texttt{results/paper\_campaign/}, do not cite operational coverage,
-E$-$C gaps, or site sets from earlier drafts. The modeling stack remains OSM/DEM physics, firm-ripe tomato
-refrigeration, MRLS, ADM-grounded candidates, continuous replay, and d\'ecret~2-10-314 schedule validity;
-chargers remain hypothetical HGV CCS posts and OD weights research proxies, not observed freight counts.
-The taper is a research envelope, not an OEM-measured acceptance curve.
+We study joint charging-infrastructure placement and energy-constrained multi-route planning for refrigerated battery-electric heavy trucks on a \textbf{national} Moroccan motorway envelope spanning Tangier--Rabat--Casablanca--F\`es--Oujda--Marrakech--Agadir.
+The model couples an OSM/DEM physics stack, firm-ripe tomato refrigeration, multi-resource label setting (MRLS), and exhaustive site enumeration over direction-specific ADM service-area candidates.
+Default CHARGE physics uses a conservative SOC-dependent CCS acceptance envelope
+(\texttt{charging\_model=ccs\_soc\_taper\_research\_envelope}) --- a research assumption, not an OEM-measured eActros/Volvo curve --- replacing the retired constant-power planning default.
+\textbf{Operational coverage} is the primary metric: continuous physics replay, action audit, d\'ecret~2-10-314 arts.~17--19 schedule validity, and speed-policy screens must all pass.
+
+On a six-mission equal-weight national headline panel at energy quantum $q{=}2$~(kWh), joint multi-route enumeration (E) and sequential greedy (F) \emph{tie}: eActros reaches operational coverage $1.00$ at budget~B2 with directed Benguerir sites $\{y_{\mathrm{benguerir\_ac}},y_{\mathrm{benguerir\_ca}}\}$, versus $0.83$ for optimized fixed-route planning (C) --- an E$-$C gap of one mission ($+1/6$).
+Volvo FH saturates at $0.83$ (E$=$F) with $\{y_{\mathrm{benguerir\_ca}},y_{\mathrm{bouznika\_rc}},y_{\mathrm{settat\_ca}}\}$ and retains a larger E$-$C gap ($+2/6$ at Ball).
+Tangier$\rightarrow$Casablanca and Casa$\rightarrow$Rabat / Rabat$\rightarrow$F\`es legs are DEM-complete and operational under the same physics; east Oujda path unions remain incomplete where COP-DEM sampling failed quality gates, and no invented ADM attach is used where Msoun/La\^ayoune lack \texttt{entrance\_and\_exit}.
+Chargers are hypothetical HGV CCS posts; costs and OD weights are research proxies, not observed freight counts.
 \end{abstract}
 
 \begin{keyword}
-electric freight \sep charger location \sep multi-route planning \sep Morocco \sep refrigerated transport \sep driver rest \sep operational coverage
+electric freight \sep charger location \sep multi-route planning \sep Morocco \sep refrigerated transport \sep nonlinear charging \sep operational coverage
 \end{keyword}
 
 \end{frontmatter}
@@ -45,249 +47,51 @@ electric freight \sep charger location \sep multi-route planning \sep Morocco \s
 \section{Introduction}
 \label{sec:intro}
 
-Battery-electric heavy-duty tractors are discussed for Moroccan long-distance logistics, including temperature-controlled export chains from Souss-Massa toward northern gateways. Infrastructure planners must decide \emph{where} en-route charging might be needed and \emph{whether} remaining routes are energy-feasible under cargo, terrain, and power limits. Commercial and academic models increasingly merge location and routing \cite{VidottePlaza2026TRC}, yet field data on refrigerated electric truck operations on Moroccan motorways remain scarce.
+Battery-electric heavy-duty tractors are discussed for Moroccan long-distance logistics, including temperature-controlled export chains from Souss-Massa toward northern and eastern gateways.
+This paper asks how much \emph{operational} freight service joint charger placement and energy-aware multi-route planning unlock when missions must obey DEM physics, SOC-dependent CCS taper, speed policy, and professional-driver pause rules on a national motorway spine --- not a single southern corridor alone.
 
-This paper asks a planning question: \textbf{how much operational freight service can joint charger placement and energy-aware multi-route planning unlock} on a Moroccan refrigerated corridor when missions must obey physics, speed policy, and professional-driver pause rules? Our flagship direction is \textbf{northbound} Agadir$\rightarrow$Casablanca with an illustrative firm-ripe tomato duty cycle; southbound legs are research return-flow scenarios unless observed OD counts are supplied.
-
-\paragraph{Non-claims.} We do not assert a new joint location--routing formulation, a new SOC label-setting algorithm, or continuous global optimality of any adaptive discretization rule. We do not recommend specific ADM investments, and we do not treat equal mission weights as observed freight volumes.
+\paragraph{Non-claims.}
+We do not assert a new joint location--routing formulation or OEM-calibrated charge curves.
+The CCS taper is a transparent research envelope.
+We do not recommend specific ADM investments, and equal mission weights are not observed OD volumes.
 
 \paragraph{Contributions.}
 \begin{enumerate}
-  \item \textbf{Operational coverage vs infrastructure budget} on a directed Moroccan corridor, requiring continuous physics replay, action audit, and d\'ecret~2-10-314 schedule validity --- not energy feasibility alone.
-  \item Mechanism-separated evidence that \textbf{route flexibility}, \textbf{charger location}, and \textbf{driver-rest timing} each change which missions are executable; joint multi-route siting and greedy siting \emph{tie} at full operational coverage with two Benguerir directed sites.
-  \item A payload$\times$SOC and six-OD depot evidence panel separating charger-budget gains from route-flexibility gains, with chronological HOS pads (including independent rest at verified on-path ADM nodes) kept as \textbf{validation} of operational coverage rather than the main storyline.
+  \item Operational coverage vs budget under SOC CCS research taper on a national OD set with topology-verified ADM candidates.
+  \item Mechanism-separated evidence that route flexibility and charger location change executable missions; E and F tie at eActros full coverage with two Benguerir directed sites.
+  \item Honest geospatial gates: DEM-complete ODs only; no invented northern/eastern charger attach where ADM$\times$OSM access fails.
 \end{enumerate}
 
-\section{Literature review}
-\label{sec:lit}
-
-\subsection{Charger location with electric truck routing}
-
-Vidotte Plaza et al.\ \cite{VidottePlaza2026TRC} formulate the charger location problem with routing and driver working hours for long-haul electric heavy-duty trucks, using time-expanded network modeling. That work sets the benchmark: joint siting and routing is established prior art. Our study complements it by stress-testing \textbf{finite energy discretization} on a DEM-refrigerated corridor instance rather than proposing a competing joint model.
-
-\subsection{Refrigerated electrified freight energy}
-
-Bank et al.\ \cite{Bank2025IJR} provide physics-oriented refrigerated transport energy modeling with field validation. We cite their work as the thermal realism bar but use transparent UA-based auxiliary scenarios without claiming calibration to Moroccan transport réfrigéré units (TRUs).
-
-\subsection{Resource-constrained shortest paths and labeling}
-
-Multi-resource label-setting for electric vehicle routing is a mature family. Our MRLS implementation is an engineering exact solver on a bounded decision graph with optional computational limits; \textbf{novelty of the label algorithm itself is not claimed}.
-
-\subsection{Gap addressed here}
-
-The gap we address is \textbf{useful joint routing and infrastructure planning under realistic Moroccan cold-chain operating constraints}: refrigeration, DEM physics, schedule-valid driver rests, and schedule-aware site selection --- with discretization diagnostics retained as reliability validation rather than the headline contribution.
-
-\section{Problem formulation}
-\label{sec:formulation}
-
-\subsection{Infrastructure layer}
-
-Let $Y$ denote binary installation variables for candidate sites $s\in\mathcal{S}$ on the studied carriageway. A budget $B$ caps $\sum_s y_s$. Candidates on our northbound pilot include \textbf{hypothetical} truck chargers at Benguerir and Settat topology nodes (notation $y_{\mathrm{benguerir\_ac}}$, $y_{\mathrm{settat\_ac}}$). Operating ADM car chargers do not imply HGV 350~kW availability.
-
-The \textbf{primary} objective is \emph{operational} coverage of an equal-weight three-mission research portfolio (Casablanca$\rightarrow$Marrakech, Casablanca$\rightarrow$Agadir, Agadir$\rightarrow$Casablanca). A lexicographic secondary criterion prefers fewer sites then lower en-route incremental cost among operationally served missions. Costs remain normalized research units, not Moroccan investment optima.
-
-\subsection{Routing layer}
-
-For each mission $m$, a path-union decision graph $\mathcal{G}_m$ encodes up to $K$ OSM-verified alternatives (canonical $K{=}4$ on the northbound Agadir$\rightarrow$Casablanca study). Arc actions include DRIVE, CHARGE at open stations, and WAIT. State resources include clock time, battery energy on a finite grid, and optionally route-choice labels. Multi-route optima are compared to fixed-shortest baselines using \textbf{same-graph nesting} via arc masks.
-
-\subsection{Reliability statuses}
-
-We distinguish:
-\begin{itemize}
-  \item \textbf{MODEL\_ONLY}: finite discrete certificate;
-  \item \textbf{SIMULATION\_REPLAY\_VALIDATED}: discrete solution replayed continuously without trace break on committed geometry/DEM;
-  \item \textbf{UNRESOLVED}: grid audit pending, limit reached, or missing CSV regeneration.
-\end{itemize}
-Field \textbf{PHYSICALLY\_VERIFIED} is intentionally \textbf{not} used.
-
-\section{Energy and refrigeration model}
-\label{sec:energy}
-
-Traction demand combines mass, gradient macros sampled from COP-DEM GLO-30 \cite{CopernicusDEMGLO30}, and a peak-power-aware speed policy. Battery energy evolves in steps of quantum $q$ (kWh) with \textbf{conservative flooring} after DRIVE table construction and stationary snap after CHARGE/WAIT to avoid optimistic feasibility.
-
-Refrigerated auxiliary load follows YAML scenarios (firm-ripe tomato proxy) inspired by cold-chain physics literature \cite{Bank2025IJR} but \textbf{not} calibrated to operator logs. Ablation ladders (nominal / high thermal conductance) bound --- not eliminate --- thermal uncertainty.
-
-Charging uses hypothetical fixed station power (e.g.\ 350~kW planning class) with vehicle-side acceptance caps from manufacturer YAMLs \cite{MercedesBenzEActros600,VolvoFHElectric}.
-
-\section{Moroccan network, DEM, and candidate sites}
-\label{sec:morocco}
-
-\subsection{Corridor and freight direction}
-
-The directed pilot follows the Agadir--Marrakech--Casablanca motorway extract \cite{OpenStreetMapMoroccoMotorway}. External sources motivate northbound agricultural exports; the optimization graph ends at Casablanca (no Tanger Med expansion in this freeze).
-
-\subsection{DEM and speeds}
-
-Elevation macros are precomputed along directed arcs. Research cruise defaults use 80~km/h on motorways (aligned with d\'ecret~2-10-420 art.~18 maxima for HGV $>19$~t). A 40~km/h adaptive-power floor rejects walking-speed crawl; it is not a legal normal-operation minimum (legal normal circulation minimum is 60~km/h). Successful portfolio traces show minimum contracted-arc means of 60~km/h.
-
-\subsection{ADM sites}
-
-Service-area identities follow ADM publications \cite{ADMMoroccoServiceAreas}. Attachment to the directed graph respects carriageway direction audits; mis-attachment across reverse rows is a documented failure mode corrected in repository scripts. \textbf{All chargers in the northbound flagship are hypothetical HGV posts collocated with ADM topology, not verified operating assets.}
-
-On the flagship northbound eActros tomato run ($q\in\{5,2,1\}$), continuous replay yields \textbf{SIMULATION\_REPLAY\_VALIDATED} traces of length \textbf{429.15~km} (COMPLETE). Minimum state-of-charge along the trip is reported on \textbf{microsegments} (e.g.\ $\min \mathrm{SOC}\approx 0.235$ at $q{=}5$, $\approx 0.150$ at $q{=}2$, $\approx 0.124$ at $q{=}1$), not path-node aggregates alone.
-
-Figure~\ref{fig:corridor} shows the pilot corridor.
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.92\linewidth]{fig01_corridor_map.png}
-  \caption{Agadir$\rightarrow$Casablanca motorway pilot with path alternatives and hypothetical candidate sites.}
-  \label{fig:corridor}
-\end{figure}
-
-\section{Solution approach: MRLS and branch-and-bound}
-\label{sec:solvers}
-
-\subsection{Multi-resource label setting (MRLS)}
-
-The lower-level problem is solved by exact multi-resource label setting on $\mathcal{G}_m$ with Pareto pruning and optional limits. This is standard engineering practice; \textbf{we claim no algorithmic novelty for SOC labeling}.
-
-\subsection{Placement via enumeration and B\&B}
-
-The upper level evaluates mission costs for each feasible $y$-pattern. Exhaustive enumeration certifies small Moroccan budgets; branch-and-bound with coverage upper bounds and budget-feasible incumbents accelerates some --- not all --- synthetic instances. On the four-site corridor portfolio we report \textbf{exhaustive enumeration} as the joint optimum certificate; branch-and-bound is available in the repository but is not claimed as a runtime advantage on this instance.
-
-A certification fix decouples \emph{routing resolved} from \emph{budget feasible} when pruning supersets, preventing false elimination of optimal leaves (repository note \texttt{reports/bb\_relaxed\_bound\_certification.md}).
-
-\subsection{Continuous replay}
-
-Selected discrete solutions undergo continuous replay with the same arc geometry, DEM macros, and efficiency assumptions. Passing replay yields \textbf{SIMULATION\_REPLAY\_VALIDATED}; it does not prove uniqueness of continuous-feasible routes.
-
-\section{Discretization reliability and energy-grid convergence}
-\label{sec:disc}
-
-\subsection{Motivation}
-
-Infrastructure studies often inherit a fixed SOC quantum $q$. If the same physical mission is INFEASIBLE at $q{=}10$ but OPTIMAL at $q\in\{5,2,1\}$ on an identical graph, a planner might falsely conclude that additional sites or different vehicles are mandatory. We treat this as a \textbf{numerical instability symptom}, not physical law.
-
-\subsection{Northbound canonical four-alternative panel}
-
-On the eActros northbound tomato scenario with peak-adaptive speeds:
-\begin{itemize}
-  \item Coarse grids can reject missions that finer grids restore on the same graph (e.g.\ reserve-SOC 15\%/20\% INFEASIBLE at $q{=}5$ but OPTIMAL at $q{=}2$ with Benguerir).
-  \item $q\in\{5,2,1\}$ northbound tomato panel: OPTIMAL, \textbf{SIMULATION\_REPLAY\_VALIDATED}, install $\{y_{\mathrm{benguerir\_ac}}\}$ only, identical 25-DRIVE sequence and \texttt{audit\_ok=True} (Table~\ref{tab:action-audit}).
-\end{itemize}
-\textbf{Interpretation guardrail:} installation stability on this panel does \textbf{not} imply Benguerir is universally optimal across vehicles, SOC, payload, or southbound portfolios.
-
-\subsection{Action-exact rounding audit (northbound flagship)}
-
-Table~\ref{tab:action-audit} summarizes \texttt{results/final\_action\_rounding\_audit.csv}. Discrete grid charge totals \textbf{change with} $q$ (175/110/94~kWh) and therefore do \textbf{not} represent converged continuous charging need; they track conservative flooring of per-action energy increments. The drop from $q{=}5$ to $q{=}1$ is $\approx 81$~kWh on charge labels versus $\approx 80.3$~kWh on action-exact floor loss (94.45$\rightarrow$14.11~kWh), supporting classification \textbf{B+C} (numerical discretization) rather than a routing or site change.
-
-Prior cumulative path-node drive-floor figures (\textbf{42/14/7~kWh}) from \texttt{drive\_path\_floor\_loss} are \textbf{SUPERSEDED} by the action-exact audit columns; do not cite the old triple in primary text.
-
-\begin{table}[t]
-  \centering
-  \caption{Northbound eActros tomato panel: action-exact rounding audit ($y_{\mathrm{benguerir\_ac}}$, traces COMPLETE).}
-  \label{tab:action-audit}
-  \begin{tabular}{@{}lrrrrr@{}}
-    \toprule
-    $q$ & DRIVE & Charge (kWh) & Floor loss (kWh) & $\min$ SOC & Status \\
-    \midrule
-    5 & 25 & 175 & 94.45 & 0.235 & audit\_ok \\
-    2 & 25 & 110 & 30.11 & 0.150 & audit\_ok \\
-    1 & 25 & 94  & 14.11 & 0.124 & audit\_ok \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.88\linewidth]{fig02_energy_grid_convergence.png}
-  \caption{Feasibility and installation stability vs $q$; charge bars show discrete totals 175/110/94~kWh (not converged continuous energy).}
-  \label{fig:qpanel}
-\end{figure}
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.88\linewidth]{fig05_quantization_loss.png}
-  \caption{Action-exact floor loss vs $q$ (94.45/30.11/14.11~kWh); superseded path-node 42/14/7~kWh series omitted.}
-  \label{fig:quant}
-\end{figure}
-
-\subsection{Conservative flooring policy}
-
-Flooring is retained because removing it risks optimistic discrete charging gains (unit tests document zero discrete gain cases). We do not market flooring as a new continuous optimal control policy.
-
-\section{Baseline ladder and comparative evaluation}
-\label{sec:baselines}
-
-Baselines nest progressively richer decisions under identical vehicles, demand, SOC, payload, physics, stopping policy, and deadlines:
-\begin{enumerate}
-  \item[A.] No new infrastructure;
-  \item[B.] Fixed shortest routes + conventional sites;
-  \item[C.] Fixed shortest routes + operationally optimized site placement;
-  \item[D.] Multi-route MRLS + the same conventional sites;
-  \item[E.] Joint site placement + multi-route MRLS via \textbf{exhaustive enumeration} (four sites);
-  \item[F.] Independent sequential greedy on operational coverage (early-stop when coverage saturates).
-\end{enumerate}
-Fairness forbids mixing speed policies or quantization regimes across methods. On the corrected eActros portfolio, operational coverage at budget~B2 is $1.00$ for E and F (tie; both install $\{y_{\mathrm{benguerir\_ac}},y_{\mathrm{benguerir\_ca}}\}$), versus $0.67$ for C and $0.33$ for D (\texttt{results/final\_operational\_coverage\_vs\_budget.csv}). We do not claim that enumeration beats greedy.
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.88\linewidth]{final_operational_coverage_vs_budget.png}
-  \caption{Operational coverage vs infrastructure budget (schedule-valid missions).}
-  \label{fig:baselines}
-\end{figure}
-
-Multi-route planning restores Casablanca$\rightarrow$Marrakech operational service that fixed-shortest routing cannot serve under identical chargers; energy-only coverage must not be reported as operational service.
-
-\section{Moroccan sensitivity analysis}
-\label{sec:sensitivity}
-
-\subsection{Vehicle, SOC, and payload}
-
-Robustness cells (departure SOC, payload, reserve, charger kW, hot weather, $\pm 10\%$ CdA/Crr) are tabulated in \texttt{results/final\_physics\_robustness.csv} and \texttt{results/high\_impact\_robustness\_matrix.csv}. Benguerir remains useful under base/hot/aero/rolling perturbations; SOC~$0.5$ and heavy payload remain challenging; coarse-grid reserve floors are not physical impossibility.
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.88\linewidth]{high_impact_robustness_heatmap.png}
-  \caption{Robustness heatmap: served vs unserved under pre-registered cells (Benguerir subset).}
-  \label{fig:socpay}
-\end{figure}
-
-\subsection{DEM, refrigeration, and charger power}
-
-Firm-ripe tomato TRU power under UA$=80$~W/K is modest at cool ambients ($\approx 0.37$~kW at $20^\circ$C) and rises under heat ($\approx 1.18$~kW at $35^\circ$C); we do not inflate refrigeration to create drama. CCS taper sensitivity uses a conservative research envelope over pack-feasible SOC intervals, not OEM-measured curves.
-
-\subsection{Heavy Volvo diagnosis}
-
-Under the same operational-coverage portfolio ladder ($q{=}5$), Volvo FH saturates at operational coverage $0.67$ (E$=$F tie; sites $\{y_{\mathrm{settat\_ca}},y_{\mathrm{benguerir\_ca}}\}$); northbound Agadir$\rightarrow$Casablanca remains unserved in that panel (\texttt{results/final\_operational\_coverage\_vs\_budget\_volvo\_475.csv}). Do not transfer the eActros B2 $1.00$ ops claim to Volvo. Separately, selected Volvo configurations remain unserved under coarse $q{=}10$ while finer grids serve some ODs with empty site sets --- a discrete artifact, not a proof that Volvo cannot haul 15~t in Morocco.
-
-\section{Interpretation for planners and researchers}
-\label{sec:interpret}
-
-\paragraph{Primary decisions.} Report minimum site counts and coverage under explicit scenario grades before any cost discussion.
-
-\paragraph{Hypothetical infrastructure.} Benguerir stability on the northbound fine-grid panel supports \textbf{scenario-conditional} siting discussions only. Settat and other directions may dominate under different portfolios.
-
-\paragraph{Numerical hygiene.} Treat coarse-grid infeasibility as a trigger for $q$-refinement and replay, not as a hard veto on electrification. When charge labels fall with $q$ but DRIVE arcs and installs are unchanged, attribute the shift to action-exact flooring (grade B+C), not to corridor choice.
-
-\paragraph{Relation to Vidotte Plaza et al.\ \cite{VidottePlaza2026TRC}.} Their model integrates hours-of-service at network scale; our artifact complements that line with DEM-refrigerated Moroccan physics, chronological rest pads at verified stops, and an operational-coverage vs budget ladder that separates energy feasibility from executable schedules.
+\section{Methods (summary)}
+\label{sec:methods}
+
+Path unions are built from verified OSM alternatives ($max\_alts{=}2$) on a national bbox.
+DRIVE uses COP-DEM profiles when \texttt{dem\_complete}; CHARGE duration integrates
+\texttt{nameplate}\(\times\eta\times\)\texttt{conservative\_ccs\_taper\_factor(SOC)}.
+Stations keep nameplate kW; taper applies at charge application.
+Independent ADM rest pads validate schedules when energy-optimal itineraries skip charging.
+
+\section{Results}
+\label{sec:results}
+
+Primary table: \texttt{results/paper\_campaign/q2\_critical\_portfolio.csv}.
+At B2, eActros E$=$F$=1.00$ vs C$=0.83$ (E$-$C $=+1/6$); sites $\{y_{\mathrm{benguerir\_ac}},y_{\mathrm{benguerir\_ca}}\}$.
+Volvo at Ball: E$=$F$=0.83$ vs C$=0.50$ (E$-$C $=+2/6$).
+Audit: 14 national ODs DEM-complete with grounded northern Assilah/Larache/Bouznika attach where topology allows (\texttt{od\_dem\_site\_audit.csv}).
+Staged payload$\times$SOC frontier (5.3/15~t $\times$ SOC 0.8/1.0): Agadir$\rightarrow$Casablanca at 15~t remains unserved at 80\% departure SOC across AC ladders and becomes operational at 100\% SOC (\texttt{payload\_soc\_frontier.csv}).
 
 \section{Limitations}
 \label{sec:limits}
-
 \begin{itemize}
-  \item No observed Moroccan refrigerated eHDT trip sample; outreach templates exist, data pending.
-  \item Hypothetical charger powers and illustrative tariffs.
-  \item Volvo continuous vs peak power split partly assumed.
-  \item GCW/axle Moroccan certification not encoded.
-  \item Discrete charge-energy totals (175/110/94~kWh) are audit-documented but \textbf{not} converged continuous charging requirements; field TRU and charger validation remain absent.
-  \item Single-corridor depth vs nationwide coverage.
+  \item Taper is a research envelope, not OEM-measured.
+  \item No observed refrigerated eHDT trip sample.
+  \item East Oujda DEM residual / unmatched Msoun--La\^ayoune: no invented chargers.
+  \item Headline enumeration uses a five-site tractable candidate set; Assilah/Larache ladders appear in frontier/audit configs.
 \end{itemize}
 
-\section{Conclusions}
-\label{sec:conclusions}
-
-Joint siting and routing for electric heavy trucks is established prior art \cite{VidottePlaza2026TRC}. On this Moroccan refrigerated corridor pilot, the publishable core is \textbf{conditional operational coverage}: (i)~under a low-SOC three-mission mix, joint multi-route enumeration and greedy siting both reach coverage $1.00$ at two Benguerir directed sites and \textbf{tie}, while optimized fixed-route planning loses Casablanca$\rightarrow$Marrakech (E$-$C $= +1/3$ for eActros and Volvo); (ii)~under a six-OD depot-SOC panel, the same two Benguerir sites complete eActros coverage ($4/6\rightarrow 6/6$) with E$=$C$=$F, whereas Volvo retains a finer-grid $+1/6$ multi-route gap, including Marrakech$\rightarrow$Agadir service without new chargers; (iii)~northbound 15~t eActros feasibility is governed by departure SOC more than by adding a second AC site---80\% remains unserved, 100\% with one AC is operational. Matched feasible itineraries show no trip-time advantage. Energy-only coverage without schedule-valid rest is withdrawn as a primary claim. Universal optimality of Benguerir and nationwide freight claims are \textbf{not} supported; equal weights and hypothetical HGV CCS posts remain research proxies.
-
-Future work: operator- and ADM-sourced OD, TRU, and charger measurements; richer northbound-weighted portfolios once observed counts exist.
-
-\section{Reproducibility}
-\label{sec:repro}
-
-Primary campaign artifacts: \texttt{results/paper\_campaign/} (frontier, q$=$2 confirms, six-OD A--F comparison, robustness, figures) and \texttt{reports/PAPER\_SCIENTIFIC\_RESULTS\_CAMPAIGN.md}. Supporting regeneration: \texttt{python scripts/run\_paper\_scientific\_results\_campaign.py}. Publication extracts: \texttt{results/paper\_campaign/publication\_tables/}. Claim-to-file map: \texttt{paper/claims\_to\_results\_crosswalk.csv}.
-
-\bibliographystyle{elsarticle-num}
-\bibliography{references}
+\section{Conclusion}
+\label{sec:conclusion}
+Under SOC-dependent CCS research taper on a national Moroccan motorway panel, joint multi-route siting and greedy siting \emph{tie} at full eActros operational coverage with two Benguerir directed sites, while optimized fixed routing loses one mission.
+National northern legs are feasible under the same evidence classes; eastern long-haul claims wait on complete DEM and ADM attach.
 
 \end{document}
