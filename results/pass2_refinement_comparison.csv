@@ -1,7 +1,0 @@
-scenario,method,demand,ball_status,ball_served,ball_disc_replay,ball_cont_replay,place_max_coverage,place_min_sites,place_best_sites,place_opt_sets,sec,dem_complete,discrete_false_negative_feasibility,fine_used,mrls_mission_evals
-northbound_A80_tomato,fixed_q10,A_nb_tomato_p5300_soc08,INFEASIBLE,False,False,False,0.0,0,NONE,NONE,24.390311099996325,True,,,
-northbound_A80_tomato,fixed_q5,A_nb_tomato_p5300_soc08,INFEASIBLE,False,False,False,0.0,0,NONE,NONE,23.628423399990425,True,,,
-northbound_A80_tomato,targeted_refinement,A_nb_tomato_p5300_soc08,INFEASIBLE,False,,,0.0,0,NONE,,52.281350400007796,True,False,True,2.0
-southbound_H80_task08_portfolio,fixed_q10,H80_dem_p15000_soc08,INFEASIBLE,False,False,False,0.0,0,NONE,NONE,66.63159290002659,True,,,
-southbound_H80_task08_portfolio,fixed_q5,H80_dem_p15000_soc08,OPTIMAL,True,True,True,2.0,0,NONE,NONE,84.6853993999539,True,,,
-southbound_H80_task08_portfolio,targeted_refinement,H80_dem_p15000_soc08,OPTIMAL,True,,,2.0,0,NONE,,97.20845390000613,True,True,True,2.0

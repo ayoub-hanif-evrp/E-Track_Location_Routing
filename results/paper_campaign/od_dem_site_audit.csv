@@ -1,7 +1,0 @@
-od_id,dem_complete,station_keys_on_union,amskroud_ca_on_union,note
-agadir_casa,True,"benguerir_ac,settat_ac",False,DEM ok; AC sites only
-agadir_marrakech,True,,False,DEM recovered; no validated on-union charger (amskroud_ac missing)
-marrakech_casa,True,"benguerir_ac,settat_ac",False,DEM recovered; AC sites
-casa_agadir,True,"amskroud_ca,benguerir_ca,settat_ca",True,Amskroud CA on path-union
-casa_marrakech,True,"benguerir_ca,settat_ca",False,Amskroud not on CM path-union
-marrakech_agadir,True,amskroud_ca,True,Amskroud CA only on-union site

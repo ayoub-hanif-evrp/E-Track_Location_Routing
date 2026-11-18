@@ -1,6 +1,0 @@
-budget,max_sites,A_no_infra,B_fixed_conventional,C_fixed_optimized,D_multi_conventional,E_joint_multi_opt,F_greedy_multi,E_sites,C_sites,F_sites
-B0,0,0.0,0.0,0.0,0.0,0.0,0.0,,,
-B1,1,,0.3333333333333333,0.3333333333333333,0.6666666666666666,0.6666666666666666,0.6666666666666666,y_settat_ca,y_settat_ca,y_benguerir_ca
-B2,2,,0.3333333333333333,0.6666666666666666,0.6666666666666666,1.0,1.0,"y_benguerir_ac,y_settat_ca","y_benguerir_ac,y_settat_ca","y_benguerir_ac,y_benguerir_ca"
-B3,3,,0.3333333333333333,0.6666666666666666,0.6666666666666666,1.0,1.0,"y_benguerir_ac,y_settat_ca","y_benguerir_ac,y_settat_ca","y_benguerir_ac,y_benguerir_ca,y_settat_ac"
-Ball,4,,0.6666666666666666,0.6666666666666666,1.0,1.0,1.0,"y_benguerir_ac,y_settat_ca","y_benguerir_ac,y_settat_ca","y_benguerir_ac,y_benguerir_ca,y_settat_ac,y_settat_ca"

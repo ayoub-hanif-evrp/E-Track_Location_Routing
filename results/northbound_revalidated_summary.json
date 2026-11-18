@@ -1,7 +1,0 @@
-{
-  "n_cases": 32,
-  "n_served_peak_adapt": 1,
-  "n_peak_adapt_cases": 8,
-  "reproduce": "python scripts/run_northbound_revalidated_feasibility.py",
-  "note": "Peak-adapt is a physical model correction (power-feasible climb speed), not a new optimizer. Floor60 tests motorway normal-min constraint."
-}

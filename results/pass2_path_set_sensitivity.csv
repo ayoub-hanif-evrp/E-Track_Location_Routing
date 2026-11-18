@@ -1,3 +1,0 @@
-experiment,max_alts,dem_complete,n_arcs,mrls_status,served,uncertified,objective_cents,sec,note
-path_set_sensitivity,2,True,33,INFEASIBLE,False,False,,7.591721699980553,infeasible_under_assumed_power_and_path_union
-path_set_sensitivity,4,True,51,INFEASIBLE,False,False,,12.149817300029099,infeasible_under_assumed_power_and_path_union

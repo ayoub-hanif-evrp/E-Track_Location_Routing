@@ -1,6 +1,6 @@
 % Joint charger placement and energy-aware multi-route planning
-% Moroccan refrigerated eActros corridor --- operational coverage results
-% Primary numbers: results/final_operational_coverage_vs_budget.csv
+% Moroccan refrigerated eActros national long-haul --- PENDING REVALIDATION
+% Constant-power corridor numerics deleted; regenerate under SOC CCS taper + national ODs.
 
 \documentclass[review,12pt]{elsarticle}
 
@@ -24,9 +24,14 @@
             country={Morocco}}
 
 \begin{abstract}
-We study joint charging-infrastructure placement and energy-constrained multi-route planning for refrigerated battery-electric heavy trucks on the Casablanca--Agadir motorway corridor. The model couples an OSM/DEM physics stack, firm-ripe tomato refrigeration, multi-resource label setting (MRLS), and exhaustive site enumeration over direction-specific ADM service-area candidates. \textbf{Operational coverage}---not mere energy feasibility---is the primary service metric: a mission counts only when continuous physics replay, action audit, Moroccan professional-driver pause rules (d\'ecret~2-10-314 arts.~17--19), and speed-policy screens all pass. Chronological rest adjustment extends verified CHARGE stops before the 4.5~h continuous-driving limit and, when the energy-optimal itinerary skips charging, inserts an independent qualifying rest at a topology-verified on-path ADM node with auxiliary and refrigeration load during the break.
-
-On an equal-weight three-mission pilot (stress southbound SOC~$0.5$), joint multi-route enumeration and sequential greedy siting both reach operational coverage $1.00$ with two Benguerir directed sites while optimized fixed-route planning tops out at $0.67$ (eActros) or $0.33$ (Volvo FH) at the same budget---an E$-$C gap of one mission; E and F \emph{tie}. On a six-OD depot-SOC~$0.8$ panel, eActros coverage rises from $4/6$ with no new chargers to $6/6$ with the same two Benguerir sites, but E equals C; Volvo retains a smaller $+$1/6 multi-route gap. Northbound 15~t eActros dispatches remain unserved at 80\% departure SOC even with both AC candidates, yet become operational at 100\% SOC with one AC site. Matched feasible pairs show no trip-time savings. Chargers are hypothetical HGV CCS posts; costs and OD weights are illustrative research proxies, not observed freight counts or grid-capacity evidence.
+\textbf{PENDING REVALIDATION.} Prior constant-power corridor coverage numbers were permanently retired.
+This manuscript will be rewritten from a national long-haul campaign under SOC-dependent CCS research taper
+(\texttt{charging\_model=ccs\_soc\_taper\_research\_envelope}) covering Tangier--Rabat--Casablanca--F\`es--Oujda--Marrakech--Agadir
+missions. Until regenerated tables exist under \texttt{results/paper\_campaign/}, do not cite operational coverage,
+E$-$C gaps, or site sets from earlier drafts. The modeling stack remains OSM/DEM physics, firm-ripe tomato
+refrigeration, MRLS, ADM-grounded candidates, continuous replay, and d\'ecret~2-10-314 schedule validity;
+chargers remain hypothetical HGV CCS posts and OD weights research proxies, not observed freight counts.
+The taper is a research envelope, not an OEM-measured acceptance curve.
 \end{abstract}
 
 \begin{keyword}
