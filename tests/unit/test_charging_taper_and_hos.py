@@ -8,11 +8,14 @@ from morocco_etruck.energy.vehicle import (
     conservative_ccs_taper_factor,
     effective_charge_power_kw_with_taper,
     load_vehicle,
+    tapered_battery_charge_minutes,
 )
 from morocco_etruck.optimization.operational_schedule import (
     propose_hos_rest_adjustment_with_usable,
     validate_schedule_from_replay_trace,
 )
+from morocco_etruck.optimization.problem import RoutingInstance, StationData
+from morocco_etruck.optimization.resource_transitions import Label, apply_charge
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -30,6 +33,69 @@ def test_taper_caps_below_ccs_and_charger():
     p = effective_charge_power_kw_with_taper(v, 350.0, soc=0.9, apply_taper=True)
     assert p < 350.0
     assert p <= float(v.ccs_max_charge_kw)
+
+
+def test_high_soc_charge_takes_longer_than_low_soc():
+    kwargs = dict(
+        nameplate_power_kw=350.0,
+        eta=0.95,
+        delta_e_batt_kwh=50.0,
+        usable_kwh=600.0,
+        apply_taper=True,
+    )
+    low = tapered_battery_charge_minutes(soc_start=0.20, **kwargs)
+    high = tapered_battery_charge_minutes(soc_start=0.85, **kwargs)
+    assert high > low * 1.2
+
+
+def test_apply_charge_uses_taper_and_provenance_flag():
+    inst = RoutingInstance(
+        name="t",
+        nodes=["S"],
+        arcs=[],
+        origin="S",
+        destination="S",
+        deadline_steps=500,
+        E_truck_cap=600,
+        E_truck_min=60,
+        E_truck_init=510,
+        E_trailer_cap=None,
+        E_trailer_min=None,
+        E_trailer_init=None,
+        stations={
+            "S": StationData(
+                node="S",
+                power_kw=350.0,
+                eta=0.95,
+                price_cents_per_grid_kwh=20,
+            )
+        },
+        active_stations={"S"},
+        power_source="A",
+        refrigeration_on=False,
+        time_step_min=5,
+        energy_quantum_kwh=10,
+    )
+    lab = Label(
+        node="S",
+        t=0,
+        E_truck=510,
+        E_trailer=None,
+        cost=0,
+        pred_id=None,
+        action={"type": "START"},
+        label_id=0,
+        can_charge=True,
+    )
+    # 510/600 = 0.85 SOC → taper active vs constant power from SOC 0
+    res = apply_charge(inst, lab, delta_e=50, new_id=1)
+    assert res.ok and res.label is not None
+    assert res.label.action.get("charging_model") == "ccs_soc_taper_research_envelope"
+    steps_taper = res.label.action["steps"]
+    steps_const = inst.charge_duration_steps(
+        inst.stations["S"], 50, soc_start=510 / 600, apply_taper=False
+    )
+    assert steps_taper > steps_const
 
 
 def test_hos_pad_not_needed_for_short_trip():

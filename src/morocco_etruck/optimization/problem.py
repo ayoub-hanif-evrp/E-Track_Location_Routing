@@ -116,14 +116,39 @@ class RoutingInstance:
                 out.append(a)
         return out
 
-    def charge_duration_steps(self, station: StationData, delta_e_batt_kwh: int) -> int:
-        """Time steps to deliver delta_e_batt_kwh into the battery at station power×η."""
+    def charge_duration_steps(
+        self,
+        station: StationData,
+        delta_e_batt_kwh: int,
+        *,
+        soc_start: float | None = None,
+        apply_taper: bool = True,
+    ) -> int:
+        """
+        Time steps to deliver delta_e_batt_kwh into the battery.
+
+        Default: SOC-dependent CCS research taper on nameplate power×η.
+        Pass ``apply_taper=False`` only for constant-power unit tests.
+        """
         if delta_e_batt_kwh <= 0:
             return 0
         if station.eta <= 0 or station.power_kw <= 0:
             raise ValueError("invalid station power/eta")
-        per_step = station.power_kw * station.eta * (self.time_step_min / 60.0)
-        return max(1, int(math.ceil(delta_e_batt_kwh / per_step)))
+        from morocco_etruck.energy.vehicle import tapered_battery_charge_minutes
+
+        usable = max(1e-9, float(self.E_truck_cap))
+        soc0 = 0.0 if soc_start is None else float(soc_start)
+        minutes = tapered_battery_charge_minutes(
+            nameplate_power_kw=float(station.power_kw),
+            eta=float(station.eta),
+            soc_start=soc0,
+            delta_e_batt_kwh=float(delta_e_batt_kwh),
+            usable_kwh=usable,
+            apply_taper=bool(apply_taper),
+        )
+        if minutes <= 0:
+            return 0
+        return max(1, int(math.ceil(minutes / float(self.time_step_min))))
 
     def grid_kwh_for_batt(self, station: StationData, delta_e_batt_kwh: int) -> int:
         """Grid energy (kWh quanta, ceil) for battery gain delta_e_batt_kwh."""

@@ -157,10 +157,23 @@ def test_charge_duration_scales_inversely_with_power():
 
     inst350 = _inst(350.0)
     inst150 = _inst(150.0)
-    d350 = inst350.charge_duration_steps(inst350.stations["S"], 100)
-    d150 = inst150.charge_duration_steps(inst150.stations["S"], 100)
+    # Low SOC keeps taper factor ≈ 1 so inverse power scaling remains valid.
+    d350 = inst350.charge_duration_steps(
+        inst350.stations["S"], 100, soc_start=0.1, apply_taper=True
+    )
+    d150 = inst150.charge_duration_steps(
+        inst150.stations["S"], 100, soc_start=0.1, apply_taper=True
+    )
     assert d150 > d350
     assert d150 / d350 >= 2.0
+    # Explicit constant-power control still available for tests.
+    d350_c = inst350.charge_duration_steps(
+        inst350.stations["S"], 100, apply_taper=False
+    )
+    d150_c = inst150.charge_duration_steps(
+        inst150.stations["S"], 100, apply_taper=False
+    )
+    assert d150_c / d350_c >= 2.0
 
 
 def test_shortest_path_baseline_restricts_union():

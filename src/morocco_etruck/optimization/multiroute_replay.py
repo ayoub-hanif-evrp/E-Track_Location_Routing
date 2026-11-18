@@ -304,10 +304,21 @@ def continuous_replay_multiroute(
             soc_before = soc
             t_before = t_s
             if "steps" in act:
+                # Discrete planner already used SOC taper for step count.
                 dt = int(act["steps"]) * ctx.time_step_min * 60.0
             else:
-                batt_kw = st.power_kw * st.eta
-                dt = (de / batt_kw) * 3600.0 if batt_kw > 0 else 0.0
+                from morocco_etruck.energy.vehicle import tapered_battery_charge_minutes
+
+                minutes = tapered_battery_charge_minutes(
+                    nameplate_power_kw=float(st.power_kw),
+                    eta=float(st.eta),
+                    soc_start=float(soc_before),
+                    delta_e_batt_kwh=float(de),
+                    usable_kwh=float(usable),
+                    soc_max=float(ctx.vehicle.soc_max),
+                    apply_taper=True,
+                )
+                dt = minutes * 60.0
             aux_w = float(inst.aux_w) if inst.aux_w > 0 else float(ctx.vehicle.P_aux_w)
             e_aux_kwh = aux_w * dt / 3.6e6
             if inst.tru_mean_w > 0 and ctx.refrigeration_on:

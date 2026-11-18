@@ -78,7 +78,9 @@ charging:
   ccs_max_charge_kw: 350.0
   voltage_note: "Advertised CCS up to 350 kW below 750 V; ~65 min 20→80% claim"
   provenance: manufacturer_advertised
-  taper_note: "No published SOC curve; model uses constant min(charger, 350 kW)×η"
+  taper_note: >
+    No published OEM SOC curve. Nameplate min(charger, 350 kW); default planning/replay
+    multiplies by conservative_ccs_taper_factor(SOC) research envelope.
 
 refrigeration:
   power_source_default: A

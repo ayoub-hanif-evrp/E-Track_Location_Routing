@@ -67,9 +67,11 @@ charging:
   ccs_max_charge_provenance: manufacturer_public_web
   ccs_max_charge_source: "https://www.mercedes-benz-trucks.com/int/en/trucks/eactros.html"
   note: >
-    Vehicle-side CCS acceptance cap 400 kW. Effective charge power = min(charger_kw, 400).
-    Full SOC-dependent acceptance curve not published here; constant-envelope assumption.
-    MCS megawatt charging is future capability and not used in current experiments.
+    Vehicle-side CCS acceptance cap 400 kW. Nameplate = min(charger_kw, 400).
+    Default MRLS/replay applies conservative_ccs_taper_factor(SOC) research envelope
+    (not an OEM-measured eActros curve). MCS megawatt charging is unused.
+  taper_note: >
+    Research envelope: full power ≤60% SOC; linear derate 60→80% and 80→95%; 20% above 95%.
 
 refrigeration:
   power_source_default: A

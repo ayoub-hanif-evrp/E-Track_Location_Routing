@@ -90,9 +90,10 @@ def load_vehicle(path: str | Path) -> VehicleParams:
 
 def effective_charge_power_kw(vehicle: VehicleParams, charger_power_kw: float) -> float:
     """
-    Constant-power acceptance approximation: min(charger, vehicle CCS max).
+    Nameplate acceptance floor: min(charger, vehicle CCS max).
 
-    Not a SOC-dependent taper curve. Missing vehicle CCS ⇒ charger power only.
+    Prefer ``effective_charge_power_kw_with_taper`` for planning/replay.
+    Missing vehicle CCS ⇒ charger power only.
     """
     p_chg = float(charger_power_kw)
     if p_chg <= 0:
@@ -112,7 +113,8 @@ def conservative_ccs_taper_factor(soc: float) -> float:
       0.60–0.80  → linear 1.00 → 0.70
       0.80–0.95  → linear 0.70 → 0.35
       SOC ≥ 0.95 → 0.20
-    Use only for sensitivity; default planning remains constant-power.
+
+    Default MRLS / continuous CHARGE accounting uses this envelope.
     """
     s = float(soc)
     if s <= 0.60:
@@ -131,11 +133,53 @@ def effective_charge_power_kw_with_taper(
     soc: float,
     apply_taper: bool = True,
 ) -> float:
-    """Effective charge power with optional conservative SOC taper."""
+    """Effective charge power with conservative SOC taper (default on)."""
     base = effective_charge_power_kw(vehicle, charger_power_kw)
     if not apply_taper:
         return base
     return base * conservative_ccs_taper_factor(soc)
+
+
+def tapered_battery_charge_minutes(
+    *,
+    nameplate_power_kw: float,
+    eta: float,
+    soc_start: float,
+    delta_e_batt_kwh: float,
+    usable_kwh: float,
+    soc_max: float = 1.0,
+    n_steps: int = 40,
+    apply_taper: bool = True,
+) -> float:
+    """
+    Wall-clock minutes to deliver ``delta_e_batt_kwh`` into the pack.
+
+    Integrates ``nameplate_power_kw * eta * taper(soc)`` over the SOC interval.
+    ``nameplate_power_kw`` should already be min(charger, CCS cap).
+    """
+    de = float(delta_e_batt_kwh)
+    if de <= 1e-12:
+        return 0.0
+    usable = max(1e-9, float(usable_kwh))
+    s0 = max(0.0, min(float(soc_start), float(soc_max)))
+    s1 = max(s0, min(s0 + de / usable, float(soc_max)))
+    batt = (s1 - s0) * usable
+    if batt <= 1e-12:
+        return 0.0
+    eta_c = max(1e-9, float(eta))
+    p_name = max(1e-9, float(nameplate_power_kw))
+    if not apply_taper:
+        # Battery delivery rate = nameplate * eta
+        return (batt / (p_name * eta_c)) * 60.0
+    minutes = 0.0
+    n = max(1, int(n_steps))
+    dt_batt = batt / float(n)
+    for i in range(n):
+        soc_mid = s0 + (s1 - s0) * ((i + 0.5) / n)
+        p_grid = p_name * conservative_ccs_taper_factor(soc_mid)
+        p_batt = max(1e-9, p_grid * eta_c)
+        minutes += (dt_batt / p_batt) * 60.0
+    return minutes
 
 
 def tapered_charge_session_minutes(

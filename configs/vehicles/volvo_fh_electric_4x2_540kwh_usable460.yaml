@@ -69,7 +69,9 @@ soc:
 charging:
   ccs_max_charge_kw: 350.0
   provenance: manufacturer_advertised
-  taper_note: "No published SOC curve; constant min(charger, 350 kW)×η"
+  taper_note: >
+    No published OEM SOC curve. Nameplate min(charger, 350 kW); default planning/replay
+    multiplies by conservative_ccs_taper_factor(SOC) research envelope.
 
 refrigeration:
   power_source_default: A
