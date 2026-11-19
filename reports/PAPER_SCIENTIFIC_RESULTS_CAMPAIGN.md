@@ -1,74 +1,352 @@
-# Paper scientific results campaign — national SOC CCS taper
+# PAPER_SCIENTIFIC_RESULTS_CAMPAIGN
 
-**Status:** Regenerated after permanent deletion of constant-power corridor evidence.  
-**Charging model:** `ccs_soc_taper_research_envelope` (research envelope; not OEM-measured).  
-**Geography:** national motorway envelope (Tangier–Rabat–Casa–Fès–Oujda–Marrakech–Agadir).
+Git SHA: `04277605829b24fb18d7307d90683740c6c70c44`
 
-## Scientific honesty
+Primary metric: **operational coverage** (energy + continuous replay + schedule/HOS).
+Chargers are hypothetical. Scenario counts are not Moroccan traffic samples.
 
-- Taper is a conservative SOC acceptance envelope, not an eActros/Volvo OEM curve.
-- Evidence classes remain OSM + COP-DEM + ADM topology + constructed refrigerated OD scenarios — not observed truck counts.
-- East Oujda / Msoun–Laâyoune: no invented `entrance_and_exit` attach where ADM×OSM fails; incomplete DEM arcs excluded from claims.
+## DEM / site audit
 
-## DEM / site audit (`od_dem_site_audit.csv`)
+- `agadir_casa`: dem_complete=True, amskroud_on_union=False
+- `agadir_marrakech`: dem_complete=True, amskroud_on_union=False
+- `marrakech_casa`: dem_complete=True, amskroud_on_union=False
+- `casa_agadir`: dem_complete=True, amskroud_on_union=True
+- `casa_marrakech`: dem_complete=True, amskroud_on_union=False
+- `marrakech_agadir`: dem_complete=True, amskroud_on_union=True
+- `tangier_casa`: dem_complete=True, amskroud_on_union=False
+- `casa_tangier`: dem_complete=True, amskroud_on_union=False
+- `casa_rabat`: dem_complete=True, amskroud_on_union=False
+- `rabat_casa`: dem_complete=True, amskroud_on_union=False
+- `rabat_fes`: dem_complete=True, amskroud_on_union=False
+- `fes_rabat`: dem_complete=True, amskroud_on_union=False
+- `tangier_rabat`: dem_complete=True, amskroud_on_union=False
+- `rabat_tangier`: dem_complete=True, amskroud_on_union=False
 
-14 audited ODs are **dem_complete=True**. Grounded on-union stations include:
+## 1–2. Strongest findings & E vs C vs F (q=2 headline)
 
-| OD | stations on union |
-|----|-------------------|
-| casa_agadir | amskroud_ca, benguerir_ca, settat_ca |
-| agadir_casa | benguerir_ac, settat_ac |
-| tangier_casa | assilah_tr, bouznika_rc |
-| casa_tangier | bouznika_cr, larache_rt |
-| casa_rabat | bouznika_cr |
-| rabat_fes | *(none — east ADM unmatched)* |
+### eactros_600
+| budget | C_ops | E_ops | F_ops | E−C | E=F | E_sites |
+|---|---:|---:|---:|---:|---|---|
+| B0 | 0.64 | 0.64 | 0.64 | 0.00 | True | nan |
+| B1 | 0.71 | 0.79 | 0.79 | 0.07 | True | y_benguerir_ca |
+| B2 | 0.79 | 0.86 | 0.86 | 0.07 | True | y_benguerir_ca,y_bouznika_cr |
+| B3 | 0.86 | 0.93 | 0.93 | 0.07 | True | y_benguerir_ac,y_benguerir_ca,y_bouznika_cr |
+| Ball | 0.86 | 0.93 | 0.93 | 0.07 | True | y_benguerir_ac,y_benguerir_ca,y_bouznika_cr |
+- B2 denominator n_missions=14: E serves 12/14, C serves 11/14.
 
-## Headline q=2 portfolio (`q2_critical_portfolio.csv`)
+### volvo_475
+| budget | C_ops | E_ops | F_ops | E−C | E=F | E_sites |
+|---|---:|---:|---:|---:|---|---|
+| B0 | 0.50 | 0.50 | 0.50 | 0.00 | True | nan |
+| B1 | 0.57 | 0.57 | 0.57 | 0.00 | True | y_larache_rt |
+| B2 | 0.64 | 0.64 | 0.64 | 0.00 | True | y_larache_rt,y_settat_ca |
+| B3 | 0.71 | 0.71 | 0.71 | 0.00 | True | y_bouznika_cr,y_larache_rt,y_settat_ca |
+| Ball | 0.79 | 0.86 | 0.86 | 0.07 | True | y_benguerir_ca,y_bouznika_cr,y_bouznika_rc,y_larache_rt,y_settat_ca |
+- B2 denominator n_missions=14: E serves 9/14, C serves 9/14.
 
-Equal-weight 6-mission national panel; 5-site tractable enumeration  
-`{settat_ca, benguerir_ca, settat_ac, benguerir_ac, bouznika_rc}`.
+## 3. Payload × SOC frontier (does it hold under realistic dispatch?)
 
-### eActros 600
+| vehicle | od | payload_t | soc | multi_any | fixed_any | flex_gain |
+|---|---|---:|---:|---|---|---|
+| eactros_600 | agadir_casa | 5.3 | 0.5 | False | False | False |
+| eactros_600 | agadir_casa | 5.3 | 0.8 | True | True | False |
+| eactros_600 | agadir_casa | 5.3 | 1.0 | True | True | False |
+| eactros_600 | agadir_casa | 10.0 | 0.5 | False | False | False |
+| eactros_600 | agadir_casa | 10.0 | 0.8 | True | True | False |
+| eactros_600 | agadir_casa | 10.0 | 1.0 | True | True | False |
+| eactros_600 | agadir_casa | 15.0 | 0.5 | False | False | False |
+| eactros_600 | agadir_casa | 15.0 | 0.8 | False | False | False |
+| eactros_600 | agadir_casa | 15.0 | 1.0 | True | True | False |
+| eactros_600 | agadir_marrakech | 5.3 | 0.5 | False | False | False |
+| eactros_600 | agadir_marrakech | 5.3 | 0.8 | True | True | False |
+| eactros_600 | agadir_marrakech | 5.3 | 1.0 | True | True | False |
+| eactros_600 | agadir_marrakech | 10.0 | 0.5 | False | False | False |
+| eactros_600 | agadir_marrakech | 10.0 | 0.8 | True | True | False |
+| eactros_600 | agadir_marrakech | 10.0 | 1.0 | True | True | False |
+| eactros_600 | agadir_marrakech | 15.0 | 0.5 | False | False | False |
+| eactros_600 | agadir_marrakech | 15.0 | 0.8 | True | True | False |
+| eactros_600 | agadir_marrakech | 15.0 | 1.0 | True | True | False |
+| eactros_600 | casa_agadir | 5.3 | 0.5 | True | True | False |
+| eactros_600 | casa_agadir | 5.3 | 0.8 | True | True | False |
+| eactros_600 | casa_agadir | 5.3 | 1.0 | True | True | False |
+| eactros_600 | casa_agadir | 10.0 | 0.5 | False | False | False |
+| eactros_600 | casa_agadir | 10.0 | 0.8 | True | True | False |
+| eactros_600 | casa_agadir | 10.0 | 1.0 | True | True | False |
+| eactros_600 | casa_agadir | 15.0 | 0.5 | True | True | False |
+| eactros_600 | casa_agadir | 15.0 | 0.8 | True | True | False |
+| eactros_600 | casa_agadir | 15.0 | 1.0 | True | True | False |
+| eactros_600 | casa_marrakech | 5.3 | 0.5 | True | False | True |
+| eactros_600 | casa_marrakech | 5.3 | 0.8 | True | True | False |
+| eactros_600 | casa_marrakech | 5.3 | 1.0 | True | True | False |
+| eactros_600 | casa_marrakech | 10.0 | 0.5 | True | False | True |
+| eactros_600 | casa_marrakech | 10.0 | 0.8 | True | True | False |
+| eactros_600 | casa_marrakech | 10.0 | 1.0 | True | True | False |
+| eactros_600 | casa_marrakech | 15.0 | 0.5 | True | False | True |
+| eactros_600 | casa_marrakech | 15.0 | 0.8 | True | True | False |
+| eactros_600 | casa_marrakech | 15.0 | 1.0 | True | True | False |
+| eactros_600 | casa_rabat | 5.3 | 0.5 | True | True | False |
+| eactros_600 | casa_rabat | 5.3 | 0.8 | True | True | False |
+| eactros_600 | casa_rabat | 5.3 | 1.0 | True | True | False |
+| eactros_600 | casa_rabat | 10.0 | 0.5 | True | True | False |
+| eactros_600 | casa_rabat | 10.0 | 0.8 | True | True | False |
+| eactros_600 | casa_rabat | 10.0 | 1.0 | True | True | False |
+| eactros_600 | casa_rabat | 15.0 | 0.5 | True | True | False |
+| eactros_600 | casa_rabat | 15.0 | 0.8 | True | True | False |
+| eactros_600 | casa_rabat | 15.0 | 1.0 | True | True | False |
+| eactros_600 | casa_tangier | 5.3 | 0.5 | True | True | False |
+| eactros_600 | casa_tangier | 5.3 | 0.8 | True | True | False |
+| eactros_600 | casa_tangier | 5.3 | 1.0 | True | True | False |
+| eactros_600 | casa_tangier | 10.0 | 0.5 | True | True | False |
+| eactros_600 | casa_tangier | 10.0 | 0.8 | True | True | False |
+| eactros_600 | casa_tangier | 10.0 | 1.0 | True | True | False |
+| eactros_600 | casa_tangier | 15.0 | 0.5 | True | True | False |
+| eactros_600 | casa_tangier | 15.0 | 0.8 | True | True | False |
+| eactros_600 | casa_tangier | 15.0 | 1.0 | True | True | False |
+| eactros_600 | fes_rabat | 5.3 | 0.5 | True | True | False |
+| eactros_600 | fes_rabat | 5.3 | 0.8 | True | True | False |
+| eactros_600 | fes_rabat | 5.3 | 1.0 | True | True | False |
+| eactros_600 | fes_rabat | 10.0 | 0.5 | False | False | False |
+| eactros_600 | fes_rabat | 10.0 | 0.8 | True | True | False |
+| eactros_600 | fes_rabat | 10.0 | 1.0 | True | True | False |
+| eactros_600 | fes_rabat | 15.0 | 0.5 | False | False | False |
+| eactros_600 | fes_rabat | 15.0 | 0.8 | True | True | False |
+| eactros_600 | fes_rabat | 15.0 | 1.0 | True | True | False |
+| eactros_600 | marrakech_agadir | 5.3 | 0.5 | False | False | False |
+| eactros_600 | marrakech_agadir | 5.3 | 0.8 | True | True | False |
+| eactros_600 | marrakech_agadir | 5.3 | 1.0 | True | True | False |
+| eactros_600 | marrakech_agadir | 10.0 | 0.5 | False | False | False |
+| eactros_600 | marrakech_agadir | 10.0 | 0.8 | True | True | False |
+| eactros_600 | marrakech_agadir | 10.0 | 1.0 | True | True | False |
+| eactros_600 | marrakech_agadir | 15.0 | 0.5 | False | False | False |
+| eactros_600 | marrakech_agadir | 15.0 | 0.8 | True | True | False |
+| eactros_600 | marrakech_agadir | 15.0 | 1.0 | True | True | False |
+| eactros_600 | marrakech_casa | 5.3 | 0.5 | True | True | False |
+| eactros_600 | marrakech_casa | 5.3 | 0.8 | True | True | False |
+| eactros_600 | marrakech_casa | 5.3 | 1.0 | True | True | False |
+| eactros_600 | marrakech_casa | 10.0 | 0.5 | True | True | False |
+| eactros_600 | marrakech_casa | 10.0 | 0.8 | True | True | False |
+| eactros_600 | marrakech_casa | 10.0 | 1.0 | True | True | False |
+| eactros_600 | marrakech_casa | 15.0 | 0.5 | True | True | False |
+| eactros_600 | marrakech_casa | 15.0 | 0.8 | True | True | False |
+| eactros_600 | marrakech_casa | 15.0 | 1.0 | True | True | False |
+| eactros_600 | rabat_casa | 5.3 | 0.5 | True | True | False |
+| eactros_600 | rabat_casa | 5.3 | 0.8 | True | True | False |
+| eactros_600 | rabat_casa | 5.3 | 1.0 | True | True | False |
+| eactros_600 | rabat_casa | 10.0 | 0.5 | True | True | False |
+| eactros_600 | rabat_casa | 10.0 | 0.8 | True | True | False |
+| eactros_600 | rabat_casa | 10.0 | 1.0 | True | True | False |
+| eactros_600 | rabat_casa | 15.0 | 0.5 | True | True | False |
+| eactros_600 | rabat_casa | 15.0 | 0.8 | True | True | False |
+| eactros_600 | rabat_casa | 15.0 | 1.0 | True | True | False |
+| eactros_600 | rabat_fes | 5.3 | 0.5 | False | False | False |
+| eactros_600 | rabat_fes | 5.3 | 0.8 | True | True | False |
+| eactros_600 | rabat_fes | 5.3 | 1.0 | True | True | False |
+| eactros_600 | rabat_fes | 10.0 | 0.5 | False | False | False |
+| eactros_600 | rabat_fes | 10.0 | 0.8 | True | True | False |
+| eactros_600 | rabat_fes | 10.0 | 1.0 | True | True | False |
+| eactros_600 | rabat_fes | 15.0 | 0.5 | False | False | False |
+| eactros_600 | rabat_fes | 15.0 | 0.8 | True | True | False |
+| eactros_600 | rabat_fes | 15.0 | 1.0 | True | True | False |
+| eactros_600 | rabat_tangier | 5.3 | 0.5 | False | False | False |
+| eactros_600 | rabat_tangier | 5.3 | 0.8 | True | True | False |
+| eactros_600 | rabat_tangier | 5.3 | 1.0 | True | True | False |
+| eactros_600 | rabat_tangier | 10.0 | 0.5 | False | False | False |
+| eactros_600 | rabat_tangier | 10.0 | 0.8 | True | True | False |
+| eactros_600 | rabat_tangier | 10.0 | 1.0 | True | True | False |
+| eactros_600 | rabat_tangier | 15.0 | 0.5 | False | False | False |
+| eactros_600 | rabat_tangier | 15.0 | 0.8 | True | True | False |
+| eactros_600 | rabat_tangier | 15.0 | 1.0 | True | True | False |
+| eactros_600 | tangier_casa | 5.3 | 0.5 | True | True | False |
+| eactros_600 | tangier_casa | 5.3 | 0.8 | True | True | False |
+| eactros_600 | tangier_casa | 5.3 | 1.0 | True | True | False |
+| eactros_600 | tangier_casa | 10.0 | 0.5 | True | True | False |
+| eactros_600 | tangier_casa | 10.0 | 0.8 | True | True | False |
+| eactros_600 | tangier_casa | 10.0 | 1.0 | True | True | False |
+| eactros_600 | tangier_casa | 15.0 | 0.5 | True | True | False |
+| eactros_600 | tangier_casa | 15.0 | 0.8 | True | True | False |
+| eactros_600 | tangier_casa | 15.0 | 1.0 | True | True | False |
+| eactros_600 | tangier_rabat | 5.3 | 0.5 | True | True | False |
+| eactros_600 | tangier_rabat | 5.3 | 0.8 | True | True | False |
+| eactros_600 | tangier_rabat | 5.3 | 1.0 | True | True | False |
+| eactros_600 | tangier_rabat | 10.0 | 0.5 | True | True | False |
+| eactros_600 | tangier_rabat | 10.0 | 0.8 | True | True | False |
+| eactros_600 | tangier_rabat | 10.0 | 1.0 | True | True | False |
+| eactros_600 | tangier_rabat | 15.0 | 0.5 | True | True | False |
+| eactros_600 | tangier_rabat | 15.0 | 0.8 | True | True | False |
+| eactros_600 | tangier_rabat | 15.0 | 1.0 | True | True | False |
+| volvo_475 | agadir_casa | 5.3 | 0.5 | False | False | False |
+| volvo_475 | agadir_casa | 5.3 | 0.8 | False | False | False |
+| volvo_475 | agadir_casa | 5.3 | 1.0 | True | True | False |
+| volvo_475 | agadir_casa | 10.0 | 0.5 | False | False | False |
+| volvo_475 | agadir_casa | 10.0 | 0.8 | False | False | False |
+| volvo_475 | agadir_casa | 10.0 | 1.0 | False | False | False |
+| volvo_475 | agadir_casa | 15.0 | 0.5 | False | False | False |
+| volvo_475 | agadir_casa | 15.0 | 0.8 | False | False | False |
+| volvo_475 | agadir_casa | 15.0 | 1.0 | False | False | False |
+| volvo_475 | agadir_marrakech | 5.3 | 0.5 | False | False | False |
+| volvo_475 | agadir_marrakech | 5.3 | 0.8 | True | True | False |
+| volvo_475 | agadir_marrakech | 5.3 | 1.0 | True | True | False |
+| volvo_475 | agadir_marrakech | 10.0 | 0.5 | False | False | False |
+| volvo_475 | agadir_marrakech | 10.0 | 0.8 | False | False | False |
+| volvo_475 | agadir_marrakech | 10.0 | 1.0 | False | False | False |
+| volvo_475 | agadir_marrakech | 15.0 | 0.5 | False | False | False |
+| volvo_475 | agadir_marrakech | 15.0 | 0.8 | False | False | False |
+| volvo_475 | agadir_marrakech | 15.0 | 1.0 | False | False | False |
+| volvo_475 | casa_agadir | 5.3 | 0.5 | True | True | False |
+| volvo_475 | casa_agadir | 5.3 | 0.8 | True | True | False |
+| volvo_475 | casa_agadir | 5.3 | 1.0 | True | True | False |
+| volvo_475 | casa_agadir | 10.0 | 0.5 | True | True | False |
+| volvo_475 | casa_agadir | 10.0 | 0.8 | True | True | False |
+| volvo_475 | casa_agadir | 10.0 | 1.0 | True | True | False |
+| volvo_475 | casa_agadir | 15.0 | 0.5 | False | False | False |
+| volvo_475 | casa_agadir | 15.0 | 0.8 | False | False | False |
+| volvo_475 | casa_agadir | 15.0 | 1.0 | False | False | False |
+| volvo_475 | casa_marrakech | 5.3 | 0.5 | True | False | True |
+| volvo_475 | casa_marrakech | 5.3 | 0.8 | True | True | False |
+| volvo_475 | casa_marrakech | 5.3 | 1.0 | True | True | False |
+| volvo_475 | casa_marrakech | 10.0 | 0.5 | True | False | True |
+| volvo_475 | casa_marrakech | 10.0 | 0.8 | True | True | False |
+| volvo_475 | casa_marrakech | 10.0 | 1.0 | True | True | False |
+| volvo_475 | casa_marrakech | 15.0 | 0.5 | True | False | True |
+| volvo_475 | casa_marrakech | 15.0 | 0.8 | True | True | False |
+| volvo_475 | casa_marrakech | 15.0 | 1.0 | True | True | False |
+| volvo_475 | casa_rabat | 5.3 | 0.5 | True | True | False |
+| volvo_475 | casa_rabat | 5.3 | 0.8 | True | True | False |
+| volvo_475 | casa_rabat | 5.3 | 1.0 | True | True | False |
+| volvo_475 | casa_rabat | 10.0 | 0.5 | True | True | False |
+| volvo_475 | casa_rabat | 10.0 | 0.8 | True | True | False |
+| volvo_475 | casa_rabat | 10.0 | 1.0 | True | True | False |
+| volvo_475 | casa_rabat | 15.0 | 0.5 | True | True | False |
+| volvo_475 | casa_rabat | 15.0 | 0.8 | True | True | False |
+| volvo_475 | casa_rabat | 15.0 | 1.0 | True | True | False |
+| volvo_475 | casa_tangier | 5.3 | 0.5 | True | True | False |
+| volvo_475 | casa_tangier | 5.3 | 0.8 | True | True | False |
+| volvo_475 | casa_tangier | 5.3 | 1.0 | True | True | False |
+| volvo_475 | casa_tangier | 10.0 | 0.5 | True | True | False |
+| volvo_475 | casa_tangier | 10.0 | 0.8 | True | True | False |
+| volvo_475 | casa_tangier | 10.0 | 1.0 | True | True | False |
+| volvo_475 | casa_tangier | 15.0 | 0.5 | True | True | False |
+| volvo_475 | casa_tangier | 15.0 | 0.8 | True | True | False |
+| volvo_475 | casa_tangier | 15.0 | 1.0 | True | True | True |
+| volvo_475 | fes_rabat | 5.3 | 0.5 | False | False | False |
+| volvo_475 | fes_rabat | 5.3 | 0.8 | True | True | False |
+| volvo_475 | fes_rabat | 5.3 | 1.0 | True | True | False |
+| volvo_475 | fes_rabat | 10.0 | 0.5 | False | False | False |
+| volvo_475 | fes_rabat | 10.0 | 0.8 | True | True | False |
+| volvo_475 | fes_rabat | 10.0 | 1.0 | True | True | False |
+| volvo_475 | fes_rabat | 15.0 | 0.5 | False | False | False |
+| volvo_475 | fes_rabat | 15.0 | 0.8 | True | True | False |
+| volvo_475 | fes_rabat | 15.0 | 1.0 | True | True | False |
+| volvo_475 | marrakech_agadir | 5.3 | 0.5 | False | False | False |
+| volvo_475 | marrakech_agadir | 5.3 | 0.8 | True | False | True |
+| volvo_475 | marrakech_agadir | 5.3 | 1.0 | True | True | False |
+| volvo_475 | marrakech_agadir | 10.0 | 0.5 | False | False | False |
+| volvo_475 | marrakech_agadir | 10.0 | 0.8 | False | False | False |
+| volvo_475 | marrakech_agadir | 10.0 | 1.0 | True | True | False |
+| volvo_475 | marrakech_agadir | 15.0 | 0.5 | False | False | False |
+| volvo_475 | marrakech_agadir | 15.0 | 0.8 | False | False | False |
+| volvo_475 | marrakech_agadir | 15.0 | 1.0 | True | True | False |
+| volvo_475 | marrakech_casa | 5.3 | 0.5 | True | True | False |
+| volvo_475 | marrakech_casa | 5.3 | 0.8 | True | True | False |
+| volvo_475 | marrakech_casa | 5.3 | 1.0 | True | True | False |
+| volvo_475 | marrakech_casa | 10.0 | 0.5 | True | True | False |
+| volvo_475 | marrakech_casa | 10.0 | 0.8 | True | True | False |
+| volvo_475 | marrakech_casa | 10.0 | 1.0 | True | True | False |
+| volvo_475 | marrakech_casa | 15.0 | 0.5 | True | True | False |
+| volvo_475 | marrakech_casa | 15.0 | 0.8 | True | True | False |
+| volvo_475 | marrakech_casa | 15.0 | 1.0 | True | True | False |
+| volvo_475 | rabat_casa | 5.3 | 0.5 | True | True | False |
+| volvo_475 | rabat_casa | 5.3 | 0.8 | True | True | False |
+| volvo_475 | rabat_casa | 5.3 | 1.0 | True | True | False |
+| volvo_475 | rabat_casa | 10.0 | 0.5 | True | True | False |
+| volvo_475 | rabat_casa | 10.0 | 0.8 | True | True | False |
+| volvo_475 | rabat_casa | 10.0 | 1.0 | True | True | False |
+| volvo_475 | rabat_casa | 15.0 | 0.5 | True | True | False |
+| volvo_475 | rabat_casa | 15.0 | 0.8 | True | True | False |
+| volvo_475 | rabat_casa | 15.0 | 1.0 | True | True | False |
+| volvo_475 | rabat_fes | 5.3 | 0.5 | False | False | False |
+| volvo_475 | rabat_fes | 5.3 | 0.8 | True | True | False |
+| volvo_475 | rabat_fes | 5.3 | 1.0 | True | True | False |
+| volvo_475 | rabat_fes | 10.0 | 0.5 | False | False | False |
+| volvo_475 | rabat_fes | 10.0 | 0.8 | True | False | True |
+| volvo_475 | rabat_fes | 10.0 | 1.0 | True | True | False |
+| volvo_475 | rabat_fes | 15.0 | 0.5 | False | False | False |
+| volvo_475 | rabat_fes | 15.0 | 0.8 | False | False | False |
+| volvo_475 | rabat_fes | 15.0 | 1.0 | True | True | False |
+| volvo_475 | rabat_tangier | 5.3 | 0.5 | False | False | False |
+| volvo_475 | rabat_tangier | 5.3 | 0.8 | True | True | False |
+| volvo_475 | rabat_tangier | 5.3 | 1.0 | True | True | False |
+| volvo_475 | rabat_tangier | 10.0 | 0.5 | False | False | False |
+| volvo_475 | rabat_tangier | 10.0 | 0.8 | True | True | False |
+| volvo_475 | rabat_tangier | 10.0 | 1.0 | True | True | False |
+| volvo_475 | rabat_tangier | 15.0 | 0.5 | False | False | False |
+| volvo_475 | rabat_tangier | 15.0 | 0.8 | True | True | False |
+| volvo_475 | rabat_tangier | 15.0 | 1.0 | True | True | False |
+| volvo_475 | tangier_casa | 5.3 | 0.5 | True | True | False |
+| volvo_475 | tangier_casa | 5.3 | 0.8 | True | True | False |
+| volvo_475 | tangier_casa | 5.3 | 1.0 | True | True | False |
+| volvo_475 | tangier_casa | 10.0 | 0.5 | True | True | True |
+| volvo_475 | tangier_casa | 10.0 | 0.8 | True | True | True |
+| volvo_475 | tangier_casa | 10.0 | 1.0 | True | True | True |
+| volvo_475 | tangier_casa | 15.0 | 0.5 | True | True | False |
+| volvo_475 | tangier_casa | 15.0 | 0.8 | True | True | False |
+| volvo_475 | tangier_casa | 15.0 | 1.0 | True | True | True |
+| volvo_475 | tangier_rabat | 5.3 | 0.5 | True | True | False |
+| volvo_475 | tangier_rabat | 5.3 | 0.8 | True | True | False |
+| volvo_475 | tangier_rabat | 5.3 | 1.0 | True | True | False |
+| volvo_475 | tangier_rabat | 10.0 | 0.5 | True | True | False |
+| volvo_475 | tangier_rabat | 10.0 | 0.8 | True | True | False |
+| volvo_475 | tangier_rabat | 10.0 | 1.0 | True | True | False |
+| volvo_475 | tangier_rabat | 15.0 | 0.5 | True | True | False |
+| volvo_475 | tangier_rabat | 15.0 | 0.8 | True | True | False |
+| volvo_475 | tangier_rabat | 15.0 | 1.0 | True | True | False |
 
-| Budget | C ops | E ops | F ops | E−C | E sites |
-|--------|------:|------:|------:|----:|---------|
-| B0 | 0.50 | 0.50 | 0.50 | 0 | — |
-| B1 | 0.67 | 0.83 | 0.83 | +1/6 | y_benguerir_ca |
-| B2 | 0.83 | **1.00** | **1.00** | +1/6 | y_benguerir_ac, y_benguerir_ca |
-| Ball | 0.83 | 1.00 | 1.00 | +1/6 | y_benguerir_ac, y_benguerir_ca |
+- Flexibility ops-gains at SOC≥80%: **6** cells (denominator 168 veh×od×payload×soc summaries).
 
-E=F tie at full coverage with the Benguerir directed pair.
+## 4. Infrastructure required / Amskroud CA value
 
-### Volvo FH (475 usable)
+- `casa_agadir`: amskroud_on_union=True
+  - p=5300.0 soc=0.5: without=True with=True
+  - p=5300.0 soc=0.8: without=True with=True
+  - p=10000.0 soc=0.8: without=True with=True
+- `casa_marrakech`: amskroud_on_union=False
+- `marrakech_agadir`: amskroud_on_union=True
+  - p=5300.0 soc=0.5: without=False with=False
+  - p=5300.0 soc=0.8: without=True with=True
+  - p=10000.0 soc=0.8: without=True with=True
 
-| Budget | C ops | E ops | F ops | E−C | E sites |
-|--------|------:|------:|------:|----:|---------|
-| B0 | 0.33 | 0.33 | 0.33 | 0 | — |
-| B2 | 0.50 | 0.67 | 0.67 | +1/6 | y_bouznika_rc, y_settat_ca |
-| Ball | 0.50 | **0.83** | **0.83** | +2/6 | y_benguerir_ca, y_bouznika_rc, y_settat_ca |
+## 5. Charging / rest / time credibility
 
-## Payload × SOC frontier (`payload_soc_frontier.csv`, 80 rows)
+- Matched-time comparisons (both C and E ops-feasible): **95**
+- Serviceability-only gains (E yes, C no): **9**
+- Matched Δtrip_min median=0.00 (positive ⇒ E slower).
 
-Staged eActros grid: payloads `{5.3, 15}` t × SOC `{0.8, 1.0}` × national ODs above.
+## 6–7. Generalization & strength vs prior 3-mission pilot
 
-- At 5.3 t / SOC 0.8–1.0: all six frontier ODs admit **multi_ops=True** under at least one ladder (often even `none` for short legs).
-- Stress cell: **agadir_casa @ 15 t / SOC 0.8** remains **multi_ops=False** across AC ladders; becomes operational at **SOC 1.0**.
-- No multi-vs-fixed flexibility gains in this staged grid (`flexibility_ops_gain=0`); headline E−C gap remains the route-flexibility story.
-- Expand `PAYLOADS`/`SOCS` to the full 3×3 panel for the camera-ready table.
+- Headline q=2 confirms whether prior B2 claims survive finer energy grid.
+- Frontier expands evidence across payload×SOC; unique ODs separated from scenario rows.
+- DEM recovery for `marrakech_casa` / `agadir_marrakech` succeeded via COP-DEM on verified OSM macros.
+
+## 8. Remaining barriers to journal submission
+
+- No observed OD truck counts / charger availability / grid capacity.
+- Axle-law compliance unverified; HGV access at ADM sites unknown.
+- CCS taper is a research envelope, not OEM-measured curves.
+- Equal / illustrative weights ≠ traffic sample.
+- If heavy-payload cells remain unserved, that is a physical/operating finding—not a solver bug.
 
 ## Artifacts
 
-- `results/paper_campaign/od_dem_site_audit.csv`
-- `results/paper_campaign/q2_critical_portfolio.csv`
-- `results/paper_campaign/q2_critical_missions.csv`
-- `results/paper_campaign/operational_efficiency.csv`
-- `configs/optimization/national_longhaul_portfolio.yaml`
+- Directory: `C:/Users/AYOUB/OneDrive - EMSI/Bureau/PHD_WORK/E-Track_Location_Routing/results/paper_campaign`
+- Figures: `C:/Users/AYOUB/OneDrive - EMSI/Bureau/PHD_WORK/E-Track_Location_Routing/results/paper_campaign/figures`
 
 ## Answers checklist
 
-1. Strongest positive finding: eActros E=F=1.00 at B2 under SOC taper; E−C=+1/6 vs optimized fixed.
-2. vs C and F: E ties F; beats C by one mission (eActros) / up to two (Volvo Ball).
-3. National northern legs (Tangier→Casa, Casa→Rabat, Rabat→Fès) are DEM-complete and enter the headline panel.
-4. Infrastructure: Benguerir directed pair for eActros full coverage; Volvo also uses Bouznika/Settat.
-5. Charging credibility: taper-on by default; HOS pads appear on long legs (e.g. bouznika_rc).
-6. Barriers: OEM taper unknown; no observed OD counts; east ADM attach incomplete.
+1. Strongest three positive findings: see q=2 B2 E−C gaps and frontier flexibility cells above.
+2. vs optimized fixed (C) and greedy (F): tables above; ties reported when E=F.
+3. Realistic SOC/payload: frontier section.
+4. Infrastructure required: E_sites columns + Amskroud section.
+5. Charging/rest credibility: efficiency section + HOS pads in mission CSVs.
+6. General vs case-specific: compare headline vs frontier vs expanded depot panel.
+7. Stronger than 3-mission? Only if frontier + expanded OD panel add mechanism-separated gains.
+8. Barriers: listed above.

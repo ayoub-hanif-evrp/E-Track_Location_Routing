@@ -182,106 +182,27 @@ demand_scenarios:
       od_evidence_class: national_research_proxy
       direction_panel: north_spine
 
-  depot_soc08_national_unique:
-    note: Unique national ODs at depot SOC 0.8 / 5.3 t (DEM-complete gate required).
+  # Alias used by campaign compare phase.
+  realistic_depot_soc08_p5300: &depot14
+    note: All 14 DEM-complete ODs at depot SOC 0.8 / 5.3 t.
     panel: unique_ods_depot
     missions:
-    - id: N_agadir_casa
-      od_id: agadir_casa
-      weight: 1.0
-      E_truck_init: 0
-      E_init_soc_frac: 0.8
-      refrigeration_on: true
-      terrain_mode: dem
-      weather_id: cool
-      gcm: light
-      cargo_payload_kg: 5300.0
-      direction_panel: northbound_agricultural
-      od_evidence_class: national_research_proxy
-    - id: N_tangier_casa
-      od_id: tangier_casa
-      weight: 1.0
-      E_truck_init: 0
-      E_init_soc_frac: 0.8
-      refrigeration_on: true
-      terrain_mode: dem
-      weather_id: cool
-      gcm: light
-      cargo_payload_kg: 5300.0
-      direction_panel: north_spine
-      od_evidence_class: national_research_proxy
-    - id: N_casa_tangier
-      od_id: casa_tangier
-      weight: 1.0
-      E_truck_init: 0
-      E_init_soc_frac: 0.8
-      refrigeration_on: true
-      terrain_mode: dem
-      weather_id: cool
-      gcm: light
-      cargo_payload_kg: 5300.0
-      direction_panel: north_spine
-      od_evidence_class: national_research_proxy
-    - id: N_rabat_fes
-      od_id: rabat_fes
-      weight: 1.0
-      E_truck_init: 0
-      E_init_soc_frac: 0.8
-      refrigeration_on: true
-      terrain_mode: dem
-      weather_id: cool
-      gcm: light
-      cargo_payload_kg: 5300.0
-      direction_panel: east_spine
-      od_evidence_class: national_research_proxy
-    - id: N_casa_oujda
-      od_id: casa_oujda
-      weight: 1.0
-      E_truck_init: 0
-      E_init_soc_frac: 0.8
-      refrigeration_on: true
-      terrain_mode: dem
-      weather_id: cool
-      gcm: light
-      cargo_payload_kg: 5300.0
-      direction_panel: east_spine
-      od_evidence_class: national_research_proxy
-    - id: S_casa_marrakech
-      od_id: casa_marrakech
-      weight: 1.0
-      E_truck_init: 0
-      E_init_soc_frac: 0.8
-      refrigeration_on: true
-      terrain_mode: dem
-      weather_id: cool
-      gcm: light
-      cargo_payload_kg: 5300.0
-      direction_panel: southbound_return
-      od_evidence_class: national_research_proxy
-    - id: S_casa_agadir
-      od_id: casa_agadir
-      weight: 1.0
-      E_truck_init: 0
-      E_init_soc_frac: 0.8
-      refrigeration_on: true
-      terrain_mode: dem
-      weather_id: cool
-      gcm: light
-      cargo_payload_kg: 5300.0
-      direction_panel: southbound_return
-      od_evidence_class: national_research_proxy
-    - id: S_casa_rabat
-      od_id: casa_rabat
-      weight: 1.0
-      E_truck_init: 0
-      E_init_soc_frac: 0.8
-      refrigeration_on: true
-      terrain_mode: dem
-      weather_id: cool
-      gcm: light
-      cargo_payload_kg: 5300.0
-      direction_panel: north_spine
-      od_evidence_class: national_research_proxy
+    - {id: N_agadir_casa, od_id: agadir_casa, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, od_evidence_class: national_research_proxy}
+    - {id: N_agadir_marrakech, od_id: agadir_marrakech, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, od_evidence_class: national_research_proxy}
+    - {id: N_marrakech_casa, od_id: marrakech_casa, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, od_evidence_class: national_research_proxy}
+    - {id: S_casa_agadir, od_id: casa_agadir, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, od_evidence_class: national_research_proxy}
+    - {id: S_casa_marrakech, od_id: casa_marrakech, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, od_evidence_class: national_research_proxy}
+    - {id: S_marrakech_agadir, od_id: marrakech_agadir, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, od_evidence_class: national_research_proxy}
+    - {id: N_tangier_casa, od_id: tangier_casa, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, od_evidence_class: national_research_proxy}
+    - {id: N_casa_tangier, od_id: casa_tangier, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, od_evidence_class: national_research_proxy}
+    - {id: N_casa_rabat, od_id: casa_rabat, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, od_evidence_class: national_research_proxy}
+    - {id: N_rabat_casa, od_id: rabat_casa, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, od_evidence_class: national_research_proxy}
+    - {id: N_rabat_fes, od_id: rabat_fes, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, od_evidence_class: national_research_proxy}
+    - {id: N_fes_rabat, od_id: fes_rabat, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, od_evidence_class: national_research_proxy}
+    - {id: N_tangier_rabat, od_id: tangier_rabat, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, od_evidence_class: national_research_proxy}
+    - {id: N_rabat_tangier, od_id: rabat_tangier, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, od_evidence_class: national_research_proxy}
+
+  depot_soc08_national_unique: *depot14
 
 solver:
   max_seconds: 180.0

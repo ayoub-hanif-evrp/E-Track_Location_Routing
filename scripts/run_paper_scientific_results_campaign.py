@@ -62,20 +62,37 @@ CFG_PAPER = ROOT / "configs/optimization/paper_scientific_portfolio.yaml"
 CFG_HEADLINE = ROOT / "configs/optimization/multiroute_placement_corridor_portfolio.yaml"
 OUT_MD = ROOT / "reports/PAPER_SCIENTIFIC_RESULTS_CAMPAIGN.md"
 
-# Pre-registered frontier (frozen before solve). National DEM-complete ODs only.
-# East Oujda arcs with incomplete DEM are excluded (honesty gate).
-# Staged first-pass grid (expand PAYLOADS/SOCS for full 3×3 panel).
-PAYLOADS = [5300.0, 15000.0]
-SOCS = [0.8, 1.0]
-RESERVES_SCREEN = [0.10]  # full reserve ladder only on frontier flips
+# Full paper frontier (no lean cuts). DEM-complete ODs only; Oujda incomplete excluded.
+PAYLOADS = [5300.0, 10000.0, 15000.0]
+SOCS = [0.5, 0.8, 1.0]
+RESERVES_SCREEN = [0.10]
 CHARGING_MODEL = "ccs_soc_taper_research_envelope"
+FULL_SITE_IDS = [
+    "y_settat_ca",
+    "y_benguerir_ca",
+    "y_amskroud_ca",
+    "y_settat_ac",
+    "y_benguerir_ac",
+    "y_bouznika_cr",
+    "y_bouznika_rc",
+    "y_larache_rt",
+    "y_assilah_tr",
+]
 FRONTIER_ODS = [
     "agadir_casa",
-    "casa_marrakech",
+    "agadir_marrakech",
+    "marrakech_casa",
     "casa_agadir",
+    "casa_marrakech",
+    "marrakech_agadir",
     "tangier_casa",
+    "casa_tangier",
     "casa_rabat",
+    "rabat_casa",
     "rabat_fes",
+    "fes_rabat",
+    "tangier_rabat",
+    "rabat_tangier",
 ]
 INFRA_LADDERS = {
     "agadir_casa": [
@@ -83,6 +100,14 @@ INFRA_LADDERS = {
         ("opt1_benguerir_ac", frozenset(["y_benguerir_ac"])),
         ("opt2_benguerir_pair", frozenset(["y_benguerir_ac", "y_settat_ac"])),
         ("all_ac", frozenset(["y_benguerir_ac", "y_settat_ac"])),
+    ],
+    "agadir_marrakech": [
+        ("none", frozenset()),  # no direction-compatible ADM attach on union
+    ],
+    "marrakech_casa": [
+        ("none", frozenset()),
+        ("opt1_benguerir_ac", frozenset(["y_benguerir_ac"])),
+        ("opt2_benguerir_settat_ac", frozenset(["y_benguerir_ac", "y_settat_ac"])),
     ],
     "casa_marrakech": [
         ("none", frozenset()),
@@ -118,9 +143,19 @@ INFRA_LADDERS = {
         ("none", frozenset()),
         ("opt1_bouznika_cr", frozenset(["y_bouznika_cr"])),
     ],
-    "rabat_fes": [
+    "rabat_casa": [
         ("none", frozenset()),
-        # No entrance_and_exit ADM attach on east spine yet (Msoun/Laâyoune unmatched).
+        ("opt1_bouznika_rc", frozenset(["y_bouznika_rc"])),
+    ],
+    "rabat_fes": [("none", frozenset())],
+    "fes_rabat": [("none", frozenset())],
+    "tangier_rabat": [
+        ("none", frozenset()),
+        ("opt1_assilah", frozenset(["y_assilah_tr"])),
+    ],
+    "rabat_tangier": [
+        ("none", frozenset()),
+        ("opt1_larache", frozenset(["y_larache_rt"])),
     ],
 }
 
@@ -203,23 +238,7 @@ def audit_dem_and_sites() -> pd.DataFrame:
             "note": "DEM audit only",
             "missions": [],
         }
-        ods = [
-            "agadir_casa",
-            "agadir_marrakech",
-            "marrakech_casa",
-            "casa_agadir",
-            "casa_marrakech",
-            "marrakech_agadir",
-            "tangier_casa",
-            "casa_tangier",
-            "casa_rabat",
-            "rabat_casa",
-            "rabat_fes",
-            "fes_rabat",
-            "tangier_rabat",
-            "rabat_tangier",
-            # casa_oujda / fes_oujda excluded until DEM complete
-        ]
+        ods = list(FRONTIER_ODS)
         for od in ods:
             demand["missions"].append(
                 {
@@ -324,10 +343,18 @@ def _run_af_portfolio(
         sites = site_ids or [s.id for s in cfg.sites]
         print(f"[{tag}] sites={sites} missions={len(context['missions'])} q={q}", flush=True)
 
+        import pickle
+
         enum_cache: dict[frozenset, dict] = {}
+        cache_path = OUT / f"_enum_cache_{tag}.pkl"
+        if cache_path.exists():
+            enum_cache = pickle.loads(cache_path.read_bytes())
+            print(f"[{tag}] Loaded enum cache n={len(enum_cache)} from {cache_path}", flush=True)
         for r in range(0, len(sites) + 1):
             for combo in itertools.combinations(sites, r):
                 key = frozenset(combo)
+                if key in enum_cache:
+                    continue
                 ev = evaluate_subset(
                     context=context,
                     cfg=cfg,
@@ -345,6 +372,12 @@ def _run_af_portfolio(
                     f"ops={ev['operational_coverage']:.3f} energy={ev['energy_coverage']:.3f}",
                     flush=True,
                 )
+                if len(enum_cache) % 16 == 0:
+                    cache_path.write_bytes(pickle.dumps(enum_cache))
+        cache_path.write_bytes(pickle.dumps(enum_cache))
+        print(f"[{tag}] Saved enum cache n={len(enum_cache)}", flush=True)
+
+        fixed_cache: dict[frozenset, dict] = {}
 
         def best_under(nmax: int | None, route_mode: str, method_id: str, bname: str):
             best = None
@@ -352,17 +385,28 @@ def _run_af_portfolio(
                 if nmax is not None and len(key) > nmax:
                     continue
                 if route_mode == "fixed":
-                    cand = evaluate_subset(
-                        context=context,
-                        cfg=cfg,
-                        installed=set(key),
-                        route_mode="fixed",
-                        masks=masks,
-                        method_id=method_id,
-                        budget_name=bname,
-                        vehicle=vehicle,
-                        fridge_path=FRIDGE,
-                    )
+                    # Evaluate each subset's fixed-route portfolio at most once.
+                    if key not in fixed_cache:
+                        fixed_cache[key] = evaluate_subset(
+                            context=context,
+                            cfg=cfg,
+                            installed=set(key),
+                            route_mode="fixed",
+                            masks=masks,
+                            method_id="fixed_cache",
+                            budget_name="all_subsets",
+                            vehicle=vehicle,
+                            fridge_path=FRIDGE,
+                        )
+                        print(
+                            f"[{tag}] FIXED {sorted(key) or ['∅']}: "
+                            f"ops={fixed_cache[key]['operational_coverage']:.3f}",
+                            flush=True,
+                        )
+                    cand = dict(fixed_cache[key])
+                    cand["method_id"] = method_id
+                    cand["budget_name"] = bname
+                    cand["selection_engine"] = "exhaustive_enumeration"
                 else:
                     cand = dict(ev0)
                     cand["method_id"] = method_id
@@ -573,15 +617,7 @@ def run_q2_headline() -> None:
             demand_name="corridor_eactros_equal",
             q=2,
             vehicle_key=veh,
-            # Keep enumeration tractable (2^5=32). Northern Assilah/Larache
-            # ladders remain in frontier INFRA_LADDERS / grounded audit.
-            site_ids=[
-                "y_settat_ca",
-                "y_benguerir_ca",
-                "y_settat_ac",
-                "y_benguerir_ac",
-                "y_bouznika_rc",
-            ],
+            site_ids=list(FULL_SITE_IDS),
             tag=f"q2_headline_{veh}",
         )
         all_cov.extend(cov)
@@ -994,13 +1030,7 @@ def run_compare_expanded(
                 demand_name="realistic_depot_soc08_p5300",
                 q=q,
                 vehicle_key=veh,
-                site_ids=[
-                    "y_settat_ca",
-                    "y_benguerir_ca",
-                    "y_amskroud_ca",
-                    "y_settat_ac",
-                    "y_benguerir_ac",
-                ],
+                site_ids=list(FULL_SITE_IDS),
                 tag=tag,
             )
             all_cov.extend(cov)
@@ -1199,6 +1229,17 @@ def write_figures() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     figdir = OUT / "figures"
     figdir.mkdir(parents=True, exist_ok=True)
+    paper_fig = ROOT / "paper" / "figures"
+    paper_fig.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+
+    def _save(fig, name: str) -> None:
+        p1 = figdir / name
+        fig.savefig(p1, dpi=150)
+        p2 = paper_fig / name
+        fig.savefig(p2, dpi=150)
+        written.append(p1)
+        plt.close(fig)
 
     q2 = OUT / "q2_critical_portfolio.csv"
     if q2.exists():
@@ -1216,19 +1257,17 @@ def write_figures() -> None:
             ax.set_xticklabels(list(g["budget"]))
             ax.set_ylim(-0.05, 1.05)
             ax.set_ylabel("Operational coverage")
-            ax.set_title(f"Fig1: Ops coverage vs budget (q=2, {veh})")
+            ax.set_title(f"Ops coverage vs budget (q=2, {veh}, SOC taper)")
             ax.legend()
             ax.grid(True, alpha=0.3)
             fig.tight_layout()
-            fig.savefig(figdir / f"fig1_coverage_vs_budget_{veh}.png", dpi=150)
-            plt.close(fig)
+            _save(fig, f"fig1_coverage_vs_budget_{veh}.png")
 
     fr = OUT / "payload_soc_frontier.csv"
     if fr.exists():
         df = pd.read_csv(fr)
-        # best multi ops across infra for each payload×soc
         for veh in df.vehicle_key.unique():
-            for od in ["agadir_casa", "casa_marrakech"]:
+            for od in sorted(df.od_id.unique()):
                 sub = df[(df.vehicle_key == veh) & (df.od_id == od)]
                 if sub.empty:
                     continue
@@ -1247,14 +1286,16 @@ def write_figures() -> None:
                 ax.set_yticklabels([f"{p/1000:.1f}t" for p in PAYLOADS])
                 ax.set_xlabel("Departure SOC")
                 ax.set_ylabel("Payload")
-                ax.set_title(f"Fig2: Multi-route ops feasibility ({veh}, {od})")
+                ax.set_title(f"Multi-route ops feasibility ({veh}, {od})")
                 for i in range(pivot.shape[0]):
                     for j in range(pivot.shape[1]):
-                        ax.text(j, i, "Y" if pivot.values[i, j] >= 0.5 else "N", ha="center", va="center")
+                        val = pivot.values[i, j]
+                        if pd.isna(val):
+                            continue
+                        ax.text(j, i, "Y" if val >= 0.5 else "N", ha="center", va="center")
                 fig.colorbar(im, ax=ax, fraction=0.046)
                 fig.tight_layout()
-                fig.savefig(figdir / f"fig2_payload_soc_{veh}_{od}.png", dpi=150)
-                plt.close(fig)
+                _save(fig, f"fig2_payload_soc_{veh}_{od}.png")
 
     eff = OUT / "operational_efficiency.csv"
     if eff.exists():
@@ -1268,12 +1309,10 @@ def write_figures() -> None:
             color=["#2c7bb6", "#fdae61"],
         )
         ax.set_ylabel("Mission comparisons (count)")
-        ax.set_title("Fig3: Route flexibility / joint benefit types")
+        ax.set_title("Route flexibility / joint benefit types")
         fig.tight_layout()
-        fig.savefig(figdir / "fig3_flexibility_and_time.png", dpi=150)
-        plt.close(fig)
+        _save(fig, "fig3_flexibility_and_time.png")
 
-    # Fig4: infra robustness from frontier — share ops True by n_sites for SOC>=0.8
     if fr.exists():
         df = pd.read_csv(fr)
         sub = df[(df.soc_frac >= 0.8) & (df.vehicle_key == "eactros_600")]
@@ -1284,11 +1323,35 @@ def write_figures() -> None:
             ax.set_xlabel("Installed sites (ladder)")
             ax.set_ylabel("Share ops-feasible cells")
             ax.set_ylim(-0.05, 1.05)
-            ax.set_title("Fig4: Infrastructure vs ops feasibility (eActros, SOC≥80%)")
+            ax.set_title("Infrastructure vs ops feasibility (eActros, SOC≥80%)")
             ax.grid(True, alpha=0.3)
             fig.tight_layout()
-            fig.savefig(figdir / "fig4_infra_robustness.png", dpi=150)
-            plt.close(fig)
+            _save(fig, "fig4_infra_robustness.png")
+
+    rob = OUT / "robustness_matrix.csv"
+    if rob.exists():
+        df = pd.read_csv(rob)
+        if "ops" in df.columns and "cell_id" in df.columns:
+            pivot_src = df.copy()
+            if "od_id" in pivot_src.columns:
+                heat = (
+                    pivot_src.groupby(["cell_id", "od_id"])["ops"]
+                    .max()
+                    .unstack("od_id")
+                    .astype(float)
+                )
+                fig, ax = plt.subplots(figsize=(8, 5))
+                im = ax.imshow(heat.values, aspect="auto", cmap="RdYlGn", vmin=0, vmax=1)
+                ax.set_xticks(range(heat.shape[1]))
+                ax.set_xticklabels(list(heat.columns), rotation=45, ha="right")
+                ax.set_yticks(range(heat.shape[0]))
+                ax.set_yticklabels(list(heat.index))
+                ax.set_title("Robustness matrix (ops)")
+                fig.colorbar(im, ax=ax, fraction=0.046)
+                fig.tight_layout()
+                _save(fig, "fig5_robustness_heatmap.png")
+
+    print(f"Wrote {len(written)} figures to {figdir} and {paper_fig}", flush=True)
 
 
 def write_report() -> None:
