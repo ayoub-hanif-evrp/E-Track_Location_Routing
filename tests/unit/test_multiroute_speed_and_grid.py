@@ -32,6 +32,11 @@ from morocco_etruck.energy.simulator import EdgeInput
 ROOT = Path(__file__).resolve().parents[2]
 
 
+
+from tests.unit._multiroute_graph import skip_without_multiroute_graph
+
+pytestmark = skip_without_multiroute_graph
+
 def _weather() -> CorridorWeatherDay:
     return CorridorWeatherDay(
         day_id="cool",

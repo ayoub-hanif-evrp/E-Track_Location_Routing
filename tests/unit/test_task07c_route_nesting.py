@@ -24,6 +24,11 @@ PAYLOAD = 5300.0
 ROAD_CENTS = 100.0
 
 
+
+from tests.unit._multiroute_graph import skip_without_multiroute_graph
+
+pytestmark = skip_without_multiroute_graph
+
 def _full_union_template(*, od_id: str, terrain_mode: str = "flat", with_chargers: bool = True):
     cfg = load_multiroute_pilot_config(
         ROOT / "configs/optimization/multiroute_pilot.yaml", root=ROOT

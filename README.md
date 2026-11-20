@@ -1,78 +1,111 @@
-# E-Track_Location_Routing
+﻿# E-Track_Location_Routing
 
+**Paper campaign (authoritative numerics):** `results/paper_campaign/` + `reports/PAPER_SCIENTIFIC_RESULTS_CAMPAIGN.md` + `paper/manuscript.tex`.
+
+## One-command path: clone → tests → regenerate paper tables
+
+```bash
+pip install -e ".[dev]"
+pytest -q -m "not integration"
+python scripts/run_stage_c_hos_national.py --phase all_fast
+```
+
+`all_fast` archives legacy CSVs, re-scores frozen A–F site sets under HOS-in-search, rebuilds identical-site ablation / q=1 boundary / blind-greedy / certification / manifest, then refreshes `reports/PAPER_SCIENTIFIC_RESULTS_CAMPAIGN.md`.
+
+Optional Stage-A-only repair (no physics re-solve):
+
+```bash
+python scripts/_stage_a_rebuild_confirm_flags.py
+python scripts/run_paper_scientific_results_campaign.py --phase ablation
+python scripts/run_paper_scientific_results_campaign.py --phase report
+```
+
+Full exhaustive HOS enum + frontier (multi-day; requires `data/processed/multiroute/` graph CSVs):
+
+```bash
+python scripts/run_stage_c_hos_national.py --phase all
+python scripts/run_paper_scientific_results_campaign.py --phase frontier --confirm-mode decisive
+python scripts/run_paper_scientific_results_campaign.py --phase robustness
+python scripts/run_paper_scientific_results_campaign.py --phase figures
+python scripts/run_paper_scientific_results_campaign.py --phase report
+```
+
+HOS-in-search is enabled inside `evaluate_mission_operational` (Stage B). Authoritative numerics for TR-C are the Stage C CSVs under `results/paper_campaign/` with matching `campaign_manifest.json`.
+
+---
 **Provisional title:** Joint Charging Infrastructure Placement and Energy-Feasible Routing for Electric Refrigerated Heavy-Duty Trucks on Moroccan Motorway Corridors
 
-PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible real-data foundation for the Casablanca–Agadir motorway corridor. It does **not** solve the joint location–routing optimization problem.
+PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible real-data foundation for the Casablancaâ€“Agadir motorway corridor. It does **not** solve the joint locationâ€“routing optimization problem.
 
 ## Scientific objective
 
 Eventually determine which Moroccan motorway service areas should receive truck-compatible charging infrastructure, which routes electric refrigerated heavy-duty trucks should follow, where/how much to charge, and which freight missions are energy-feasible.
 
-## Current scope (Tasks 01–08 freeze)
+## Current scope (Tasks 01â€“08 freeze)
 
-**Task 01 / 01B / 01C — geographic foundation**
+**Task 01 / 01B / 01C â€” geographic foundation**
 
 - Download a **dated** Geofabrik Morocco OSM extract (cached + SHA-256).
-- Extract a buffered Casablanca–Agadir pilot region.
+- Extract a buffered Casablancaâ€“Agadir pilot region.
 - Build a **directed** motorway graph with real lengths and OSM attributes.
 - Identify **ADM-directory** corridor service areas as **candidate** future charger sites (not verified e-truck chargers).
 - Direction-aware OSM matching; unresolved sites are never given invented coordinates.
-- Shortest-distance baseline paths Casablanca ↔ Agadir on **separate directed A3 carriageway components**.
+- Shortest-distance baseline paths Casablanca â†” Agadir on **separate directed A3 carriageway components**.
 - Access audit: provisional topological matches only (see open issue below).
 
-**Task 02 / 02B — physics-based energy model (no optimization)**
+**Task 02 / 02B â€” physics-based energy model (no optimization)**
 
 - Longitudinal traction + aux + approximate refrigeration energy for an **eActros 600** refrigerated combination.
 - Constant cruise **80 km/h** (OSM `maxspeed` not used as travel speed); peak-motor exceedances flagged (no silent power clip).
-- Path-wise SOC feasibility (min SOC / first violation); invalid DEM → indeterminate mission status.
+- Path-wise SOC feasibility (min SOC / first violation); invalid DEM â†’ indeterminate mission status.
 - Terrain: AWS open **COP-DEM GLO-30** with bounds-aware sampling + quality gates (flat-road baseline always retained).
 - Weather: **Open-Meteo** historical cache; vector-mean daily wind.
-- Refrigeration configs **A** (tractor battery) / **B** (independent trailer pack); GCM labels (not “payload”).
+- Refrigeration configs **A** (tractor battery) / **B** (independent trailer pack); GCM labels (not â€œpayloadâ€).
 - Pilot CSV + figures; methodology, validation, and Task 02B audit/diagnostics reports.
 - **Not claimed:** calibrated TRU reproduction, OEM coast-down parameters, empirical trip validation, or charger-feasible routing.
 
-**Task 03A — multi-resource label-setting (MRLS) routing solver**
+**Task 03A â€” multi-resource label-setting (MRLS) routing solver**
 
 - Custom discrete MRLS with DRIVE / CHARGE / WAIT; active stations are **inputs** (no placement B&B yet).
-- Exactness only for the **finite integer-grid** synthetic problem (1 kWh / 5 min); validated vs an independent exhaustive reference on cases A–J.
+- Exactness only for the **finite integer-grid** synthetic problem (1 kWh / 5 min); validated vs an independent exhaustive reference on cases Aâ€“J.
 - Incremental physics adapter `apply_drive` (incoming SOC) bridges Task 02B without copying force equations into the router.
 - **Not claimed:** continuous charging optimality, Moroccan network optimality, or certified operational chargers at ADM sites.
 
-**Task 03B — Moroccan corridor charging-stop pilot**
+**Task 03B â€” Moroccan corridor charging-stop pilot**
 
 - Validation gates: dominance stress `K`, transition oracle, instance validation, solution replay.
-- Fixed A3 baselines → macro-arcs with **state-dependent DRIVE tables** (conservative floor-kWh / ceil-time); edge/macro-local terrain (no misused global DEM `s_cursor`).
-- Hypothetical `entrance_and_exit` chargers only; S1–S5 experiments + continuous physics replay.
+- Fixed A3 baselines â†’ macro-arcs with **state-dependent DRIVE tables** (conservative floor-kWh / ceil-time); edge/macro-local terrain (no misused global DEM `s_cursor`).
+- Hypothetical `entrance_and_exit` chargers only; S1â€“S5 experiments + continuous physics replay.
 - **Not claimed:** certified HGV access, multi-path LRP, or continuous optimality beyond replay checks.
 
-**Task 04A — Charging-grid fix + exact placement enumeration**
+**Task 04A â€” Charging-grid fix + exact placement enumeration**
 
 - Action-level stationary Wh drains + quantum-floor after CHARGE/WAIT; fingerprinted DRIVE-table cache.
 - Exhaustive evaluation of all **32** subsets of five directional hypothetical sites; lex coverage-then-cost objective under illustrative budgets.
 - **Not claimed:** market CAPEX/tariffs or certified HGV chargers.
 
-**Task 04B — Certified placement branch-and-bound + MRLS**
+**Task 04B â€” Certified placement branch-and-bound + MRLS**
 
 - Full terrain fingerprint; global certification statuses; serviceability taxonomy (`peak_motor` structural only).
 - Install/exclude B&B with proved budget, coverage UB, and secondary LB pruning; MRLS memoization.
 - Matches all **32** Task 04A scenario optima; synthetic 12-site pruning demo.
 - **Not claimed:** market prices, nationwide LRP, or metaheuristics/MIP solvers.
 
-**Task 05A — Multi-route Moroccan freight discovery**
+**Task 05A â€” Multi-route Moroccan freight discovery**
 
 - Stage-1 B&B safeguards; separate expanded OSM graph under `data/processed/multiroute/`.
-- Verified path alternatives for Casa↔Marrakech↔Agadir (discovery milestone).
+- Verified path alternatives for Casaâ†”Marrakechâ†”Agadir (discovery milestone).
 - **Not claimed:** physics-integrated multi-route optimality (see 05B).
 
-**Task 05B — Physics-validated multi-route MRLS**
+**Task 05B â€” Physics-validated multi-route MRLS**
 
 - Audited path-union decision graph (`arc_id`, canonical aliases, length checks).
-- OD-local path-union MRLS with Task 02B/03B DRIVE tables (not artificial `O→R_i→D`).
+- OD-local path-union MRLS with Task 02B/03B DRIVE tables (not artificial `Oâ†’R_iâ†’D`).
 - Grounded ADM hypothetical chargers only; continuous replay of OSM-edge journeys.
-- Pilot ODs: Casa→Marrakech, Casa→Agadir, Marrakech→Agadir.
+- Pilot ODs: Casaâ†’Marrakech, Casaâ†’Agadir, Marrakechâ†’Agadir.
 - **Not claimed:** full-network optimality, certified HGV access, or joint placement (see 05C).
 
-**Task 05C — Corrected station coupling + joint B&B–MRLS**
+**Task 05C â€” Corrected station coupling + joint B&Bâ€“MRLS**
 
 - Direction-specific ADM attach (`travel_direction` + OSM id); no wrong-carriageway proximity snap.
 - Fixed path-union graph across install subsets (activate/deactivate only); DEM parent-slice after splits.
@@ -80,38 +113,38 @@ Eventually determine which Moroccan motorway service areas should receive truck-
 - Joint placement: exhaustive enum vs existing B&B on a small multi-route portfolio.
 - **Not claimed:** certified HGV access, nationwide optimality, or new metaheuristics.
 
-**Task 06A — Speed policy + energy-grid validation**
+**Task 06A â€” Speed policy + energy-grid validation**
 
 - Per-OSM-hop research cruise speeds enter `apply_drive` (class defaults; OSM maxspeed not used as HGV cruise).
 - DRIVE-table fingerprint `06a.1` includes speed schedule; no silent `E_init` bump.
-- Grid sensitivity + discrete vs continuous feasibility audit; placement enum↔B&B revalidated.
+- Grid sensitivity + discrete vs continuous feasibility audit; placement enumâ†”B&B revalidated.
 - **Not claimed:** observed truck speeds, empirical vehicle validation, or B&B speedup on the tiny site set.
 
-**Task 06B — Objective integrity, exact replay, grid-robust placement**
+**Task 06B â€” Objective integrity, exact replay, grid-robust placement**
 
 - Discrete/continuous replay resolve DRIVE arcs by `arc_id` (no silent parallel-arc pick); destination terminal checks.
-- Explicit modes: `enroute_incremental_cost` (legacy Task 03A \(J\)) vs `energy_replenishment_cost` (terminal shortfall to usable cap at research tariff/η).
-- Admissible MRLS/reference stop under terminal valuation; split-invariant road costs; placement compared at q=10/5/(2) × both modes.
+- Explicit modes: `enroute_incremental_cost` (legacy Task 03A \(J\)) vs `energy_replenishment_cost` (terminal shortfall to usable cap at research tariff/Î·).
+- Admissible MRLS/reference stop under terminal valuation; split-invariant road costs; placement compared at q=10/5/(2) Ã— both modes.
 - **Not claimed:** grid-robust nationwide optimality, config B Moroccan results, market tariffs, or B&B speedup.
 
-**Task 06C — Moroccan vehicle realism and multi-vehicle validation**
+**Task 06C â€” Moroccan vehicle realism and multi-vehicle validation**
 
-- Evidence matrix for Volvo FH Electric 4×2 (prospective highway) vs eActros 600 comparator; Petit Forestier / Centrale Danone ~7.5 t dossier only (urban EV; **no** highway YAML).
-- Dual usable scenarios **475 kWh (MA)** and **460 kWh (global)** — never merged; discrete `E_cap/min/init` derived from loaded vehicle (no hard-coded 600/60).
+- Evidence matrix for Volvo FH Electric 4Ã—2 (prospective highway) vs eActros 600 comparator; Petit Forestier / Centrale Danone ~7.5 t dossier only (urban EV; **no** highway YAML).
+- Dual usable scenarios **475 kWh (MA)** and **460 kWh (global)** â€” never merged; discrete `E_cap/min/init` derived from loaded vehicle (no hard-coded 600/60).
 - CCS acceptance `min(charger, vehicle_ccs_max)`; Config A refrigeration labeled declared assumption.
-- Certification: unresolved portfolio probe → `UNRESOLVED_SERVICEABILITY` / `CONDITIONAL_RESTRICTED_PORTFOLIO`, never false full-portfolio `CERTIFIED_OPTIMAL`.
-- Research monetary convention for 06C CSVs: solver integers = cents; `road_cost_per_km=100` ¢/km.
-- Identical-mission eActros vs Volvo B&B–MRLS comparison on path-union ODs.
+- Certification: unresolved portfolio probe â†’ `UNRESOLVED_SERVICEABILITY` / `CONDITIONAL_RESTRICTED_PORTFOLIO`, never false full-portfolio `CERTIFIED_OPTIMAL`.
+- Research monetary convention for 06C CSVs: solver integers = cents; `road_cost_per_km=100` Â¢/km.
+- Identical-mission eActros vs Volvo B&Bâ€“MRLS comparison on path-union ODs.
 - **Not claimed:** FH Electric already in Moroccan refrigerated long-haul fleets; FE Electric as FH; Aero Extended Range mix-in; measured OEM curb/CdA.
 
 ### Claim taxonomy (read before citing results)
 
 | Label | Meaning |
 |---|---|
-| **(A) Real Moroccan refrigerated EV** | Petit Forestier ~7.5 t / Centrale Danone urban–peri-urban duty (dossier only) |
-| **(B) Prospective long-haul scenario** | Volvo FH Electric 4×2 on MA product pages — research highway pack |
+| **(A) Real Moroccan refrigerated EV** | Petit Forestier ~7.5 t / Centrale Danone urbanâ€“peri-urban duty (dossier only) |
+| **(B) Prospective long-haul scenario** | Volvo FH Electric 4Ã—2 on MA product pages â€” research highway pack |
 | **(C) Manufacturer specs** | Published installed/usable kWh, CCS ceiling, GCW, driveline menu |
-| **(D) Assumed physics / demand** | CdA, Crr, η, curb mass bounds, Config A TRU, illustrative tariffs/demand |
+| **(D) Assumed physics / demand** | CdA, Crr, Î·, curb mass bounds, Config A TRU, illustrative tariffs/demand |
 
 ## Requirements
 
@@ -133,7 +166,7 @@ pip install -e ".[dev,extract]"
 | Source | URL |
 |---|---|
 | ADM aires de services | https://www.adm.co.ma/fr/gares-de-peage-et-aires-de-services |
-| ADM A3 Casablanca–Agadir | https://www.adm.co.ma/fr/nos-autoroutes/a3-casablanca-agadir |
+| ADM A3 Casablancaâ€“Agadir | https://www.adm.co.ma/fr/nos-autoroutes/a3-casablanca-agadir |
 | Geofabrik Morocco | https://download.geofabrik.de/africa/morocco.html |
 | Pinned snapshot (default) | https://download.geofabrik.de/africa/morocco-261106.osm.pbf |
 | OSM copyright / ODbL | https://www.openstreetmap.org/copyright |
@@ -167,7 +200,7 @@ Outputs:
 
 Large raw PBF files stay under `data/raw/` and are **gitignored**.
 
-## Task 02 — energy pilot
+## Task 02 â€” energy pilot
 
 ```bash
 pip install -e ".[dev]"
@@ -192,7 +225,7 @@ Outputs:
 
 Weather/DEM raw caches under `data/raw/weather/` and `data/raw/dem/` are **gitignored**. CI uses `tests/fixtures/weather/`.
 
-Package API: `morocco_etruck.energy.evaluate_route(...)` — independent of charger/station logic.
+Package API: `morocco_etruck.energy.evaluate_route(...)` â€” independent of charger/station logic.
 
 ## Tests
 
@@ -211,7 +244,7 @@ Open `reports/pilot_corridor_report.html` after a successful build. Literature o
 
 | Kind | Examples |
 |---|---|
-| **Real / manufacturer** | OSM geometry & tags; ADM names; Geofabrik hash; eActros battery/mass/power from product sheet; Volvo FH installed/usable (MA 475 / global 460), CCS≤350 kW, GCW≤65 t; Open-Meteo & COP-DEM retrievals |
+| **Real / manufacturer** | OSM geometry & tags; ADM names; Geofabrik hash; eActros battery/mass/power from product sheet; Volvo FH installed/usable (MA 475 / global 460), CCSâ‰¤350 kW, GCWâ‰¤65 t; Open-Meteo & COP-DEM retrievals |
 | **Derived** | Directed graph; shortest paths; DEM grades along baselines; SOC trajectories; discrete energy bounds from usable kWh; pilot CSV |
 | **Assumed / uncertain** | \(C_{rr}\), \(C_dA\), efficiencies, \(P_\mathrm{aux}\), UA/COP refrigeration approx, trailer pack (B), SOC floor 10%; Volvo curb 12 t research bound; mid-menu 400 kW continuous=peak; Config A TRU; HGV access unknown |
 | **Operating evidence (non-highway)** | Petit Forestier / Centrale Danone ~7.5 t urban EV (dossier; not a tractor YAML) |
@@ -220,7 +253,7 @@ Open `reports/pilot_corridor_report.html` after a successful build. Literature o
 
 - ADM HTML has **no coordinates**; matching depends on OSM naming quality.
 - No silent snap to the **opposite** carriageway.
-- Service area ≠ grid capacity ≠ truck parking ≠ high-power charging.
+- Service area â‰  grid capacity â‰  truck parking â‰  high-power charging.
 - Baseline routes are **not** certified HGV routes.
 - **Task 01C open issue:** 5 provisional topological access matches; **0** legally confirmed HGV; entrance/exit paths independent; no continuous facility traversal; **not** optimization-ready.
 - Energy model uses **assumed** aero/rolling/TRU parameters; not OEM-calibrated; not empirically validated on measured e-truck logs.
@@ -230,7 +263,7 @@ Open `reports/pilot_corridor_report.html` after a successful build. Literature o
 ## Licences and attribution
 
 - **Python research code** in this repository is provided for academic reproducibility of Task 01/01B. That grant does **not** change OSM licensing.
-- **OpenStreetMap-derived data** (road graphs, candidate location matches, route geometries): © OpenStreetMap contributors, **ODbL 1.0**. Attribution and share-alike apply to derivative databases. See https://www.openstreetmap.org/copyright
+- **OpenStreetMap-derived data** (road graphs, candidate location matches, route geometries): Â© OpenStreetMap contributors, **ODbL 1.0**. Attribution and share-alike apply to derivative databases. See https://www.openstreetmap.org/copyright
 - **Geofabrik** distributes OSM extracts under the same OSM licence terms.
 - **ADM** pages are cited for official naming and direction labels; ADM content is not treated as an open geospatial database.
 - **Copernicus DEM** (DOI 10.5270/ESA-c5d3d65) via AWS Open Data; **Open-Meteo** weather under their terms; eActros specs cited from manufacturer materials (not redistributed as a datasheet PDF here).
@@ -239,13 +272,13 @@ Open `reports/pilot_corridor_report.html` after a successful build. Literature o
 
 | Field | Meaning |
 |---|---|
-| `location_match_status` | `matched_osm` / `unmatched` — geographic identification only |
+| `location_match_status` | `matched_osm` / `unmatched` â€” geographic identification only |
 | `directed_access_status` | `entrance_and_exit` / `entrance_only` / `exit_only` / `opposite_carriageway_only` / `proximity_only` / `unresolved` |
 | `hgv_access_status` | `permitted` / `restricted` / `unknown` from OSM tags along access paths |
 
-Proximity or bearing alone never yields truck-accessible verification. OSM topology ≠ legal HGV certification.
+Proximity or bearing alone never yields truck-accessible verification. OSM topology â‰  legal HGV certification.
 
-## Task 03A — routing benchmarks
+## Task 03A â€” routing benchmarks
 
 ```bash
 python scripts/run_routing_benchmarks.py
@@ -254,7 +287,7 @@ pytest -q tests/unit/test_label_setting.py tests/unit/test_routing_reference.py
 
 Outputs: `results/routing_benchmarks.csv`, `reports/task03a_problem_formulation.md`, `reports/task03a_algorithm_validation.md`.
 
-## Task 03B — Morocco MRLS integration
+## Task 03B â€” Morocco MRLS integration
 
 ```bash
 python scripts/run_morocco_routing.py
@@ -271,7 +304,7 @@ Outputs:
 - `reports/task03b_discretization_validation.md`
 - Cached DRIVE tables under `data/processed/optimization/drive_tables/`
 
-## Task 04A — joint placement enumeration
+## Task 04A â€” joint placement enumeration
 
 ```bash
 python scripts/run_location_enumeration.py
@@ -286,7 +319,7 @@ Outputs:
 - `reports/task04a_location_enumeration_results.md`
 - `reports/figures/placement_budget_*_CA.png`
 
-## Task 04B — certified placement B&B
+## Task 04B â€” certified placement B&B
 
 ```bash
 python scripts/run_branch_and_bound.py
@@ -300,13 +333,13 @@ Outputs:
 - `reports/task04b_algorithm_validation.md`
 - `configs/optimization/branch_bound_benchmarks.yaml` (synthetic prune demo)
 
-## Task 05A — multi-route discovery
+## Task 05A â€” multi-route discovery
 
 ```bash
 python scripts/build_multiroute_pilot.py --skip-download
 ```
 
-## Task 05B — physics-validated multi-route MRLS
+## Task 05B â€” physics-validated multi-route MRLS
 
 ```bash
 python scripts/regenerate_multiroute_decision_graph.py
@@ -325,7 +358,7 @@ Outputs:
 - `reports/task05b_route_choice_validation.md`
 - `reports/figures/multiroute_physics_paths.png`
 
-## Task 05C — joint multi-route placement
+## Task 05C â€” joint multi-route placement
 
 ```bash
 pytest -q tests/unit/test_multiroute_station_direction.py \
@@ -345,7 +378,7 @@ Outputs:
 - `reports/task05c_joint_multiroute_validation.md`
 - `reports/task05c_comparative_results.md`
 
-## Task 06A — numerical validation
+## Task 06A â€” numerical validation
 
 ```bash
 pytest -q tests/unit/test_multiroute_speed_and_grid.py tests/unit
@@ -363,7 +396,7 @@ Outputs:
 - `reports/task06a_discretization_validation.md`
 - `reports/task06a_corrected_placement_comparison.md`
 
-## Task 06B — objective / replay / grid placement
+## Task 06B â€” objective / replay / grid placement
 
 ```bash
 pytest -q tests/unit/test_exact_arc_replay.py \
@@ -382,7 +415,7 @@ Outputs:
 
 **Objective scope:** legacy en-route incremental cost vs energy-replenishment cost (terminal shortfall). Exactness only on the finite discrete model; continuous replay certifies served Moroccan journeys under research physics assumptions.
 
-## Task 06C — multi-vehicle comparison
+## Task 06C â€” multi-vehicle comparison
 
 ```bash
 pytest -q tests/unit/test_multi_vehicle_06c.py tests/unit
@@ -400,11 +433,11 @@ Outputs:
 - `reports/task06c_moroccan_operating_ev_dossier.md`
 - `reports/task06c_vehicle_comparison.md`
 
-**Vehicle scope:** eActros 600 comparator + prospective Volvo FH Electric 4×2 (dual usable). Petit Forestier is documented separately and is **not** run as a 40 t motorway pack.
+**Vehicle scope:** eActros 600 comparator + prospective Volvo FH Electric 4Ã—2 (dual usable). Petit Forestier is documented separately and is **not** run as a 40 t motorway pack.
 
-**Task 06C routing CSV is invalidated** by a GCM state-leak bug (light-labeled rows inherited 40 t). Retained as `results/task06c_vehicle_comparison_INVALIDATED_gcm_leak.csv`. Use Task 06D results instead.
+**Task 06C routing CSV is invalidated** by a GCM state-leak bug (light-labeled rows inherited 40â€¯t). Retained as `results/task06c_vehicle_comparison_INVALIDATED_gcm_leak.csv`. Use Task 06D results instead.
 
-## Task 06D — fair multi-vehicle integrity + placement revalidation
+## Task 06D â€” fair multi-vehicle integrity + placement revalidation
 
 ```bash
 pytest -q tests/unit/test_task06d_gcm_integrity.py tests/unit
@@ -424,7 +457,7 @@ Outputs:
 
 **Task 06D `refrigerated_06d` is non-primary** (ablation/hot mixed into demand). Use Task 07A cold-chain baseline.
 
-## Task 07A — cold-chain benchmark integrity
+## Task 07A â€” cold-chain benchmark integrity
 
 ```bash
 pytest -q tests/unit/test_task07a_demand_integrity.py tests/unit
@@ -443,9 +476,9 @@ Outputs:
 - `reports/task07a_placement_robustness.md`
 - `reports/task07a_research_claims_and_limitations.md`
 
-**Framing:** future infrastructure planning at ADM service areas (`hypothetical_future_truck_site`). Illustrative demand weights — not observed Moroccan freight volumes.
+**Framing:** future infrastructure planning at ADM service areas (`hypothetical_future_truck_site`). Illustrative demand weights â€” not observed Moroccan freight volumes.
 
-## Task 07B — physical realism and scientific validation
+## Task 07B â€” physical realism and scientific validation
 
 ```bash
 pytest -q tests/unit/test_task07b_physical_realism.py
@@ -467,7 +500,7 @@ Outputs:
 
 **Invalidated:** Task 07B `task07b_routing_baselines.csv` shortest-vs-multi-route nesting claims (different physical graphs via `max_alts` rebuild). See Task 07C.
 
-## Task 07C — route nesting integrity (still stands)
+## Task 07C â€” route nesting integrity (still stands)
 
 ```bash
 pytest -q tests/unit/test_task07c_route_nesting.py
@@ -489,7 +522,7 @@ Outputs:
 
 **Freeze framing:** evidence-grounded prospective optimization study. Not field-validated Moroccan deployment.
 
-## Task 08 — final SOC/payload realism and algorithm validation
+## Task 08 â€” final SOC/payload realism and algorithm validation
 
 ```bash
 pytest -q tests/unit/test_task08_nesting_and_realism.py tests/unit/test_task07c_route_nesting.py
@@ -509,7 +542,7 @@ Outputs:
 - `results/task08_final_summary.csv`
 - `reports/figures/task08_*.png`
 
-**Headline:** the 50%-SOC one-site eActros vs two-site Volvo contrast does **not** universally survive 80%/100% departure SOC or 15 t cargo — report without retuning.
+**Headline:** the 50%-SOC one-site eActros vs two-site Volvo contrast does **not** universally survive 80%/100% departure SOC or 15 t cargo â€” report without retuning.
 
 ## Publication-readiness checkpoint (post Task 08)
 
@@ -529,9 +562,9 @@ Outputs:
 - `results/task08_algorithm_benchmarks.csv` (corrected cert/timings)
 - `results/task08_algorithm_benchmarks_historical_8site.csv`
 
-**Defensible headline:** charger requirements depend strongly on vehicle configuration, departure SOC, cargo payload, and route flexibility — not a universal one-truck / one-site ranking.
+**Defensible headline:** charger requirements depend strongly on vehicle configuration, departure SOC, cargo payload, and route flexibility â€” not a universal one-truck / one-site ranking.
 
-## PASS 1 — Moroccan scientific integrity (awaiting independent review)
+## PASS 1 â€” Moroccan scientific integrity (awaiting independent review)
 
 Before any PASS 2 northbound scenario rewiring:
 
@@ -540,9 +573,9 @@ Before any PASS 2 northbound scenario rewiring:
 - `reports/methodological_novelty_go_nogo.md`
 - `reports/moroccan_data_request_specification.md`
 
-**Key PASS 1 findings:** Task 07/08 portfolios are southbound-only; primary Moroccan refrigerated export motivation is northbound (Souss-Massa→Casablanca); reverse OD road data exist; reverse Amskroud missing; legal label `gross_mass_within_limit_axle_unverified`; methodological novelty is CONDITIONAL GO for certification-aware q-refinement diagnostics (NO-GO for unproved continuous-optimal adaptive theorems).
+**Key PASS 1 findings:** Task 07/08 portfolios are southbound-only; primary Moroccan refrigerated export motivation is northbound (Souss-Massaâ†’Casablanca); reverse OD road data exist; reverse Amskroud missing; legal label `gross_mass_within_limit_axle_unverified`; methodological novelty is CONDITIONAL GO for certification-aware q-refinement diagnostics (NO-GO for unproved continuous-optimal adaptive theorems).
 
-## PASS 2 — Northbound benchmark + bounded discretization test
+## PASS 2 â€” Northbound benchmark + bounded discretization test
 
 ```bash
 python scripts/fetch_multiroute_dem.py --od-ids agadir_casa --merge-meta --max-alts 4
@@ -553,7 +586,7 @@ pytest -q -m "not integration"
 
 - Case A proxy: firm-ripe tomatoes, `agadir_casa`, DEM validated, `settat_ac`/`benguerir_ac` only.
 - Under assumed power packs, Case A is peak-motor / model-infeasible (chargers do not restore).
-- PASS 2B: `CONDITIONAL_DIAGNOSTIC_ONLY` — q-refinement can change serviceability conclusions; not a top-tier new optimizer.
+- PASS 2B: `CONDITIONAL_DIAGNOSTIC_ONLY` â€” q-refinement can change serviceability conclusions; not a top-tier new optimizer.
 - Ledger: `reports/pass2_final_claims_and_provenance.md`
 
 ## Not yet implemented (manuscript + external operator data)
@@ -565,3 +598,4 @@ pytest -q -m "not integration"
 - External fleet GPS/TRU logs and certified HGV charger-access data
 
 **STOP DEVELOPMENT.** No Task 09 feature chain. Next activity is manuscript preparation and external Moroccan operational evidence.
+

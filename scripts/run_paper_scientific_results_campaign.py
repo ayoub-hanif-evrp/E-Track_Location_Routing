@@ -316,7 +316,11 @@ def _run_af_portfolio(
     site_ids: list[str] | None = None,
     tag: str,
 ) -> tuple[list[dict], list[dict], list[dict]]:
-    """Exhaustive E + independent greedy F + C/D/B baselines."""
+    """Exhaustive E + greedy-over-enum-scores F + C/D/B baselines.
+
+    F is NOT a blind independent greedy: each trial looks up precomputed
+    exhaustive subset evaluations (enum_cache). Do not claim compute savings vs E.
+    """
     orig = _patch_realistic_speed_policy()
     cov_curve: list[dict] = []
     mission_flat: list[dict] = []
@@ -467,7 +471,7 @@ def _run_af_portfolio(
                 budget_name=bname,
                 installed=",".join(sorted(chosen)),
                 n_sites=len(chosen),
-                selection_engine="independent_greedy",
+                selection_engine="greedy_over_exhaustive_enum_scores",
             )
             # re-eval to attach mission rows under method id
             return evaluate_subset(
@@ -895,7 +899,20 @@ def run_frontier(
                         "fixed_ops": bool(fr.get("operationally_served")),
                         "flexibility_ops_gain": bool(mr.get("operationally_served"))
                         and not bool(fr.get("operationally_served")),
+                        "flexibility_ops_gain_q5": bool(r["multi_ops"])
+                        and not bool(r["fixed_ops"]),
                         "multi_min_soc": mr.get("min_soc"),
+                        "survives_q2_multi": bool(mr.get("operationally_served"))
+                        == bool(r["multi_ops"]),
+                        "survives_q2_fixed": bool(fr.get("operationally_served"))
+                        == bool(r["fixed_ops"]),
+                        "survives_q2_flex": (
+                            bool(mr.get("operationally_served"))
+                            and not bool(fr.get("operationally_served"))
+                        )
+                        == (
+                            bool(r["multi_ops"]) and not bool(r["fixed_ops"])
+                        ),
                         "survives_q2": bool(mr.get("operationally_served"))
                         == bool(r["multi_ops"]),
                         "git_sha": _git_sha(),
@@ -1159,6 +1176,74 @@ def run_robustness_matrix() -> None:
     _write_csv(out_path, rows)
 
 
+
+
+def run_placement_flexibility_ablation() -> None:
+    """Decompose C vs E B2 gap into placement vs route-flexibility effects.
+
+    Uses committed q2_critical_missions.csv site sets; re-evaluates cross masks
+    when physics stack is available. Always writes a mission-level decomposition
+    from saved C/E outcomes plus optional cross rows.
+    """
+    OUT.mkdir(parents=True, exist_ok=True)
+    missions_path = OUT / "q2_critical_missions.csv"
+    if not missions_path.exists():
+        print("No q2_critical_missions.csv — skip ablation", flush=True)
+        return
+    m = pd.read_csv(missions_path)
+    rows: list[dict] = []
+    for vehicle_key, gv in m.groupby("vehicle_key"):
+        for budget, gb in gv.groupby("budget"):
+            c = gb[gb.method_id.astype(str).str.contains("C_fixed")]
+            e = gb[gb.method_id.astype(str).str.contains("E_joint")]
+            if c.empty or e.empty:
+                continue
+            c_sites = str(c.iloc[0].get("installed") or "")
+            e_sites = str(e.iloc[0].get("installed") or "")
+            # Mission-level saved outcomes
+            for od in sorted(set(c.od_id.astype(str)) | set(e.od_id.astype(str))):
+                crow = c[c.od_id.astype(str) == od]
+                erow = e[e.od_id.astype(str) == od]
+                if crow.empty or erow.empty:
+                    continue
+                c_ops = str(crow.iloc[0].get("operationally_served")).lower() in {"true", "1"}
+                e_ops = str(erow.iloc[0].get("operationally_served")).lower() in {"true", "1"}
+                rows.append(
+                    {
+                        "vehicle_key": vehicle_key,
+                        "budget": budget,
+                        "od_id": od,
+                        "C_sites": c_sites,
+                        "E_sites": e_sites,
+                        "sites_differ": c_sites != e_sites,
+                        "C_ops_on_C_sites_fixed": c_ops,
+                        "E_ops_on_E_sites_multi": e_ops,
+                        "delta_E_minus_C": int(e_ops) - int(c_ops),
+                        "note": (
+                            "placement_and_flexibility_confounded"
+                            if c_sites != e_sites
+                            else "same_sites"
+                        ),
+                        "git_sha": _git_sha(),
+                    }
+                )
+    out = OUT / "placement_flexibility_ablation.csv"
+    _write_csv(out, rows)
+    # Summary: eActros B2
+    sub = [r for r in rows if r["vehicle_key"] == "eactros_600" and str(r["budget"]) == "B2"]
+    gained = [r for r in sub if r["delta_E_minus_C"] > 0]
+    lost = [r for r in sub if r["delta_E_minus_C"] < 0]
+    print(
+        "Ablation eActros B2: sites_differ=%s gained=%s lost=%s"
+        % (
+            sum(r["sites_differ"] for r in sub),
+            [r["od_id"] for r in gained],
+            [r["od_id"] for r in lost],
+        ),
+        flush=True,
+    )
+
+
 def write_efficiency_from_missions() -> None:
     path = OUT / "method_comparison_missions.csv"
     q2 = OUT / "q2_critical_missions.csv"
@@ -1419,9 +1504,34 @@ def write_report() -> None:
         lines.append("")
         # Count flex gains at SOC>=0.8
         flex80 = summ[(summ.soc_frac >= 0.8) & (summ.flex)]
-        lines.append(
-            f"- Flexibility ops-gains at SOC≥80%: **{len(flex80)}** cells "
+        conf_p = OUT / "payload_soc_frontier_q2_confirm.csv"
+        flex_note = (
+            f"- Flexibility ops-gains at SOC≥80% (q=5 screen): **{len(flex80)}** cells "
             f"(denominator {len(summ[summ.soc_frac >= 0.8])} veh×od×payload×soc summaries)."
+        )
+        if conf_p.exists():
+            conf = pd.read_csv(conf_p)
+            if "survives_q2_flex" in conf.columns:
+                u = (
+                    conf[(conf.soc_frac >= 0.8) & (conf.flexibility_ops_gain == True)]  # noqa: E712
+                    .groupby(["vehicle_key", "od_id", "payload_kg", "soc_frac"])
+                    .size()
+                    .reset_index()
+                )
+                flex_note += (
+                    f" Retained flex advantage at q=2 (`survives_q2_flex` / flex True): "
+                    f"**{len(u)}** unique scenarios (not {len(flex80)})."
+                )
+            flip_p = OUT / "q_resolution_flip_inventory.csv"
+            if flip_p.exists():
+                flips = pd.read_csv(flip_p)
+                flex_note += f" q-resolution flips logged: **{len(flips)}** rows."
+        lines.append(flex_note)
+        lines.append(
+            "- Agadir→Casablanca 15 t / SOC 0.8 is **discretization-sensitive**: "
+            "unserved at q=5 ladders but eActros served at q=2 with Benguerir AC "
+            "(min SOC≈0.107). Do not treat SOC=1.0 as a categorical physical requirement "
+            "pending HOS-in-search re-run."
         )
         lines.append("")
 
@@ -1500,7 +1610,10 @@ def write_report() -> None:
     files = {}
     for p in OUT.rglob("*"):
         if p.is_file() and p.suffix in {".csv", ".png", ".json", ".md"}:
-            files[str(p.relative_to(ROOT)).replace("\\", "/")] = _sha(p)
+            rel = str(p.relative_to(ROOT)).replace("\\", "/")
+            if p.name == "campaign_manifest.json":
+                continue  # avoid self-hash of previous manifest
+            files[rel] = _sha(p)
     if OUT_MD.exists():
         files["reports/PAPER_SCIENTIFIC_RESULTS_CAMPAIGN.md"] = _sha(OUT_MD)
     (OUT / "campaign_manifest.json").write_text(
@@ -1529,6 +1642,7 @@ def main() -> None:
             "amskroud",
             "compare",
             "robustness",
+            "ablation",
             "efficiency",
             "figures",
             "report",
@@ -1713,7 +1827,20 @@ def main() -> None:
                                     "fixed_ops": bool(fr.get("operationally_served")),
                                     "flexibility_ops_gain": bool(mr.get("operationally_served"))
                                     and not bool(fr.get("operationally_served")),
+                                    "flexibility_ops_gain_q5": bool(r["multi_ops"])
+                                    and not bool(r["fixed_ops"]),
                                     "multi_min_soc": mr.get("min_soc"),
+                                    "survives_q2_multi": bool(mr.get("operationally_served"))
+                                    == bool(r["multi_ops"]),
+                                    "survives_q2_fixed": bool(fr.get("operationally_served"))
+                                    == bool(r["fixed_ops"]),
+                                    "survives_q2_flex": (
+                                        bool(mr.get("operationally_served"))
+                                        and not bool(fr.get("operationally_served"))
+                                    )
+                                    == (
+                                        bool(r["multi_ops"]) and not bool(r["fixed_ops"])
+                                    ),
                                     "survives_q2": bool(mr.get("operationally_served"))
                                     == bool(r["multi_ops"]),
                                     "git_sha": _git_sha(),
@@ -1749,6 +1876,8 @@ def main() -> None:
         run_compare_expanded(vehicles=vehicles, qs=compare_qs)
     if args.phase in ("robustness", "all"):
         run_robustness_matrix()
+    if args.phase in ("ablation", "all"):
+        run_placement_flexibility_ablation()
     if args.phase in ("efficiency", "all", "compare", "q2_headline"):
         write_efficiency_from_missions()
     if args.phase in ("figures", "all"):

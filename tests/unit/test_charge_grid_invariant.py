@@ -101,19 +101,23 @@ def test_action_level_aux_not_per_step_ceil():
     assert drain_tr < 5.0
 
 
-@pytest.mark.parametrize("steps", [1, 2, 3, 4, 5])
-def test_charge_keeps_energy_on_quantum(steps):
-    # Force charge duration by choosing delta that needs exactly `steps` at 60 kW * 1.0
-    # per_step = 60 * 5/60 = 5 kWh/step → delta = steps * 5
+@pytest.mark.parametrize("delta_steps_nominal", [1, 2, 3, 4, 5])
+def test_charge_keeps_energy_on_quantum(delta_steps_nominal):
+    """Lattice + continuity under production CCS taper (not constant-power wall-clock)."""
+    # Nominal delta at 60 kW / 5 min = 5 kWh/step; taper may lengthen wall-clock steps.
     inst = _inst_watt(E_init=100, E_cap=200, aux_w=2500.0)
     lab = Label("S", 0, 100, None, 0, None, {"type": "START"}, 0, can_charge=True)
-    delta = steps * 5
+    delta = delta_steps_nominal * 5
+    st = inst.stations["S"]
+    soc_start = float(lab.E_truck) / float(inst.E_truck_cap)
+    expected_steps = inst.charge_duration_steps(
+        st, delta, soc_start=soc_start, apply_taper=True
+    )
     r = apply_charge(inst, lab, delta, 1)
     assert r.ok and r.label is not None
-    assert r.label.t == steps
+    assert r.label.t == expected_steps
     assert r.label.E_truck % inst.energy_quantum_kwh == 0
-    # Continuous net then floor: 100 + delta - 2.5*(5*steps)/60
-    cont = 100 + delta - 2.5 * (5 * steps) / 60.0
+    cont = 100 + delta - 2.5 * (5 * expected_steps) / 60.0
     expected = int(math.floor(cont / 5) * 5)
     assert r.label.E_truck == expected
 

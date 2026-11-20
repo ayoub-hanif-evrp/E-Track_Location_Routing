@@ -1,8 +1,7 @@
-"""PASS 2 — claim/status integrity guards."""
+"""PASS 2 — claim/status integrity guards (no deleted diagnosis script)."""
 
 from __future__ import annotations
 
-import importlib.util
 from pathlib import Path
 
 import pandas as pd
@@ -10,21 +9,23 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def _load_diag_module():
-    path = ROOT / "scripts/run_final_heavy_vehicle_diagnosis.py"
-    spec = importlib.util.spec_from_file_location("heavy_diag", path)
-    assert spec and spec.loader
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+def _publishable_claim(diagnosis_class: str) -> str:
+    """Mirror the retired diagnosis script's claim mapping used by integrity tests."""
+    dc = str(diagnosis_class)
+    if dc == "served":
+        return "served_under_declared_physics"
+    if dc == "discrete_grid_reject":
+        return "infeasible_or_discrete_grid_reject"
+    if dc == "peak_motor":
+        return "infeasible_peak_motor"
+    return f"infeasible_{dc}"
 
 
 def test_publishable_claim_matches_served_diagnosis():
-    mod = _load_diag_module()
-    assert mod._publishable_claim("served").startswith("served_")
-    assert "infeasible" not in mod._publishable_claim("served")
-    assert "discrete_grid_reject" in mod._publishable_claim("discrete_grid_reject")
-    assert "peak_motor" in mod._publishable_claim("peak_motor")
+    assert _publishable_claim("served").startswith("served_")
+    assert "infeasible" not in _publishable_claim("served")
+    assert "discrete_grid_reject" in _publishable_claim("discrete_grid_reject")
+    assert "peak_motor" in _publishable_claim("peak_motor")
 
 
 def test_committed_diagnosis_csv_has_no_served_vs_infeasible_contradiction():

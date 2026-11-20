@@ -107,6 +107,17 @@ def evaluate_mission_operational(
         allowed_arc_ids=mask,
         name=f"ops|{prep.mission.id}|{','.join(sorted(installed)) or 'none'}",
     )
+    # ENABLE HOS-IN-SEARCH (Stage B): continuous-driving resource inside MRLS.
+    if hasattr(inst, "hos_in_search"):
+        inst.hos_in_search = True
+        ts = max(1, int(getattr(inst, "time_step_min", 5) or 5))
+        need = int(round(45.0 / ts))
+        if int(getattr(inst, "wait_max_steps", 0) or 0) < need:
+            inst.wait_max_steps = need
+        if getattr(inst, "hos_rest_nodes", None) is None:
+            inst.hos_rest_nodes = frozenset(inst.stations.keys()) | frozenset(
+                inst.active_stations
+            )
     t0 = time.perf_counter()
     res = solve_mrls(inst, max_seconds=max_seconds, max_expansions=max_expansions)
     row: dict[str, Any] = {
@@ -123,6 +134,8 @@ def evaluate_mission_operational(
         "schedule_valid_raw": False,
         "schedule_valid": False,
         "hos_adjusted": False,
+        "hos_in_search": True,
+        "hos_search_audit_only": False,
         "hos_ok": False,
         "operationally_served": False,
         "pad_location": None,
@@ -196,7 +209,12 @@ def evaluate_mission_operational(
     row["hos_notes"] = hos.notes
     row["hos_independent_rest"] = bool(getattr(hos, "independent_rest", False))
 
-    if hos.needed and hos.ok and hos.pad_location and hos.pad_duration_min > 1e-9:
+    # HOS-in-search: if the discrete itinerary already validates, treat Stage-2 as audit-only.
+    if bool(getattr(inst, "hos_in_search", False)) and sched_raw.ok:
+        row["schedule_valid"] = True
+        row["hos_search_audit_only"] = True
+        row["hos_notes"] = (hos.notes or "") + ";audit_only_no_post_pad"
+    elif hos.needed and hos.ok and hos.pad_location and hos.pad_duration_min > 1e-9:
         actions_adj = inject_wait_into_solver_actions(
             res.actions,
             station_node=str(hos.pad_location),
@@ -343,7 +361,7 @@ def evaluate_subset(
         "selection_engine": "exhaustive_enumeration"
         if method_id.startswith("E_")
         else (
-            "independent_greedy"
+            "greedy_over_exhaustive_enum_scores"
             if method_id.startswith("F_")
             else "baseline_eval"
         ),

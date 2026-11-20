@@ -1,0 +1,3 @@
+instance_id,n_candidates,n_missions,method,status,certification,note
+national9_hos_frozen_sites,9,14.0,E_joint_multi_enum,optimal_among_frozen_pre_hos_sites,full_enum_pre_hos;_hos_rescore;_limit_retry_partial,Larger than 9 sites deferred; volvo Ball E!=F under HOS forbids F compute-advantage claims
+blind_greedy_contrast,9,,blind_vs_enum,see_blind_greedy_vs_enum.csv,E_vs_F_under_HOS,

@@ -1,0 +1,13 @@
+{
+  "od_id": "casa_rabat",
+  "operationally_served": true,
+  "energy_feasible": true,
+  "schedule_valid": true,
+  "hos_adjusted": false,
+  "hos_in_search": true,
+  "hos_search_audit_only": true,
+  "pad_location": null,
+  "pad_duration_min": 0.0,
+  "status": "OPTIMAL",
+  "min_soc": 0.5868675086860072
+}

@@ -27,6 +27,11 @@ EACTROS = ROOT / "configs/vehicles/eactros_600.yaml"
 VOLVO = ROOT / "configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml"
 
 
+
+from tests.unit._multiroute_graph import skip_without_multiroute_graph
+
+pytestmark = skip_without_multiroute_graph
+
 def test_frozen_light_heavy_independent_of_cfg_mutation():
     cfg = load_multiroute_pilot_config(
         ROOT / "configs/optimization/multiroute_pilot.yaml", root=ROOT

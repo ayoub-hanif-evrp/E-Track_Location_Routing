@@ -197,8 +197,15 @@ def solve_mrls(
                     labels_by_id[nxt.label_id] = nxt
                     heappush(heap, (nxt.cost, nxt.t, nxt.label_id))
 
-        # WAIT
-        for k in range(1, inst.wait_max_steps + 1):
+        # WAIT (HOS-in-search: only a qualifying break duration)
+        if getattr(inst, "hos_in_search", False):
+            from morocco_etruck.optimization.resource_transitions import _hos_limits
+
+            _max_d, min_break = _hos_limits(inst)
+            wait_ks = [min_break] if 1 <= min_break <= int(inst.wait_max_steps) else []
+        else:
+            wait_ks = list(range(1, inst.wait_max_steps + 1))
+        for k in wait_ks:
             r = apply_wait(inst, lab, k, next_id)
             if not r.ok or r.label is None:
                 continue

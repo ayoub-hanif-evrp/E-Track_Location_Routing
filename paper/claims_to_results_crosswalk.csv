@@ -1,0 +1,11 @@
+claim_id,manuscript_location,claim_text_short,result_file_path,evidence_status,notes,git_sha
+C001,Abstract; Results,eActros B2 E=0.71 vs C=0.71,results/paper_campaign/q2_critical_portfolio.csv,stage_c,hos_in_search_frozen_sites_limit_retry,adc6287ac48ebe9bd9687bd5bd36a335b462b571
+C002,Abstract; Results,E_equals_F_ops=True at B2 (frozen-site or enum),results/paper_campaign/q2_critical_portfolio.csv,stage_c,F is greedy-over-enum unless blind_greedy_vs_enum.csv shows otherwise,adc6287ac48ebe9bd9687bd5bd36a335b462b571
+C003,Results,B2 placement vs flexibility identical-site cross table,results/paper_campaign/placement_flexibility_ablation.csv,stage_c,"columns ops_*_on_{C,E} + placement_effect_* / flexibility_effect_*",adc6287ac48ebe9bd9687bd5bd36a335b462b571
+C004,Results,flex SOC>=0.8 retained via survives_q2_flex,results/paper_campaign/payload_soc_frontier_q2_confirm.csv,stage_a_confirm,do not use survives_q2 alone,adc6287ac48ebe9bd9687bd5bd36a335b462b571
+C005,Results,AC 15t SOC0.8 discretization-sensitive,results/paper_campaign/q_resolution_flip_inventory.csv,stage_a,see also q1_boundary_refinement.csv,adc6287ac48ebe9bd9687bd5bd36a335b462b571
+C006,Results,robustness matrix,results/paper_campaign/robustness_matrix.csv,legacy_or_stage_c,refresh under HOS before submission claims,adc6287ac48ebe9bd9687bd5bd36a335b462b571
+C007,Methods,HOS-in-search Label.drive_since_break_steps,tests/unit/test_hos_in_search.py,stage_b,Gate B unit + smoke,adc6287ac48ebe9bd9687bd5bd36a335b462b571
+C008,Results,hos mini panel audit-only,results/paper_campaign/hos_mini_panel_gate.csv,stage_c,ops-true => hos_search_audit_only,adc6287ac48ebe9bd9687bd5bd36a335b462b571
+C009,Results,q1 boundary under HOS,results/paper_campaign/q1_boundary_refinement.csv,stage_c,flip / near-reserve cells,adc6287ac48ebe9bd9687bd5bd36a335b462b571
+C010,Results,solver certification + larger instance,results/paper_campaign/solver_certification_table.csv,stage_c,also solver_larger_instance_table.csv; blind_greedy_vs_enum.csv,adc6287ac48ebe9bd9687bd5bd36a335b462b571

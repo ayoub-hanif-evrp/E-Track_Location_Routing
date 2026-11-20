@@ -23,6 +23,9 @@ class Label:
     label_id: int
     # Prevent consecutive re-charging explosions: one CHARGE burst per visit.
     can_charge: bool = True
+    # Continuous driving since last qualifying break (discrete steps). Used when
+    # RoutingInstance.hos_in_search is True (decret 2-10-314 art. 18 screen).
+    drive_since_break_steps: int = 0
 
 
 @dataclass
@@ -30,6 +33,49 @@ class TransitionResult:
     ok: bool
     label: Label | None = None
     reason: str | None = None
+
+
+def _hos_limits(inst: RoutingInstance) -> tuple[int, int]:
+    """Return (max_continuous_drive_steps, min_break_steps)."""
+    ts = max(1, int(inst.time_step_min))
+    max_drive = inst.hos_max_continuous_driving_steps
+    if max_drive is None:
+        max_drive = int(round(270.0 / ts))  # 4.5 h
+    min_break = inst.hos_min_break_steps
+    if min_break is None:
+        min_break = int(round(45.0 / ts))  # 45 min
+    return int(max_drive), int(min_break)
+
+
+def _hos_rest_nodes(inst: RoutingInstance) -> set[str]:
+    if inst.hos_rest_nodes is not None:
+        return set(inst.hos_rest_nodes)
+    return set(inst.active_stations) | set(inst.stations.keys())
+
+
+def _hos_after_stationary(
+    inst: RoutingInstance,
+    lab: Label,
+    node: str,
+    steps: int,
+) -> int:
+    """Carry or reset drive_since_break after CHARGE/WAIT."""
+    if not getattr(inst, "hos_in_search", False):
+        return int(lab.drive_since_break_steps)
+    _max_drive, min_break = _hos_limits(inst)
+    if steps >= min_break and node in _hos_rest_nodes(inst):
+        return 0
+    return int(lab.drive_since_break_steps)
+
+
+def _hos_check_drive(inst: RoutingInstance, lab: Label, dt_steps: int) -> str | None:
+    if not getattr(inst, "hos_in_search", False):
+        return None
+    max_drive, _ = _hos_limits(inst)
+    if int(lab.drive_since_break_steps) + int(dt_steps) > max_drive:
+        return "hos_continuous_driving_exceeded"
+    return None
+
 
 
 def _uses_watt_stationary(inst: RoutingInstance) -> bool:
@@ -135,6 +181,9 @@ def apply_drive(inst: RoutingInstance, lab: Label, arc: ArcData, new_id: int) ->
         }
         if arc.arc_id is not None:
             action["arc_id"] = arc.arc_id
+        hos_reason = _hos_check_drive(inst, lab, int(entry.dt_steps))
+        if hos_reason:
+            return TransitionResult(False, reason=hos_reason)
         return TransitionResult(
             True,
             Label(
@@ -147,6 +196,7 @@ def apply_drive(inst: RoutingInstance, lab: Label, arc: ArcData, new_id: int) ->
                 action=action,
                 label_id=new_id,
                 can_charge=True,
+                drive_since_break_steps=int(lab.drive_since_break_steps) + int(entry.dt_steps),
             ),
         )
 
@@ -178,6 +228,9 @@ def apply_drive(inst: RoutingInstance, lab: Label, arc: ArcData, new_id: int) ->
     }
     if arc.arc_id is not None:
         action["arc_id"] = arc.arc_id
+    hos_reason = _hos_check_drive(inst, lab, int(arc.dt_steps))
+    if hos_reason:
+        return TransitionResult(False, reason=hos_reason)
     return TransitionResult(
         True,
         Label(
@@ -190,6 +243,7 @@ def apply_drive(inst: RoutingInstance, lab: Label, arc: ArcData, new_id: int) ->
             action=action,
             label_id=new_id,
             can_charge=True,
+            drive_since_break_steps=int(lab.drive_since_break_steps) + int(arc.dt_steps),
         ),
     )
 
@@ -257,6 +311,7 @@ def apply_charge(
             },
             label_id=new_id,
             can_charge=False,
+            drive_since_break_steps=_hos_after_stationary(inst, lab, lab.node, int(steps)),
         ),
     )
 
@@ -266,6 +321,8 @@ def apply_wait(inst: RoutingInstance, lab: Label, k_steps: int, new_id: int) -> 
         return TransitionResult(False, reason="zero_wait")
     if k_steps > inst.wait_max_steps:
         return TransitionResult(False, reason="wait_cap")
+    if getattr(inst, "hos_in_search", False) and lab.node not in _hos_rest_nodes(inst):
+        return TransitionResult(False, reason="hos_wait_not_at_rest_node")
     t2 = lab.t + k_steps
     if t2 > inst.deadline_steps:
         return TransitionResult(False, reason="deadline")
@@ -296,6 +353,7 @@ def apply_wait(inst: RoutingInstance, lab: Label, k_steps: int, new_id: int) -> 
             },
             label_id=new_id,
             can_charge=lab.can_charge,
+            drive_since_break_steps=_hos_after_stationary(inst, lab, lab.node, int(k_steps)),
         ),
     )
 
@@ -317,7 +375,13 @@ def expand_actions(inst: RoutingInstance, lab: Label, id_start: int) -> list[Tra
             out.append(r)
             nid += 1
         _ = st
-    for k in range(1, inst.wait_max_steps + 1):
+    if getattr(inst, "hos_in_search", False):
+        # Only attempt a qualifying break duration (avoids WAIT lattice explosion).
+        _max_d, min_break = _hos_limits(inst)
+        wait_ks = [min_break] if 1 <= min_break <= int(inst.wait_max_steps) else []
+    else:
+        wait_ks = list(range(1, inst.wait_max_steps + 1))
+    for k in wait_ks:
         r = apply_wait(inst, lab, k, nid)
         out.append(r)
         nid += 1

@@ -1,0 +1,27 @@
+{
+  "git_sha": "adc6287ac48ebe9bd9687bd5bd36a335b462b571",
+  "created": "2026-11-19T21:41:15Z",
+  "files_sha256": {
+    "results/paper_campaign/amskroud_ca_value.csv": "ee84c3e3f02436b136a67f5369274c7033d2a5720b215f6cfef1946c82f607ba",
+    "results/paper_campaign/hos_in_search_smoke.json": "63b8a73a1f51990d3288956a598f625c04091a2fa28ba2861a2f1d57a5a1af0d",
+    "results/paper_campaign/od_dem_site_audit.csv": "caa7fea0c7e95860a7f2a8e9460538d4a975cbab5f1d8dbc5088abed3af8bc89",
+    "results/paper_campaign/operational_efficiency.csv": "4d6b38006f86f4bd989e7c6b519e836e2cb78da577f6a65d74eba9eebfb2c188",
+    "results/paper_campaign/payload_soc_frontier.csv": "81c08cf3517cdec06b68355e0dfa833067765d41393efab58f140b2c26d5b118",
+    "results/paper_campaign/payload_soc_frontier_q2_confirm.csv": "eca4041146f88d7585e622b328bebebed7511fb6021bed834f631c31e53af66c",
+    "results/paper_campaign/placement_flexibility_ablation.csv": "35dbaa9cbe209f42c8aeb8dab0181fae7b238f26f6aed6160dcd330559b927fc",
+    "results/paper_campaign/q1_boundary_refinement.csv": "ea529ea36f921b50fdea2422963cb01d66821327120f2c134b3b0ba7ba3522cb",
+    "results/paper_campaign/q2_critical_missions.csv": "6b6f8d76216140e066b1f6b67d718c465381084b2e12e084eb04080589cf41fb",
+    "results/paper_campaign/q2_critical_portfolio.csv": "0bda305151096f7c03505451335ef226a583ae24753a2b44df695006a3ac3b3f",
+    "results/paper_campaign/q_resolution_flip_inventory.csv": "b97f4e9a2cd4fc22b0bb877daa9f271d556b683161e995acc1a5fe8d3584c675",
+    "results/paper_campaign/robustness_matrix.csv": "212a2c81794cf55301ad2d95e29ae926f0bfd7f4e273c4882e03d218b4139e84",
+    "results/paper_campaign/scenario_registry_frozen.csv": "773d8a5a2d8efbbe887cd132721a727d74565a3129256c0e538cefc29cf51a01",
+    "results/paper_campaign/solver_certification_table.csv": "dcd8e543618aad7aef075f0dadd7a7962707fce0fbcdf23ea4561d763c901d18",
+    "results/paper_campaign/uncertainty_stability_summary.csv": "1dd7fbd0f93fe6d5ea0ebe7fa962a4b07e27ed914c4e0baf8cfa1f0f10e0ebae",
+    "results/paper_campaign/publication_tables/tableA_q2_headline_portfolio.csv": "8ba02ea936be2b1dfd468c780eab13591a37164d26b28b0f38bb9311f87b1617",
+    "results/paper_campaign/publication_tables/tableB_frontier_summary.csv": "d0722877d26593c235106cfc28c4c7fe9fc4eeade6592577f622ab87692dc91e",
+    "results/paper_campaign/publication_tables/tableC_robustness_matrix.csv": "489b701f67089421ca6aa34b808bf001c74e3a0cef6c8d574d4cbce9c184c661",
+    "results/paper_campaign/publication_tables/tableD_operational_efficiency.csv": "4d6b38006f86f4bd989e7c6b519e836e2cb78da577f6a65d74eba9eebfb2c188",
+    "results/paper_campaign/publication_tables/tableE_amskroud_value.csv": "74d18f82271d03dae45fa87e1e3255c108c6b70911417bcaac4288ef33f6f491",
+    "reports/PAPER_SCIENTIFIC_RESULTS_CAMPAIGN.md": "a920ab95f5277f4b3f98f688c7898c21c20d2535c5870790f3dac56244fadcb6"
+  }
+}

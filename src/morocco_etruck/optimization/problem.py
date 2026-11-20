@@ -86,6 +86,12 @@ class RoutingInstance:
     aux_w: float = 0.0
     tru_mean_w: float = 0.0
     wait_max_steps: int = 6
+    # When True, MRLS forbids drive expansions that exceed continuous-driving
+    # limits and resets the clock on qualifying CHARGE/WAIT at rest nodes.
+    hos_in_search: bool = False
+    hos_max_continuous_driving_steps: int | None = None
+    hos_min_break_steps: int | None = None
+    hos_rest_nodes: frozenset[str] | None = None
     time_step_min: int = 5
     energy_quantum_kwh: int = 1
     # Operating-cost mode (Task 06B). Legacy default preserves Task 03–06A J.

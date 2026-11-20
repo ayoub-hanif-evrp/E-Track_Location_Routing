@@ -1,11 +1,12 @@
 % Joint charger placement and energy-aware multi-route planning
-% Moroccan refrigerated eActros national long-haul --- SOC CCS taper campaign
-% Primary numbers: results/paper_campaign/q2_critical_portfolio.csv
+% Moroccan refrigerated eActros national long-haul --- SOC CCS taper + HOS-in-search
+% Evidence: results/paper_campaign/* ; Stage C national HOS re-run regenerates headline CSVs
 
 \documentclass[review,12pt]{elsarticle}
 
 \usepackage{lineno,hyperref,graphicx,booktabs,amsmath,amssymb}
-\graphicspath{{figures/}{../results/paper_campaign/figures/}}
+\graphicspath{{figures/}}
+\biboptions{sort&compress}
 
 \journal{Transportation Research Part C}
 
@@ -27,18 +28,19 @@
 We study joint charging-infrastructure placement and energy-constrained multi-route planning for refrigerated battery-electric heavy trucks on a \textbf{national} Moroccan motorway envelope spanning Tangier--Rabat--Casablanca--F\`es--Marrakech--Agadir.
 The model couples an OSM/DEM physics stack, firm-ripe tomato refrigeration, multi-resource label setting (MRLS), and exhaustive site enumeration over direction-specific ADM service-area candidates.
 Default CHARGE physics uses a conservative SOC-dependent CCS acceptance envelope
-(\texttt{charging\_model=ccs\_soc\_taper\_research\_envelope}) --- a research assumption, not an OEM-measured eActros/Volvo curve --- replacing the retired constant-power planning default.
-\textbf{Operational coverage} is the primary metric: continuous physics replay, action audit, d\'ecret~2-10-314 arts.~17--19 schedule validity, and speed-policy screens must all pass.
+(\texttt{charging\_model=ccs\_soc\_taper\_research\_envelope}) --- a research assumption, not an OEM-measured curve.
+\textbf{Operational coverage} requires energy feasibility under continuous replay \emph{and} d\'ecret~2-10-314 continuous-driving feasibility.
+We embed continuous-driving time since the last qualifying break as an MRLS label resource (\emph{HOS-in-search}), so schedule feasibility is optimized rather than repaired post hoc.
 
-On a fourteen-mission equal-weight national headline panel (all DEM-complete ODs) at energy quantum $q{=}2$~(kWh) with the full nine-site grounded candidate set, joint multi-route enumeration (E) and sequential greedy (F) \emph{tie} at every budget: eActros reaches operational coverage $0.86$ at budget~B2 with $\{y_{\mathrm{benguerir\_ca}},y_{\mathrm{bouznika\_cr}}\}$ (12/14 missions) versus $0.79$ for optimized fixed-route planning (C; 11/14) --- an E$-$C gap of $+0.07$.
-At Ball, eActros E$=$F$=0.93$ vs C$=0.86$.
-Volvo FH at B2 ties E$=$F$=$C$=0.64$ (9/14); the E$-$C gap appears only at Ball ($0.86$ vs $0.79$).
-A full payload$\times$SOC frontier (5.3/10/15~t $\times$ SOC 0.5/0.8/1.0 across 14 ODs; 684 screen cells + 210 decisive $q{=}2$ confirms) shows flexibility ops-gains concentrated on a small Volvo subset, while Agadir$\rightarrow$Casablanca at 15~t remains unserved at 80\% departure SOC across AC ladders and becomes operational at 100\% SOC.
-Chargers are hypothetical HGV CCS posts; costs and OD weights are research proxies, not observed freight counts.
+Authoritative coverage numbers are Stage~C CSVs under \texttt{results/paper\_campaign/} (HOS-in-search; see \texttt{campaign\_manifest.json}).
+Pre-HOS eActros B2 was E$=$F$=0.86$ vs C$=0.79$ with different directional Benguerir sites (placement--flexibility confound); Stage~C re-scores and identical-site ablation supersede those figures.
+Payload$\times$SOC frontier confirms are q-grid sensitive: Agadir$\rightarrow$Casablanca at 15~t / SOC~$0.8$ flips from unserved at $q{=}5$ to eActros-served at $q{=}2$; retained flex advantages at SOC$\ge$80\% fall from 6 screen cells to 2 after $q{=}2$ confirmation (\texttt{survives\_q2\_flex}).
+Method F is greedy over exhaustive enum scores unless \texttt{blind\_greedy\_vs\_enum.csv} shows an independent match.
+Chargers are hypothetical; OD weights are equal research proxies.
 \end{abstract}
 
 \begin{keyword}
-electric freight \sep charger location \sep multi-route planning \sep Morocco \sep refrigerated transport \sep nonlinear charging \sep operational coverage
+electric freight \sep charger location \sep multi-route planning \sep Morocco \sep refrigerated transport \sep nonlinear charging \sep hours of service \sep operational coverage
 \end{keyword}
 
 \end{frontmatter}
@@ -48,55 +50,74 @@ electric freight \sep charger location \sep multi-route planning \sep Morocco \s
 \section{Introduction}
 \label{sec:intro}
 
-Battery-electric heavy-duty tractors are discussed for Moroccan long-distance logistics, including temperature-controlled export chains from Souss-Massa toward northern gateways.
-This paper asks how much \emph{operational} freight service joint charger placement and energy-aware multi-route planning unlock when missions must obey DEM physics, SOC-dependent CCS taper, speed policy, and professional-driver pause rules on a national motorway spine --- not a single southern corridor alone.
+Battery-electric heavy-duty tractors are discussed for Moroccan long-distance refrigerated logistics.
+Related TR-C work already combines charger location with routing and driver hours~\cite{VidottePlaza2026TRC} and studies temperature-aware siting~\cite{TemperatureAwareSiting2026TRC}.
+Our contribution is a \emph{case-grounded} national Moroccan stack: DEM-complete OD physics, directional ADM access, refrigerated TRU loads~\cite{Bank2025IJR}, SOC CCS taper, and operational coverage under HOS-in-search.
 
 \paragraph{Non-claims.}
-We do not assert a new joint location--routing formulation or OEM-calibrated charge curves.
-The CCS taper is a transparent research envelope.
-We do not recommend specific ADM investments, and equal mission weights are not observed OD volumes.
+We do not claim a new generic LRP theorem, OEM-calibrated charge curves, measured traffic weights, or certified 350~kW truck chargers at ADM sites~\cite{ADMServiceAreas}.
 
-\paragraph{Contributions.}
-\begin{enumerate}
-  \item Operational coverage vs budget under SOC CCS research taper on a national 14-OD DEM-complete panel with nine topology-verified ADM candidates.
-  \item Mechanism-separated evidence that route flexibility and charger location change executable missions; E and F tie across the full budget ladder, with a modest eActros E$-$C gap ($+1/14$ at B2--Ball).
-  \item Honest geospatial gates: DEM-complete ODs only; no invented charger attach where ADM$\times$OSM access fails.
-\end{enumerate}
+\section{Mathematical model (summary)}
+\label{sec:model}
 
-\section{Methods (summary)}
-\label{sec:methods}
+\subsection{Routing resources}
+A label is $L=(i,t,E^{\mathrm{tr}},E^{\mathrm{tl}},c,\kappa,\delta)$, where $i$ is the node, $t$ discrete time, $E$ on-grid energies, $c$ en-route cost, $\kappa\in\{0,1\}$ charge eligibility, and $\delta$ is continuous-driving steps since the last qualifying break.
+DRIVE accumulates $\delta$; expansions with $\delta+\Delta t>\bar\delta$ (4.5~h) are forbidden under HOS-in-search~\cite{MoroccoDecret210314}.
+CHARGE/WAIT of duration $\ge$45~min at rest-capable stations reset $\delta=0$.
+Dominance is same-$(i,t)$ Pareto over $(c,E,\kappa,\delta)$ with smaller $\delta$ weakly preferred.
 
-Path unions are built from verified OSM alternatives ($max\_alts{=}2$) on a national bbox.
-DRIVE uses COP-DEM profiles when \texttt{dem\_complete}; CHARGE duration integrates
-\texttt{nameplate}\(\times\eta\times\)\texttt{conservative\_ccs\_taper\_factor(SOC)}.
-Stations keep nameplate kW; taper applies at charge application.
-Independent ADM rest pads validate schedules when energy-optimal itineraries skip charging.
-Headline portfolios enumerate the full nine grounded sites; payload$\times$SOC frontier and moderate robustness cells reuse the same physics stack.
+\subsection{Placement}
+For candidate sites $Y$ and budgets $B$, exhaustive enumeration maximizes equal-weight operational coverage over missions $M$, with secondary cost tie-breaks.
+Method C optimizes fixed-route masks; E optimizes multi-route masks; F is greedy over \emph{precomputed} exhaustive subset scores (not a blind cheap greedy).
+
+\section{Data and case design}
+\label{sec:case}
+National DEM-complete ODs~\cite{OpenStreetMapMoroccoMotorway,CopernicusDEMGLO30}; weather caches~\cite{OpenMeteoWeather}; 9 grounded directional sites; payloads $\{5.3,10,15\}$~t; SOC $\{0.5,0.8,1.0\}$.
 
 \section{Results}
 \label{sec:results}
 
-Primary table: \texttt{results/paper\_campaign/q2\_critical\_portfolio.csv}.
-At B2, eActros E$=$F$=0.86$ vs C$=0.79$ (E$-$C $=+1/14$); sites $\{y_{\mathrm{benguerir\_ca}},y_{\mathrm{bouznika\_cr}}\}$.
-At Ball, eActros E$=$F$=0.93$ vs C$=0.86$.
-Volvo at B2: E$=$F$=$C$=0.64$; at Ball E$=$F$=0.86$ vs C$=0.79$ (E$-$C $=+1/14$).
-Audit: 14 national ODs DEM-complete with grounded northern Assilah/Larache/Bouznika attach where topology allows (\texttt{od\_dem\_site\_audit.csv}).
-Full payload$\times$SOC frontier (5.3/10/15~t $\times$ SOC 0.5/0.8/1.0): Agadir$\rightarrow$Casablanca at 15~t remains unserved at 80\% departure SOC across AC ladders and becomes operational at 100\% SOC; flexibility ops-gains at SOC$\ge$80\% appear in \textbf{6} of 168 veh$\times$od$\times$payload$\times$soc summaries (\texttt{payload\_soc\_frontier.csv}, confirmed under $q{=}2$).
-Moderate robustness (11 cells $\times$ 4 targets $\times$ $q\in\{5,2\}$): 86/88 evaluations remain operationally served; the two failures are the heavy-payload $q{=}5$ Agadir$\rightarrow$Casablanca multi cells at 15~t / SOC 0.8 (\texttt{robustness\_matrix.csv}).
+\subsection{Headline coverage (Stage~C)}
+Pipeline tag: \texttt{hos\_in\_search\_frozen\_sites\_limit\_retry}.
+\texttt{q2\_critical\_portfolio.csv}: eActros B2 E$=$F$=$C$=0.71$ (pre-HOS $\Delta{+}1$ dissolves under HOS);
+Ball E$=$F$=0.79$ vs C$=0.71$.
+Volvo B2 E$=$F$=0.64$ vs C$=0.57$; Ball E$=0.64$ vs F$=0.57$.
+\texttt{placement\_flexibility\_ablation.csv}: identical-site cross masks (eActros B2 placement effect on Marrakech$\leftarrow$Casa under multi).
+Remaining \texttt{LIMIT\_REACHED} cells are unresolved, not certified infeasible.
+\texttt{hos\_mini\_panel\_gate.csv}: every served itinerary is audit-only with zero post-hoc pads.
+
+\subsection{Discretization and flexibility}
+\texttt{q\_resolution\_flip\_inventory.csv}: 8 screen$\to$confirm flips.
+\texttt{payload\_soc\_frontier\_q2\_confirm.csv}: flex retention via \texttt{survives\_q2\_flex} yields \textbf{2} SOC$\ge$80\% scenarios (not 6).
+\texttt{q1\_boundary\_refinement.csv}: $q{=}1$ outcomes under HOS-in-search for disputed cells.
+
+\subsection{HOS-in-search gate}
+Unit tests (\texttt{tests/unit/test\_hos\_in\_search.py}) prove WAIT insertion when a second long leg would violate continuous driving.
+National smoke (\texttt{hos\_in\_search\_smoke.json}): Casa$\rightarrow$Rabat served with \texttt{hos\_search\_audit\_only=true} and no post-hoc pad.
+Stage~C mini panel (B0/B2/Ball $\times$ both vehicles) confirms the same audit-only property on all served missions.
+
+\subsection{Robustness and solver status}
+\texttt{robustness\_matrix.csv}: legacy 86/88 under the pre-HOS stack (re-screen under HOS deferred to extended campaign).
+\texttt{solver\_certification\_table.csv} / \texttt{solver\_larger\_instance\_table.csv}: optimality claims restricted to resolved (non-\texttt{LIMIT\_REACHED}) evaluations; blind greedy contrast in \texttt{blind\_greedy\_vs\_enum.csv}.
+
+\section{Discussion and related work}
+\label{sec:disc}
+Compared with~\cite{VidottePlaza2026TRC}, we emphasize Moroccan DEM/ADM geometry, refrigerated loads, and numerical feasibility boundaries rather than a new hours-integrated MIP.
+Equal weights and research taper limit external validity~\cite{Bank2025IJR}.
+HOS-in-search lowers headline coverage relative to energy-only+pad because long ODs hit expansion limits; unresolved cells are labeled \texttt{LIMIT\_REACHED}, not physical impossibility.
 
 \section{Limitations}
 \label{sec:limits}
-\begin{itemize}
-  \item Taper is a research envelope, not OEM-measured.
-  \item No observed refrigerated eHDT trip sample.
-  \item Equal / illustrative OD weights $\neq$ traffic sample; axle-law and HGV access at ADM sites unverified.
-  \item Eastern long-haul (Oujda) and unmatched Msoun--La\^ayoune attaches remain outside the DEM-complete panel --- no invented chargers.
-\end{itemize}
+Site sets are frozen from pre-HOS exhaustive enum; full HOS re-enumeration remains optional (\texttt{--phase headline\_enum}).
+Some long ODs remain \texttt{LIMIT\_REACHED} at 180--600~s; they are not counted as certified infeasible.
+No observed eHDT trip sample; axle/HGV access unverified; eastern Oujda ODs excluded without invented attach.
 
 \section{Conclusion}
 \label{sec:conclusion}
-Under SOC-dependent CCS research taper on a national Moroccan motorway panel, joint multi-route siting and greedy siting \emph{tie} across budgets: eActros reaches $0.86$ operational coverage at B2 ($12/14$) with Benguerir-CA and Bouznika-CR, while optimized fixed routing loses one mission ($11/14$).
-Heavy-payload northbound Agadir$\rightarrow$Casablanca remains an operating-envelope finding (needs near-full departure SOC), not a solver artifact.
-National northern legs are feasible under the same evidence classes; eastern long-haul claims wait on complete DEM and ADM attach.
+The repository separates placement from flexibility, corrects q-grid contradictions, and optimizes continuous-driving inside MRLS so operational coverage means search-found energy+HOS feasibility under continuous replay audit.
+Claims are tied to Stage~C artifacts and \texttt{campaign\_manifest.json}.
+
+\bibliographystyle{elsarticle-num}
+\bibliography{references}
 
 \end{document}

@@ -29,6 +29,11 @@ EACTROS = ROOT / "configs/vehicles/eactros_600.yaml"
 VOLVO = ROOT / "configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml"
 
 
+
+from tests.unit._multiroute_graph import skip_without_multiroute_graph
+
+pytestmark = skip_without_multiroute_graph
+
 def test_synthetic_adversarial_strict_cost_monotonicity():
     """
     Positive (non-vacuous) nesting: both restricted and expanded OPTIMAL,

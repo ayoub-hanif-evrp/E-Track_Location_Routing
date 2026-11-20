@@ -414,6 +414,7 @@ def prepare_multiroute_placement_context(
     fridge_yaml: Path | None = None,
     charger_power_kw: float | None = None,
     max_alternatives_for_union: int | None = None,
+    probe_serviceability: bool = True,
 ) -> dict[str, Any]:
     from morocco_etruck.optimization.drive_table_cache import file_sha256
     from morocco_etruck.optimization.placement_cache import build_mission_energy_fingerprint
@@ -439,26 +440,30 @@ def prepare_multiroute_placement_context(
             max_alternatives_for_union=max_alternatives_for_union,
         )
 
-    # Serviceability: probe with all sites installed
+    # Serviceability: probe with all sites installed (optional; Stage C rescore skips)
     all_ids = {s.id for s in cfg.sites}
     serviceability: dict[str, str] = {}
-    for m in missions:
-        r = evaluate_multiroute_mission(
-            prepared[m.id],
-            installed=all_ids,
-            sites=cfg.sites,
-            max_seconds=cfg.solver_max_seconds,
-            max_expansions=cfg.solver_max_expansions,
-            memo=None,
-        )
-        if r.status == "LIMIT_REACHED":
-            serviceability[m.id] = "limit_reached"
-        elif r.served:
+    if probe_serviceability:
+        for m in missions:
+            r = evaluate_multiroute_mission(
+                prepared[m.id],
+                installed=all_ids,
+                sites=cfg.sites,
+                max_seconds=cfg.solver_max_seconds,
+                max_expansions=cfg.solver_max_expansions,
+                memo=None,
+            )
+            if r.status == "LIMIT_REACHED":
+                serviceability[m.id] = "limit_reached"
+            elif r.served:
+                serviceability[m.id] = "serviceable"
+            elif r.uncertified:
+                serviceability[m.id] = "replay_invalid"
+            else:
+                serviceability[m.id] = "unserved_all_candidates"
+    else:
+        for m in missions:
             serviceability[m.id] = "serviceable"
-        elif r.uncertified:
-            serviceability[m.id] = "replay_invalid"
-        else:
-            serviceability[m.id] = "unserved_all_candidates"
 
     from morocco_etruck.optimization.placement_certification import (
         is_unresolved_serviceability,

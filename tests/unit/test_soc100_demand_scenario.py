@@ -8,6 +8,7 @@ from morocco_etruck.optimization.multiroute_placement import load_multiroute_pla
 
 ROOT = Path(__file__).resolve().parents[2]
 CFG = ROOT / "configs/optimization/multiroute_placement_pass2a.yaml"
+PAPER_CFG = ROOT / "configs/optimization/paper_scientific_portfolio.yaml"
 
 
 def test_explicit_soc10_demand_exists_and_matches_payload():
@@ -24,7 +25,13 @@ def test_explicit_soc10_demand_exists_and_matches_payload():
     assert m10.weather_id == m08.weather_id
 
 
-def test_robustness_script_uses_soc10_demand_not_force_soc():
-    text = (ROOT / "scripts/run_final_moroccan_robustness.py").read_text(encoding="utf-8")
-    assert 'demand="A_nb_tomato_p5300_soc10"' in text
-    assert "force_soc" not in text or "no force_soc" in text
+def test_paper_portfolio_keeps_explicit_soc_fractions_not_force_soc():
+    """Live config guard replacing retired run_final_moroccan_robustness.py source scan."""
+    text = PAPER_CFG.read_text(encoding="utf-8")
+    assert "force_soc" not in text
+    cfg = load_multiroute_placement_config(PAPER_CFG, root=ROOT)
+    assert cfg.demand_scenarios, "paper portfolio must declare demand scenarios"
+    for missions in cfg.demand_scenarios.values():
+        for m in missions:
+            soc = float(m.E_init_soc_frac)
+            assert 0.0 < soc <= 1.0

@@ -1,0 +1,349 @@
+# **Independent research audit: E-Track Location Routing**
+
+Repository: [ayoub-hanif-evrp/E-Track_Location_Routing](https://github.com/ayoub-hanif-evrp/E-Track_Location_Routing?utm_source=chatgpt.com) · Reviewed 19 November 2026 · Main branch
+
+## **1. Preliminary publication verdict**
+
+**The project has credible research foundations, but I would not recommend submitting the current manuscript to a high-impact journal such as *Transportation Research Part C* yet.**
+
+The main concern is not that the results are numerically unimpressive. Modest improvements can be publishable. The concern is whether the conclusions are correctly supported by the experiments, whether the operational-feasibility methodology is valid, and whether the paper demonstrates a sufficiently substantial contribution.
+
+**Research software foundation**
+
+Promising
+
+**Published numerical evidence**
+
+Needs correction
+
+**High-impact journal readiness**
+
+Not ready
+
+These are reviewer-style assessments, not standardized quality scores or a prediction of an editorial decision.
+
+### **What the headline experiments actually show**
+
+The campaign evaluates two electric heavy-truck configurations across 14 equally weighted Moroccan origin–destination missions. The following figures are from the committed `q2_critical_portfolio.csv`, using the 2 kWh energy discretization.
+
+| Vehicle and budget      | Optimized fixed routing (C) | Joint multi-route (E) | Improvement |
+| ----------------------- | --------------------------- | --------------------- | ----------- |
+| eActros, B1             | 10/14                       | 11/14                 | +1 mission  |
+| eActros, B2             | 11/14                       | 12/14                 | +1 mission  |
+| eActros, B3             | 12/14                       | 13/14                 | +1 mission  |
+| Volvo, B2               | 9/14                        | 9/14                  | 0           |
+| Volvo, unlimited budget | 11/14                       | 12/14                 | +1 mission  |
+
+Operational mission coverage at B2
+
+Number of operationally served missions, out of 14; committed q=2 results
+
+Optimized fixed
+
+Joint multi-route
+
+03.5710.514eActrosVolvo
+
+At B2, the eActros improvement is **7.14 percentage points**, representing one mission out of fourteen. Moreover, the sequential greedy method F matches the joint enumeration method E in operational coverage at every reported budget.
+
+That is an interesting case-study result, but it is not yet strong evidence of a general advantage for a sophisticated joint optimization method.
+
+Sources: [Committed headline results](https://github.com/ayoub-hanif-evrp/E-Track_Location_Routing/blob/main/results/paper_campaign/q2_critical_portfolio.csv?utm_source=chatgpt.com) and [Current manuscript](https://github.com/ayoub-hanif-evrp/E-Track_Location_Routing/blob/main/paper/manuscript.tex?utm_source=chatgpt.com).
+
+## **2. Critical finding: a central manuscript claim contradicts the saved results**
+
+**This needs to be corrected before submission.**
+
+The manuscript states that an eActros mission from Agadir to Casablanca with a 15-tonne payload and 80% departure SOC remains unserved across the northbound charging options, becoming operational at 100% SOC.
+
+However, the committed numerical results show:
+
+| Charging setup, 15 t, 80% SOC | q = 5 kWh  | q = 2 kWh  |
+| ----------------------------- | ---------- | ---------- |
+| No new chargers               | Not served | Not served |
+| Benguerir AC                  | Not served | **Served** |
+| Benguerir AC + Settat AC      | Not served | **Served** |
+
+The finer-grid result reports a minimum SOC of approximately **10.70%**, above the configured 10% floor, for the served configurations.
+
+The distinction matters. The coarse-grid result is conservative, but the paper's categorical statement does not hold under its own finer 2 kWh confirmation. The difference is a discretization effect near a feasibility boundary, not evidence that 100% departure SOC is always necessary.
+
+Source: [q=2 confirmation CSV, rows 10–16](https://github.com/ayoub-hanif-evrp/E-Track_Location_Routing/blob/main/results/paper_campaign/payload_soc_frontier_q2_confirm.csv?utm_source=chatgpt.com)
+
+**Required correction:** Reconcile all q=5 and q=2 classifications, rerun sensitive cases at finer energy resolutions, and change the paper's conclusion to reflect the numerical uncertainty. Any finding that reverses under refinement should not be presented as a robust physical operating limit.
+
+This is a substantive scientific issue rather than a formatting problem.
+
+## **3. The route-flexibility evidence is weaker after finer-grid confirmation**
+
+I cross-checked the complete 684-row screening frontier against the 210 saved finer-grid confirmations.
+
+The manuscript reports **six favorable route-flexibility cases among 168 scenarios with departure SOC ≥80%**. But five of the initially favorable infrastructure-level comparisons lose their advantage at q=2 because the fixed-route solution also becomes feasible.
+
+| Measure                                                          | q=5 screening | Available q=2 confirmations    |
+| ---------------------------------------------------------------- | ------------- | ------------------------------ |
+| Unique SOC≥80% scenarios showing a route-flexibility advantage   | 6             | 2 retain a confirmed advantage |
+| Heavy-load Agadir→Casablanca at 80% SOC with northbound chargers | Unserved      | Served for eActros             |
+
+The two remaining favorable scenario combinations are Volvo Marrakech→Agadir at 5.3 t and 80% SOC, and Volvo Rabat→Fès at 10 t and 80% SOC. These are results within the investigated configurations, not generalizable fleet-wide improvements.
+
+The exact issue is visible in the campaign code: `survives_q2` checks whether **multi-route feasibility** remains unchanged, but does not check whether **fixed-route feasibility** or the *advantage of multi-routing* remains unchanged.
+
+References: [Frontier confirmation logic](https://github.com/ayoub-hanif-evrp/E-Track_Location_Routing/blob/main/scripts/run_paper_scientific_results_campaign.py?utm_source=chatgpt.com#L793-L912) and [Saved confirmation results](https://github.com/ayoub-hanif-evrp/E-Track_Location_Routing/blob/main/results/paper_campaign/payload_soc_frontier_q2_confirm.csv?utm_source=chatgpt.com).
+
+**Implication:** The manuscript's claim that the six cases are confirmed at q=2 needs revision. A complete q=2 frontier—and finer checks around disputed boundaries—should precede any claim about the prevalence of route-flexibility benefits.
+
+## **4. The latest GitHub test run fails**
+
+I also checked the actual GitHub Actions execution for commit `adc6287ac48ebe9bd9687bd5bd36a335b462b571`, rather than relying on the existence of test files.
+
+Tests passed
+
+# **280**
+
+Tests failed
+
+# **12**
+
+Tests skipped
+
+# **8**
+
+Two tests were deselected. The CI job completed with a failure on 19 November 2026.
+
+The failures have identifiable causes:
+
+| Failure group           | Evidence                                                                                                                      |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Charging-grid tests     | Three assertions expect shorter charging durations than the current SOC-taper model returns                                   |
+| Missing processed graph | Multiple tests require `data/processed/multiroute/road_nodes.csv`, which is absent from the checkout                          |
+| Missing scripts         | Tests still import `run_final_heavy_vehicle_diagnosis.py` and `run_final_moroccan_robustness.py`, which are no longer present |
+
+Some failures are packaging or stale-test problems rather than demonstrated defects in the physics model. Nevertheless, **a repository whose current committed test suite fails is not yet a reliable reproducibility package for a journal submission**.
+
+[Inspect the failing GitHub Actions run](https://github.com/ayoub-hanif-evrp/E-Track_Location_Routing/actions/runs/44608725343?utm_source=chatgpt.com)
+
+## **5. A more fundamental question: is operational feasibility actually optimized?**
+
+This is probably the most important methodological issue in the repository.
+
+The current framework separates two decisions:
+
+- The routing solver searches for the least-cost energy-feasible itinerary.
+- A subsequent procedure checks whether that itinerary satisfies driving-hour rules, physical replay, and speed constraints, with an attempt to insert additional rest.
+
+The distinction sounds minor, but mathematically it is substantial.
+
+In [`label_setting.py`](https://github.com/ayoub-hanif-evrp/E-Track_Location_Routing/blob/main/src/morocco_etruck/optimization/label_setting.py?utm_source=chatgpt.com#L66-L232), the routing state includes time, battery energy, location, cost, and charging eligibility. It does **not explicitly include the driver's accumulated driving time since the last qualifying break**.
+
+In [`run_final_operational_correction.py`](https://github.com/ayoub-hanif-evrp/E-Track_Location_Routing/blob/main/scripts/run_final_operational_correction.py?utm_source=chatgpt.com#L89-L265), the solver returns an itinerary, then the system performs operational checks and rest adjustment.
+
+### **Why this can invalidate a coverage claim**
+
+Suppose the least-cost energy-feasible route fails the mandatory-break constraint. Another route, perhaps slightly longer or requiring a different charging strategy, might satisfy all constraints.
+
+The current workflow can mark the mission unserved without establishing that **no operationally feasible itinerary exists**.
+
+Therefore, an exhaustive search over charger installations is not automatically an exact solution to the joint *operational* location-routing problem. At most, it finds the best installation set under the routing-and-repair procedure implemented.
+
+A scientifically stronger formulation would optimize:
+
+\\[ \max\_{Y}\sum\_{m\in M} w_m z_m(Y) \\]
+
+where \\(z_m(Y)=1\\) only when the model can find a route satisfying *all* energy, charging, scheduling, driving-hour, and deadline constraints for mission \\(m\\).
+
+Those constraints should be part of the route search or handled by a demonstrably complete feasibility procedure.
+
+The saved results illustrate the sensitivity. Four headline mission evaluations are energy-feasible but operationally unserved because the recorded driving duration exceeds the threshold by roughly **0.1 minute (six seconds)**.
+
+That does not prove those missions are operationally impossible. It shows that the binary result can be sensitive to schedule construction and timing precision.
+
+### **A useful diagnostic experiment**
+
+Take every case classified as energy-feasible but operationally unserved. Rerun its routing problem with break-history state included, or search additional feasible itineraries and charging patterns.
+
+If even one currently unserved mission becomes operationally feasible, the reported coverage and potentially the optimal charging-site selection will need to be recomputed.
+
+The code's existing independent replay infrastructure provides a useful starting point for this.
+
+## **6. The claimed route-flexibility benefit is confounded by charger placement**
+
+At budget B2, the two compared methods do **not** use the same charging stations.
+
+| Method                    | Selected installations                                 |
+| ------------------------- | ------------------------------------------------------ |
+| C — optimized fixed-route | Benguerir Agadir→Casablanca; Bouznika Casablanca→Rabat |
+| E — joint multi-route     | Benguerir Casablanca→Agadir; Bouznika Casablanca→Rabat |
+
+The directional Benguerir charger differs.
+
+Examining [`q2_critical_missions.csv`](https://github.com/ayoub-hanif-evrp/E-Track_Location_Routing/blob/main/results/paper_campaign/q2_critical_missions.csv?utm_source=chatgpt.com) reveals what happens for eActros at B2:
+
+Casa → Marrakech
+
+Gained by E
+
+Casa → Agadir
+
+Gained by E
+
+Agadir → Casa
+
+Lost by E
+
+The net improvement is two gained missions minus one lost mission.
+
+This is scientifically interesting because it illustrates the trade-off between directional infrastructure investments. But it is **not valid to interpret the full one-mission difference as a pure benefit from allowing alternate routes**.
+
+I would separate the mechanism using identical charger portfolios, comparing fixed and multi-route feasibility on each portfolio, then separately comparing optimized charger choices.
+
+There is another important qualification in the greedy comparison. The F method selects among trial combinations using a cache populated by exhaustive enumeration of the nine sites—\\(2^9=512\\) possible subsets. Its decision logic is greedy, but its computational experiment already benefits from exhaustive subset evaluations.
+
+Consequently, the E=F tie is meaningful as an outcome comparison, **not evidence that the greedy algorithm independently achieves the same result at lower computational expense**.
+
+Relevant code: [Enumeration, optimized fixed baseline, and greedy selection](https://github.com/ayoub-hanif-evrp/E-Track_Location_Routing/blob/main/scripts/run_paper_scientific_results_campaign.py?utm_source=chatgpt.com#L310-L552).
+
+## **7. Scientific credibility and external validity**
+
+The repository demonstrates good attention to engineering detail, especially direction-aware site matching, state-dependent energy consumption, continuous replay, and explicit handling of unknown infrastructure properties.
+
+However, the results describe a **research simulation scenario**, not validated real-world electric freight performance.
+
+| Dimension      | What is available                           | Remaining limitation                                                       |
+| -------------- | ------------------------------------------- | -------------------------------------------------------------------------- |
+| Road network   | Real Moroccan OSM geometry                  | Full HGV accessibility not legally or operationally certified              |
+| Terrain        | COP-DEM-based profiles for included ODs     | DEM uncertainty and road-grade calibration remain                          |
+| Vehicles       | Two prospective HDV configurations          | Assumed drag, rolling resistance, efficiencies and load properties         |
+| Refrigeration  | Physics-based approximation                 | No measured refrigerated truck trip validation                             |
+| Charging       | SOC-dependent CCS taper                     | Assumed envelope, not vehicle-specific measured charging curve             |
+| Infrastructure | Nine directional service-area candidates    | No verified operational 350 kW truck charging or grid capacity             |
+| Freight demand | 14 equally weighted OD missions             | No measured flows, departure SOC distribution, or shipment frequencies     |
+| Economics      | Equal normalized CAPEX, proxy routing costs | No actual installation cost, power connection, utilization or tariff model |
+
+The **equal-weight demand assumption is particularly consequential**. A 7.14-percentage-point coverage increase is simply one additional mission among fourteen. If the missions have very different freight volumes or economic value, the benefit could become substantially smaller or larger.
+
+Likewise, the nine-site search may be exact within its restricted set of candidate locations, but the routes use a path union with up to two preselected alternatives. It is not an optimum over all physically possible Moroccan routes and charger locations.
+
+The paper would be stronger if its conclusions were explicitly conditional:
+
+> Under an assumed energy and charging model, for a specified set of Moroccan road alternatives, hypothetical sites and equally weighted missions, the joint strategy serves one additional mission compared with separately optimized fixed-route planning at selected budgets.
+
+That narrower statement is defensible as an interpretation of the committed headline results, subject to correcting the operational-feasibility and numerical-consistency issues.
+
+## **8. How novel is the work compared with existing research?**
+
+There is already substantial research overlap.
+
+In May 2026, The charger location problem with routing and driver working hours for long-haul electric heavy-duty trucks appeared in *Transportation Research Part C*. It explicitly integrates charger location, long-haul routing and driver working-hour requirements.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.sciencedirect.com\&sz=32)
+
+sciencedirect.com
+
+[image](https://www.google.com/s2/favicons?domain=https://researchportal.bath.ac.uk\&sz=32)
+
+researchportal.bath.ac.uk
+
+
+
+Another 2026 *Transportation Research Part C* paper, *Temperature-aware large-scale charging station siting and sizing for long-haul electric trucks*, incorporates thermal energy considerations, charging queues, freight flows and a bilevel siting method.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.sciencedirect.com\&sz=32)
+
+sciencedirect.com
+
+
+
+And a 2025 paper in *International Journal of Refrigeration*, *Thermal and power consumption model of an electrically refrigerated trailer*, reports experimental validation of refrigeration-energy behavior. This highlights the gap between a plausible refrigeration model and a calibrated, experimentally demonstrated one.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://www.sciencedirect.com\&sz=32)
+
+sciencedirect.com
+
+
+
+The strongest potential contribution of E-Track is therefore **not simply combining location, routing, charging and driver rules**. Those elements already exist in the literature.
+
+A stronger novelty argument could focus on the interaction of refrigerated cargo, terrain-resolved energy use, asymmetric motorway charging access, numerical feasibility boundaries, and infrastructure decisions in an under-studied freight geography.
+
+But that argument requires convincing mechanisms, robust results and substantially deeper comparison with previous methods.
+
+## **9. The manuscript and reproducibility package are not publication-ready**
+
+The current [`paper/manuscript.tex`](https://github.com/ayoub-hanif-evrp/E-Track_Location_Routing/blob/main/paper/manuscript.tex?utm_source=chatgpt.com) is very short for a full research article. Its methods and results sections are largely summaries. It lacks a complete mathematical formulation, formal explanation of solution guarantees, comprehensive experimental tables, detailed discussion of the validation protocol, and integrated literature citations.
+
+The accompanying [`references.bib`](https://github.com/ayoub-hanif-evrp/E-Track_Location_Routing/blob/main/paper/references.bib?utm_source=chatgpt.com) still contains `TBD` placeholders. The manuscript also does not currently include a bibliography command.
+
+The reproducibility trail needs attention: the campaign manifest records one Git revision, the headline CSVs record another, and the reviewed main branch has a third revision. Historical results can legitimately come from earlier commits, but a journal release should make the exact code–data–configuration relationships immutable and unambiguous.
+
+There is also a checksum-generation issue: the campaign script hashes files within its results directory before rewriting its own manifest. When an old manifest exists, its stored self-hash can therefore refer to the previous version rather than the newly generated manifest.
+
+Finally, the current CI failures confirm that a fresh checkout does not pass all intended offline tests. These are fixable software-engineering problems, but they are not acceptable in a research artifact presented as independently reproducible.
+
+## **10. What I would require before submission**
+
+The priorities below are ordered by their effect on scientific validity.
+
+1
+
+**Correct the numerical claims.** Reconcile q=5 and q=2 results, explicitly fix the 15-tonne/80%-SOC contradiction, and run finer grids on disputed cases. Produce a confirmation table checking both fixed-route and multi-route outcomes.
+
+2
+
+**Establish operational-feasibility correctness.** Incorporate driving-hour constraints into route search or provide a complete alternative-itinerary feasibility procedure. Demonstrate that failed post-checks do not incorrectly classify missions as infeasible.
+
+3
+
+**Perform controlled ablation studies.** Compare methods using identical charger sets, route sets, energy models and numerical resolutions. Separate the contributions of route flexibility, charger siting, refrigeration, terrain, and driver scheduling.
+
+4
+
+**Validate and quantify model uncertainty.** Use measured or independently documented truck energy-consumption and charging data where possible. Vary weather, aerodynamic resistance, payload, refrigeration demand, SOC reserve and tariffs to identify stable findings.
+
+5
+
+**Strengthen the optimization evidence.** Preserve all enumeration outcomes, certification statuses and solver runtimes. Compare the algorithms on larger instances where exhaustive search becomes expensive, and benchmark against a credible alternative such as MIP, decomposition or a fully independent heuristic implementation.
+
+6
+
+**Repair reproducibility.** Make the GitHub Actions suite pass, remove or update obsolete tests, provide generation instructions for missing data artifacts, pin dependencies, and publish a versioned release tying every table and figure to specific inputs and code.
+
+7
+
+**Write the full scientific paper.** Include the mathematical model, algorithms, validation methodology, case-study design, numerical results, limitations, comparison with closely related work and complete references.
+
+## **11. Overall assessment**
+
+| Review criterion                           | Assessment                       |
+| ------------------------------------------ | -------------------------------- |
+| Research problem relevance                 | Strong                           |
+| Engineering effort and modularity          | Good                             |
+| Numerical result consistency               | **Not yet acceptable**           |
+| Mathematical/algorithmic validation        | Partial                          |
+| Empirical validation                       | Insufficient                     |
+| Strength of improvement over baselines     | Modest and scenario-dependent    |
+| Novelty for Transportation Research Part C | Not yet sufficiently established |
+| Reproducibility of current checkout        | Failing                          |
+| Readiness of manuscript                    | Incomplete                       |
+
+### **Can this work be published?**
+
+**Yes, there is potentially publishable research here.** The Moroccan refrigerated electric-truck case study, coupled energy model, directional infrastructure treatment, and extensive simulation framework can form a worthwhile scientific contribution.
+
+But there are two distinct publication paths.
+
+For an **applied simulation or case-study journal**, the work could become viable after correcting the numerical inconsistencies, repairing operational-feasibility classification, validating the assumptions, and writing a full manuscript with a carefully scoped claim.
+
+For a **high-impact transportation optimization journal**, I would expect substantially more: either a genuinely new optimization methodology with rigorous guarantees and nontrivial computational benchmarks, or unusually compelling empirical evidence demonstrating a transport-planning insight that existing methods would miss.
+
+**My recommendation is not to submit the current version.** First resolve the reproducible contradictions, especially the q=2 results and operational-feasibility methodology. Those affect the paper's scientific conclusions directly.
+
+### **Scope of this audit**
+
+I inspected the connected GitHub repository's source code, configurations, committed experiment tables, manuscript, test workflow and actual CI logs, and cross-checked numerical conclusions against their underlying CSV records. I also checked closely related published research.
+
+I did **not** independently execute the entire simulation campaign or validate its physics against measured truck data. Thus this is a detailed source-and-results audit, not an independent experimental replication.
+
+The evidence is sufficient to identify several concrete blockers to publication readiness, but not to certify the physical accuracy of every reported route.
+
+**Bottom line:** This is a promising PhD research codebase with meaningful work invested, but the current reported results and paper need **major scientific revisions**, not merely editorial polishing, before they should be treated as publication-ready.

@@ -1,0 +1,9 @@
+vehicle_key,od_id,payload_kg,soc_frac,infra_label,multi_q5,multi_q2,fixed_q5,fixed_q2,flex_q5,flex_q2,flip_multi,flip_fixed,flip_flex,multi_min_soc,near_reserve
+eactros_600,agadir_casa,15000.0,0.8,opt1_benguerir_ac,False,True,False,True,False,False,True,True,False,0.1070226974311059,True
+eactros_600,agadir_casa,15000.0,0.8,opt2_benguerir_pair,False,True,False,True,False,False,True,True,False,0.1070226974311059,True
+eactros_600,agadir_casa,15000.0,0.8,all_ac,False,True,False,True,False,False,True,True,False,0.1070226974311059,True
+volvo_475,casa_tangier,15000.0,1.0,opt1_larache,True,True,False,True,True,False,False,True,True,0.1380082228941953,False
+volvo_475,tangier_casa,10000.0,0.5,opt1_assilah,True,True,False,True,True,False,False,True,True,0.149001869437959,False
+volvo_475,tangier_casa,10000.0,0.8,opt1_assilah,True,True,False,True,True,False,False,True,True,0.1466531892580092,False
+volvo_475,tangier_casa,10000.0,1.0,opt1_assilah,True,True,False,True,True,False,False,True,True,0.1466921150026139,False
+volvo_475,tangier_casa,15000.0,1.0,opt1_bouznika_rc,True,True,False,True,True,False,False,True,True,0.1495862008553723,False

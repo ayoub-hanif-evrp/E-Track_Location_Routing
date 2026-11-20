@@ -1,0 +1,98 @@
+{
+  "contribution_statement": "Moroccan refrigerated eHDT + DEM + directional ADM + operational joint siting under HOS-in-search \u2014 not a new generic LRP.",
+  "files": {
+    "amskroud_ca_value.csv": {
+      "bytes": 3593,
+      "sha256": "ee84c3e3f02436b136a67f5369274c7033d2a5720b215f6cfef1946c82f607ba"
+    },
+    "blind_greedy_vs_enum.csv": {
+      "bytes": 2114,
+      "sha256": "85c50b0fdd7398889d6f9c993aa950c73bbb52992d2b7526830ad5dfa503caf1"
+    },
+    "campaign_manifest.json": {
+      "bytes": 4739,
+      "sha256": "50da0f1b6d067e0ead442bbdf0a72d79783a148b632d05a5b941b108f2f2292f"
+    },
+    "hos_in_search_smoke.json": {
+      "bytes": 314,
+      "sha256": "63b8a73a1f51990d3288956a598f625c04091a2fa28ba2861a2f1d57a5a1af0d"
+    },
+    "hos_mini_panel_gate.csv": {
+      "bytes": 525,
+      "sha256": "38062a491ed54a40c4cdb6af4d439017f935d60cf08d30060d9f52b5b0f91e90"
+    },
+    "od_dem_site_audit.csv": {
+      "bytes": 9961,
+      "sha256": "caa7fea0c7e95860a7f2a8e9460538d4a975cbab5f1d8dbc5088abed3af8bc89"
+    },
+    "operational_efficiency.csv": {
+      "bytes": 14323,
+      "sha256": "c65aade9470cfe3a7c06299adb33e31309982f8845bf81b33d1000cef25637d6"
+    },
+    "payload_soc_frontier.csv": {
+      "bytes": 164149,
+      "sha256": "81c08cf3517cdec06b68355e0dfa833067765d41393efab58f140b2c26d5b118"
+    },
+    "payload_soc_frontier_q2_confirm.csv": {
+      "bytes": 35593,
+      "sha256": "eca4041146f88d7585e622b328bebebed7511fb6021bed834f631c31e53af66c"
+    },
+    "placement_flexibility_ablation.csv": {
+      "bytes": 5272,
+      "sha256": "5df1c827222658d2e5bafe09e373d7159eb5a693fe8f4a6fc874dbc2eb62fb29"
+    },
+    "q1_boundary_refinement.csv": {
+      "bytes": 2257,
+      "sha256": "f1b0b29bb9571c8dbae39b9fd0811c000b3cf2fe49f4b9174887f485e4b62a9e"
+    },
+    "q2_critical_missions.csv": {
+      "bytes": 1574512,
+      "sha256": "0b59455c7a8db6668c531acce14d551fd3f8682982a17c678f5c128139fa6d92"
+    },
+    "q2_critical_missions_hos.csv": {
+      "bytes": 1500489,
+      "sha256": "eb3e23181bd95d7bbdee99b3e10a07f83f9d5af0358283744087e0bd8983c73a"
+    },
+    "q2_critical_portfolio.csv": {
+      "bytes": 2585,
+      "sha256": "d27ce492e1e34b0206b6591cb3a24c0d741bb68c9156b30c5d68e1212c1454f6"
+    },
+    "q2_critical_portfolio_hos.csv": {
+      "bytes": 2585,
+      "sha256": "d27ce492e1e34b0206b6591cb3a24c0d741bb68c9156b30c5d68e1212c1454f6"
+    },
+    "q_resolution_flip_inventory.csv": {
+      "bytes": 1153,
+      "sha256": "b97f4e9a2cd4fc22b0bb877daa9f271d556b683161e995acc1a5fe8d3584c675"
+    },
+    "robustness_matrix.csv": {
+      "bytes": 17369,
+      "sha256": "212a2c81794cf55301ad2d95e29ae926f0bfd7f4e273c4882e03d218b4139e84"
+    },
+    "scenario_registry_frozen.csv": {
+      "bytes": 92393,
+      "sha256": "773d8a5a2d8efbbe887cd132721a727d74565a3129256c0e538cefc29cf51a01"
+    },
+    "solver_certification_table.csv": {
+      "bytes": 4043,
+      "sha256": "2e36ef59e61518a2ae2e02d8780dbd29394c29958cbb9b7055f79c108c1f1d7d"
+    },
+    "solver_larger_instance_table.csv": {
+      "bytes": 389,
+      "sha256": "ea8cd2676bc1a9368213047e04e338ddc00bfb8731f56f6078a84ff9e1757822"
+    },
+    "uncertainty_stability_summary.csv": {
+      "bytes": 744,
+      "sha256": "fd0cba9f2e2405d1a5fde18903608b1175479668c0f893ab39d420013229668f"
+    }
+  },
+  "generated_at": "2026-11-20T07:49:54",
+  "git_sha": "adc6287ac48ebe9bd9687bd5bd36a335b462b571",
+  "pipeline": "hos_in_search_stage_c",
+  "release_name": "stage-c-hos-adc6287ac48e",
+  "reproduce": [
+    "pip install -e \".[dev]\"",
+    "pytest -q -m \"not integration\"",
+    "python scripts/run_stage_c_hos_national.py --phase all_fast"
+  ]
+}

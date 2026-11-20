@@ -1,6 +1,6 @@
 # PAPER_SCIENTIFIC_RESULTS_CAMPAIGN
 
-Git SHA: `04277605829b24fb18d7307d90683740c6c70c44`
+Git SHA: `adc6287ac48ebe9bd9687bd5bd36a335b462b571`
 
 Primary metric: **operational coverage** (energy + continuous replay + schedule/HOS).
 Chargers are hypothetical. Scenario counts are not Moroccan traffic samples.
@@ -28,21 +28,17 @@ Chargers are hypothetical. Scenario counts are not Moroccan traffic samples.
 | budget | C_ops | E_ops | F_ops | E−C | E=F | E_sites |
 |---|---:|---:|---:|---:|---|---|
 | B0 | 0.64 | 0.64 | 0.64 | 0.00 | True | nan |
-| B1 | 0.71 | 0.79 | 0.79 | 0.07 | True | y_benguerir_ca |
-| B2 | 0.79 | 0.86 | 0.86 | 0.07 | True | y_benguerir_ca,y_bouznika_cr |
-| B3 | 0.86 | 0.93 | 0.93 | 0.07 | True | y_benguerir_ac,y_benguerir_ca,y_bouznika_cr |
-| Ball | 0.86 | 0.93 | 0.93 | 0.07 | True | y_benguerir_ac,y_benguerir_ca,y_bouznika_cr |
-- B2 denominator n_missions=14: E serves 12/14, C serves 11/14.
+| B2 | 0.71 | 0.71 | 0.71 | 0.00 | True | y_benguerir_ca,y_bouznika_cr |
+| Ball | 0.71 | 0.79 | 0.79 | 0.07 | True | y_benguerir_ac,y_benguerir_ca,y_bouznika_cr |
+- B2 denominator n_missions=14: E serves 10/14, C serves 10/14.
 
 ### volvo_475
 | budget | C_ops | E_ops | F_ops | E−C | E=F | E_sites |
 |---|---:|---:|---:|---:|---|---|
 | B0 | 0.50 | 0.50 | 0.50 | 0.00 | True | nan |
-| B1 | 0.57 | 0.57 | 0.57 | 0.00 | True | y_larache_rt |
-| B2 | 0.64 | 0.64 | 0.64 | 0.00 | True | y_larache_rt,y_settat_ca |
-| B3 | 0.71 | 0.71 | 0.71 | 0.00 | True | y_bouznika_cr,y_larache_rt,y_settat_ca |
-| Ball | 0.79 | 0.86 | 0.86 | 0.07 | True | y_benguerir_ca,y_bouznika_cr,y_bouznika_rc,y_larache_rt,y_settat_ca |
-- B2 denominator n_missions=14: E serves 9/14, C serves 9/14.
+| B2 | 0.57 | 0.64 | 0.64 | 0.07 | True | y_larache_rt,y_settat_ca |
+| Ball | 0.64 | 0.64 | 0.57 | 0.00 | False | y_benguerir_ca,y_bouznika_cr,y_bouznika_rc,y_larache_rt,y_settat_ca |
+- B2 denominator n_missions=14: E serves 9/14, C serves 8/14.
 
 ## 3. Payload × SOC frontier (does it hold under realistic dispatch?)
 
@@ -301,7 +297,8 @@ Chargers are hypothetical. Scenario counts are not Moroccan traffic samples.
 | volvo_475 | tangier_rabat | 15.0 | 0.8 | True | True | False |
 | volvo_475 | tangier_rabat | 15.0 | 1.0 | True | True | False |
 
-- Flexibility ops-gains at SOC≥80%: **6** cells (denominator 168 veh×od×payload×soc summaries).
+- Flexibility ops-gains at SOC≥80% (q=5 screen): **6** cells (denominator 168 veh×od×payload×soc summaries). Retained flex advantage at q=2 (`survives_q2_flex` / flex True): **2** unique scenarios (not 6). q-resolution flips logged: **8** rows.
+- Agadir→Casablanca 15 t / SOC 0.8 is **discretization-sensitive**: unserved at q=5 ladders but eActros served at q=2 with Benguerir AC (min SOC≈0.107). Do not treat SOC=1.0 as a categorical physical requirement pending HOS-in-search re-run.
 
 ## 4. Infrastructure required / Amskroud CA value
 
@@ -317,8 +314,8 @@ Chargers are hypothetical. Scenario counts are not Moroccan traffic samples.
 
 ## 5. Charging / rest / time credibility
 
-- Matched-time comparisons (both C and E ops-feasible): **95**
-- Serviceability-only gains (E yes, C no): **9**
+- Matched-time comparisons (both C and E ops-feasible): **48**
+- Serviceability-only gains (E yes, C no): **2**
 - Matched Δtrip_min median=0.00 (positive ⇒ E slower).
 
 ## 6–7. Generalization & strength vs prior 3-mission pilot
