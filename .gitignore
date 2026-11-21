@@ -35,6 +35,11 @@ data/processed/multiroute/pilot_network.graphml
 data/processed/multiroute/pilot_network.geojson
 data/processed/multiroute/road_nodes.csv
 data/processed/multiroute/road_edges.csv
+# Packed CI graph artifact (host as release asset; see pack_multiroute_graph_artifact.py)
+artifacts/multiroute_graph.zip
+results/paper_campaign/_enum_cache_*.pkl
+results/paper_campaign/_enum_progress_*.json
+stage_c_headline_enum.log
 results/baseline_routes.geojson
 reports/pilot_corridor_report.html
 

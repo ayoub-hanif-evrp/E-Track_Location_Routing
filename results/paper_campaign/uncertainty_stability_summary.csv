@@ -1,7 +1,9 @@
 claim,stable_under_current_pipeline,stable_under_hos_in_search,notes
-eActros_B2_E_minus_C_plus1,True,False,Pre-HOS +1 dissolves under HOS equal-timeout retry: E=F=C=0.71 at B2
-AC_15t_soc08_requires_soc10,False,False,q5 unserved; q2 served; q1 multi=True for opt1_benguerir_ac (q1_boundary_refinement.csv)
-flex_gains_soc80_six_cells,False,n/a_frontier_not_rerun,survives_q2_flex retains 2 of 6 at SOC>=0.8
-F_matches_E_at_lower_compute,False,False,volvo Ball E=0.64 vs F=0.57 under HOS; F is greedy-over-enum scores
-hos_audit_only_no_post_pad,False,True,"hos_mini_panel_gate.csv: all ops-true audit-only, zero pads"
-LIMIT_REACHED_as_unserved,False,False,Unresolved; several convert to OPTIMAL at 600s — do not narrate as physical limits
+eActros_B1_E_minus_C_plus1,True,True,certified in q2_critical_portfolio.csv hos_in_search_full_enum
+eActros_B2_E_equals_C,True,True,no multi-route gain at B2 after HOS enum
+volvo_no_E_minus_C,True,True,B1-Ball E=C=F=0.571
+blind_greedy_matches_E,False,False,B2 blind=0.714 vs E=0.786; no compute-advantage claim
+hos_audit_only_no_post_pad,True,True,hos_mini_panel_gate.csv all ops-true audit-only
+AC_15t_soc08_q_sensitive,True,True,see q1_boundary_refinement.csv with solver status
+full_national_frontier_hos,False,False,overscoped; not submission-critical; no frontier CSV retained
+robustness_matrix_hos_rescreen,False,False,legacy file deleted; do not narrate HOS robustness grid

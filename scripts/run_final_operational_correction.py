@@ -96,29 +96,68 @@ def evaluate_mission_operational(
     fridge_path: Path,
     max_seconds: float,
     max_expansions: int,
+    include_energy_only: bool = True,
 ) -> dict[str, Any]:
-    """Full operational evaluation with chronological HOS adjustment + re-replay."""
+    """Operational evaluation: HOS-in-search ops solve (+ optional energy-only baseline).
+
+    Set ``include_energy_only=False`` for exhaustive enum cache scoring (ops-only);
+    headline B/C/D/E/F rows should keep the default dual solve.
+    """
     key_of = {s.id: s.station_key for s in cfg.sites}
     active_keys = {key_of[i] for i in installed if i in key_of}
     present = active_keys & set(prep.template.stations)
+    base_name = f"{prep.mission.id}|{','.join(sorted(installed)) or 'none'}"
+
+    t0 = time.perf_counter()
+    energy_only = False
+    energy_status = "SKIPPED"
+    if include_energy_only:
+        # --- Energy-only baseline (hos_in_search=False) ---
+        inst_e = clone_physics_instance_for_subset(
+            prep.template,
+            active_stations=present,
+            allowed_arc_ids=mask,
+            name=f"energy|{base_name}",
+        )
+        inst_e.hos_in_search = False
+        res_e = solve_mrls(inst_e, max_seconds=max_seconds, max_expansions=max_expansions)
+        energy_status = res_e.status.value
+        if res_e.status.value == "OPTIMAL" and res_e.actions:
+            disc_e = replay_solution(inst_e, res_e.actions, expected_cost=res_e.objective)
+            crep_e, _ex_e = continuous_replay_multiroute(
+                prep.ctx,
+                inst_e,
+                res_e.actions,
+                discrete_cost=res_e.objective,
+                discrete_t=res_e.final_label.t if res_e.final_label else None,
+                discrete_E_truck=res_e.final_label.E_truck if res_e.final_label else None,
+                emit_trace=False,
+            )
+            audit_e = audit_solved_actions_exact(
+                inst_e,
+                res_e.actions,
+                prep_ctx=prep.ctx,
+                simulate_drive_fn=simulate_drive_from_soc,
+            )
+            energy_only = bool(disc_e.ok and crep_e.ok and audit_e.ok)
+
+    # --- HOS-in-search operational solve ---
     inst = clone_physics_instance_for_subset(
         prep.template,
         active_stations=present,
         allowed_arc_ids=mask,
-        name=f"ops|{prep.mission.id}|{','.join(sorted(installed)) or 'none'}",
+        name=f"ops|{base_name}",
     )
-    # ENABLE HOS-IN-SEARCH (Stage B): continuous-driving resource inside MRLS.
-    if hasattr(inst, "hos_in_search"):
-        inst.hos_in_search = True
-        ts = max(1, int(getattr(inst, "time_step_min", 5) or 5))
-        need = int(round(45.0 / ts))
-        if int(getattr(inst, "wait_max_steps", 0) or 0) < need:
-            inst.wait_max_steps = need
-        if getattr(inst, "hos_rest_nodes", None) is None:
-            inst.hos_rest_nodes = frozenset(inst.stations.keys()) | frozenset(
-                inst.active_stations
-            )
-    t0 = time.perf_counter()
+    inst.hos_in_search = True
+    ts = max(1, int(getattr(inst, "time_step_min", 5) or 5))
+    need = int(round(45.0 / ts))
+    if int(getattr(inst, "wait_max_steps", 0) or 0) < need:
+        inst.wait_max_steps = need
+    if getattr(inst, "hos_rest_nodes", None) is None:
+        inst.hos_rest_nodes = frozenset(inst.stations.keys()) | frozenset(
+            inst.active_stations
+        )
+    t1 = time.perf_counter()
     res = solve_mrls(inst, max_seconds=max_seconds, max_expansions=max_expansions)
     row: dict[str, Any] = {
         "mission_id": prep.mission.id,
@@ -126,8 +165,11 @@ def evaluate_mission_operational(
         "weight": float(prep.mission.weight),
         "status": res.status.value,
         "objective": res.objective,
-        "solve_sec": time.perf_counter() - t0,
-        "energy_feasible": False,
+        "solve_sec": (time.perf_counter() - t0),
+        "hos_solve_sec": (time.perf_counter() - t1),
+        "energy_status": energy_status,
+        "energy_feasible_energy_only": bool(energy_only),
+        "energy_feasible": bool(energy_only),
         "discrete_replay_valid": False,
         "physical_replay_valid": False,
         "audit_ok": False,
@@ -137,6 +179,8 @@ def evaluate_mission_operational(
         "hos_in_search": True,
         "hos_search_audit_only": False,
         "hos_ok": False,
+        "daily_driving_ok": False,
+        "daily_driving_min": None,
         "operationally_served": False,
         "pad_location": None,
         "pad_duration_min": 0.0,
@@ -173,9 +217,6 @@ def evaluate_mission_operational(
         simulate_drive_fn=simulate_drive_from_soc,
     )
     row["audit_ok"] = bool(audit.ok)
-    row["energy_feasible"] = bool(
-        disc.ok and crep.ok and audit.ok and res.status.value == "OPTIMAL"
-    )
 
     actions_use = list(res.actions)
     extras_use = extras
@@ -191,7 +232,6 @@ def evaluate_mission_operational(
     except Exception:  # noqa: BLE001
         pass
 
-    # Topology-verified on-graph ADM/service nodes (charging optional).
     verified_rest = set(getattr(prep.template, "stations", {}) or {})
     hos = propose_chronological_hos_plan(
         extras.action_trace,
@@ -202,6 +242,8 @@ def evaluate_mission_operational(
         verified_rest_nodes=verified_rest,
     )
     row["hos_ok"] = bool(hos.ok)
+    row["daily_driving_ok"] = bool(getattr(hos, "daily_driving_ok", False))
+    row["daily_driving_min"] = getattr(hos, "daily_driving_min", None)
     row["pad_location"] = hos.pad_location
     row["pad_duration_min"] = hos.pad_duration_min
     row["pad_aux_kwh"] = hos.aux_energy_kwh
@@ -209,12 +251,13 @@ def evaluate_mission_operational(
     row["hos_notes"] = hos.notes
     row["hos_independent_rest"] = bool(getattr(hos, "independent_rest", False))
 
-    # HOS-in-search: if the discrete itinerary already validates, treat Stage-2 as audit-only.
-    if bool(getattr(inst, "hos_in_search", False)) and sched_raw.ok:
+    # Audit-only only when continuous schedule AND daily driving both pass.
+    if sched_raw.ok and bool(getattr(hos, "daily_driving_ok", False)):
         row["schedule_valid"] = True
         row["hos_search_audit_only"] = True
         row["hos_notes"] = (hos.notes or "") + ";audit_only_no_post_pad"
     elif hos.needed and hos.ok and hos.pad_location and hos.pad_duration_min > 1e-9:
+        # Legacy pad path kept for diagnostics only; not used to certify ops under HOS-in-search.
         actions_adj = inject_wait_into_solver_actions(
             res.actions,
             station_node=str(hos.pad_location),
@@ -231,24 +274,34 @@ def evaluate_mission_operational(
             emit_trace=True,
         )
         sched2 = validate_schedule_from_replay_trace(extras2.action_trace)
-        if crep2.ok and sched2.ok:
+        hos2 = propose_chronological_hos_plan(
+            extras2.action_trace,
+            P_aux_w=float(getattr(vehicle, "P_aux_w", 2500.0) or 2500.0),
+            T_amb_c=mid_t,
+            fridge_params=fridge,
+            refrigeration_on=True,
+            verified_rest_nodes=verified_rest,
+        )
+        if crep2.ok and sched2.ok and bool(getattr(hos2, "daily_driving_ok", False)):
             row["hos_adjusted"] = True
             actions_use = actions_adj
             extras_use = extras2
             crep_use = crep2
             row["schedule_valid"] = True
             row["physical_replay_valid"] = True
+            row["daily_driving_ok"] = True
+            row["daily_driving_min"] = hos2.daily_driving_min
         else:
             row["schedule_valid"] = False
             row["hos_notes"] = (
-                hos.notes
+                (hos.notes or "")
                 + f";re_replay_ok={crep2.ok};re_sched_ok={sched2.ok};"
-                f"re_reason={crep2.reason}"
+                f"daily_ok={getattr(hos2, 'daily_driving_ok', False)}"
             )
-    elif sched_raw.ok:
-        row["schedule_valid"] = True
     else:
-        row["schedule_valid"] = bool(hos.ok and sched_raw.ok)
+        row["schedule_valid"] = False
+        if sched_raw.ok and not bool(getattr(hos, "daily_driving_ok", False)):
+            row["hos_notes"] = (hos.notes or "") + ";daily_driving_failed_audit"
 
     if extras_use is not None:
         row["min_soc"] = extras_use.min_soc
@@ -259,7 +312,6 @@ def evaluate_mission_operational(
         row["wait_min_phys"] = extras_use.wait_duration_s / 60.0
         row["n_trace_actions"] = len(extras_use.action_trace)
         row["action_trace_json"] = json.dumps(extras_use.action_trace)
-        # Microsegment speed screen: reject if any DRIVE arc mean < 40 km/h under policy
         bad_speed = False
         for a in extras_use.action_trace:
             if a.get("action_type") != "DRIVE":
@@ -273,13 +325,17 @@ def evaluate_mission_operational(
     else:
         row["speed_policy_ok"] = False
 
+    # Ops = HOS itinerary physically valid + continuous/daily schedule; no post-hoc pad.
+    # energy_feasible is the independent energy-only baseline (not tied to ops).
     row["operationally_served"] = bool(
-        row["energy_feasible"]
-        and row["schedule_valid"]
+        row["schedule_valid"]
         and row.get("speed_policy_ok", False)
         and crep_use.ok
+        and row["discrete_replay_valid"]
+        and row["audit_ok"]
+        and bool(row.get("daily_driving_ok"))
+        and not bool(row.get("hos_adjusted"))
     )
-    # Keep energy_feasible independent of schedule
     return row
 
 
@@ -304,9 +360,15 @@ def evaluate_subset(
     budget_name: str,
     vehicle,
     fridge_path: Path,
+    include_energy_only: bool = True,
+    max_seconds: float | None = None,
+    max_expansions: int | None = None,
 ) -> dict[str, Any]:
     mission_rows = []
     w_ops = w_energy = w_tot = 0.0
+    n_limit = 0
+    sec = float(max_seconds) if max_seconds is not None else float(cfg.solver_max_seconds)
+    exp = int(max_expansions) if max_expansions is not None else int(cfg.solver_max_expansions)
     for m in context["missions"]:
         prep = context["prepared"][m.id]
         w_tot += float(m.weight)
@@ -318,19 +380,22 @@ def evaluate_subset(
             mask=mask,
             vehicle=vehicle,
             fridge_path=fridge_path,
-            max_seconds=cfg.solver_max_seconds,
-            max_expansions=cfg.solver_max_expansions,
+            max_seconds=sec,
+            max_expansions=exp,
+            include_energy_only=include_energy_only,
         )
         mission_rows.append(mr)
-        if mr.get("energy_feasible"):
+        if mr.get("energy_feasible_energy_only") or mr.get("energy_feasible"):
             w_energy += float(m.weight)
         if mr.get("operationally_served"):
             w_ops += float(m.weight)
+        if str(mr.get("status") or "").upper() == "LIMIT_REACHED":
+            n_limit += 1
         print(
-            f"  {method_id}|{budget_name}|{m.od_id}: energy={mr.get('energy_feasible')} "
-            f"sched={mr.get('schedule_valid')} ops={mr.get('operationally_served')} "
-            f"hos_adj={mr.get('hos_adjusted')} pad={mr.get('pad_location')}/"
-            f"{mr.get('pad_duration_min')}",
+            f"  {method_id}|{budget_name}|{m.od_id}: "
+            f"energy_only={mr.get('energy_feasible_energy_only')} "
+            f"ops={mr.get('operationally_served')} status={mr.get('status')} "
+            f"daily={mr.get('daily_driving_ok')} audit={mr.get('hos_search_audit_only')}",
             flush=True,
         )
 
@@ -347,11 +412,26 @@ def evaluate_subset(
         "n_sites": len(installed),
         "energy_coverage": w_energy / w_tot if w_tot else 0.0,
         "operational_coverage": w_ops / w_tot if w_tot else 0.0,
-        "n_energy_served": sum(1 for r in mission_rows if r.get("energy_feasible")),
+        "n_energy_served": sum(
+            1
+            for r in mission_rows
+            if r.get("energy_feasible_energy_only") or r.get("energy_feasible")
+        ),
         "n_operationally_served": sum(
             1 for r in mission_rows if r.get("operationally_served")
         ),
+        "n_limit_reached": n_limit,
         "n_missions": len(mission_rows),
+        # Gate 2: unresolved LIMIT cells are not treated as infeasible in the
+        # resolved-only rate (certified among non-LIMIT missions).
+        "certified_ops_among_resolved": (
+            (
+                sum(1 for r in mission_rows if r.get("operationally_served"))
+                / max(1, len(mission_rows) - n_limit)
+            )
+            if len(mission_rows) > n_limit
+            else None
+        ),
         "secondary_cost_proxy": secondary,
         "missions_json": json.dumps(
             [{k: v for k, v in r.items() if k != "action_trace_json"} for r in mission_rows]

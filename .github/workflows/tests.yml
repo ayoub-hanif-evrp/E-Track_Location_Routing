@@ -14,5 +14,29 @@ jobs:
           python-version: "3.12"
       - name: Install package
         run: pip install -e ".[dev]"
+      - name: Restore multiroute graph artifact (optional)
+        env:
+          GRAPH_ARTIFACT_URL: ${{ secrets.GRAPH_ARTIFACT_URL }}
+        run: |
+          set -e
+          DEST=data/processed/multiroute
+          mkdir -p "$DEST"
+          if [ -f "$DEST/nodes.csv" ] && [ -f "$DEST/edges.csv" ]; then
+            echo "Graph CSVs already present in checkout"
+            exit 0
+          fi
+          if [ -z "${GRAPH_ARTIFACT_URL}" ]; then
+            echo "GRAPH_ARTIFACT_URL secret unset — graph-dependent tests will skip"
+            exit 0
+          fi
+          curl -fsSL "$GRAPH_ARTIFACT_URL" -o /tmp/multiroute_graph.zip
+          python - <<'PY'
+          import zipfile
+          from pathlib import Path
+          dest = Path("data/processed/multiroute")
+          with zipfile.ZipFile("/tmp/multiroute_graph.zip") as zf:
+              zf.extractall(dest)
+          print("extracted", sorted(p.name for p in dest.glob("*.csv")))
+          PY
       - name: Run offline unit tests
         run: pytest -q -m "not integration"

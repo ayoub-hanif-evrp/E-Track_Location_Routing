@@ -6,31 +6,24 @@
 
 ```bash
 pip install -e ".[dev]"
+# Optional: restore ~95MB graph CSVs for nesting/physics tests (CI uses GRAPH_ARTIFACT_URL secret)
+python scripts/pack_multiroute_graph_artifact.py   # local pack → artifacts/multiroute_graph.zip
 pytest -q -m "not integration"
-python scripts/run_stage_c_hos_national.py --phase all_fast
-```
-
-`all_fast` archives legacy CSVs, re-scores frozen A–F site sets under HOS-in-search, rebuilds identical-site ablation / q=1 boundary / blind-greedy / certification / manifest, then refreshes `reports/PAPER_SCIENTIFIC_RESULTS_CAMPAIGN.md`.
-
-Optional Stage-A-only repair (no physics re-solve):
-
-```bash
-python scripts/_stage_a_rebuild_confirm_flags.py
-python scripts/run_paper_scientific_results_campaign.py --phase ablation
-python scripts/run_paper_scientific_results_campaign.py --phase report
-```
-
-Full exhaustive HOS enum + frontier (multi-day; requires `data/processed/multiroute/` graph CSVs):
-
-```bash
-python scripts/run_stage_c_hos_national.py --phase all
+python scripts/run_stage_c_hos_national.py --phase headline_enum   # Gate 2; multi-hour/day
+python scripts/run_stage_c_hos_national.py --phase post_portfolio  # ablation, q1, blind, cert, manifest
 python scripts/run_paper_scientific_results_campaign.py --phase frontier --confirm-mode decisive
 python scripts/run_paper_scientific_results_campaign.py --phase robustness
 python scripts/run_paper_scientific_results_campaign.py --phase figures
 python scripts/run_paper_scientific_results_campaign.py --phase report
+python scripts/run_stage_d_release_package.py
 ```
 
-HOS-in-search is enabled inside `evaluate_mission_operational` (Stage B). Authoritative numerics for TR-C are the Stage C CSVs under `results/paper_campaign/` with matching `campaign_manifest.json`.
+`headline_enum` runs full HOS-aware A–F exhaustive enum (pipeline `hos_in_search_full_enum`) with uniform 600~s / 500k limits.
+`post_portfolio` rebuilds matched ablation, LIMIT retry, q=1 boundary, blind greedy, larger-instance cert, stability, mini panel, and `campaign_manifest.json`.
+`all_fast` is the frozen-site rescore path (legacy); prefer `headline_enum` + `post_portfolio` for submission tables.
+
+Authoritative numerics: `results/paper_campaign/` + `campaign_manifest.json` + `paper/claims_to_results_crosswalk.csv`.
+Graph CSVs (`nodes.csv`/`edges.csv`) are not always in git (push size); pack with `pack_multiroute_graph_artifact.py` and host as a release asset for CI.
 
 ---
 **Provisional title:** Joint Charging Infrastructure Placement and Energy-Feasible Routing for Electric Refrigerated Heavy-Duty Trucks on Moroccan Motorway Corridors

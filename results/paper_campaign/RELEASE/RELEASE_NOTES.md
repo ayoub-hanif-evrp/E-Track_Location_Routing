@@ -1,6 +1,6 @@
-# Stage C/D release `stage-c-hos-adc6287ac48e`
+# Stage C/D release `stage-c-hos-6ac846a43425`
 
-- Git SHA: `adc6287ac48ebe9bd9687bd5bd36a335b462b571`
+- Git SHA: `6ac846a434255c0c327488f09f983ae760a81535`
 - Pipeline: HOS-in-search Stage C artifacts under `results/paper_campaign/`
 - Claims crosswalk: `paper/claims_to_results_crosswalk.csv`
 - Manuscript: `paper/manuscript.tex` (claims ⊆ Stage C tables)

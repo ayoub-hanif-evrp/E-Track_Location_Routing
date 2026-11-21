@@ -197,12 +197,25 @@ def solve_mrls(
                     labels_by_id[nxt.label_id] = nxt
                     heappush(heap, (nxt.cost, nxt.t, nxt.label_id))
 
-        # WAIT (HOS-in-search: only a qualifying break duration)
+        # WAIT (HOS-in-search: qualifying break, or remainder after short CHARGE)
         if getattr(inst, "hos_in_search", False):
-            from morocco_etruck.optimization.resource_transitions import _hos_limits
+            from morocco_etruck.optimization.resource_transitions import (
+                _hos_limits,
+                _hos_rest_nodes,
+            )
 
-            _max_d, min_break = _hos_limits(inst)
-            wait_ks = [min_break] if 1 <= min_break <= int(inst.wait_max_steps) else []
+            _max_d, min_break, _max_daily = _hos_limits(inst)
+            wait_ks: list[int] = []
+            prev = str((lab.action or {}).get("type") or "")
+            accum0 = (
+                int(lab.stationary_accum_steps)
+                if prev in ("CHARGE", "WAIT") and lab.node in _hos_rest_nodes(inst)
+                else 0
+            )
+            need = max(0, int(min_break) - accum0)
+            for k in (need, min_break):
+                if 1 <= k <= int(inst.wait_max_steps) and k not in wait_ks:
+                    wait_ks.append(k)
         else:
             wait_ks = list(range(1, inst.wait_max_steps + 1))
         for k in wait_ks:

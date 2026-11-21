@@ -19,9 +19,14 @@ def dominates(a: Label, b: Label) -> bool:
     # Remaining charge opportunity is a resource (True better than False)
     charge_ok = a.can_charge or (not b.can_charge)
     charge_strict = a.can_charge and (not b.can_charge)
-    # Less accumulated continuous driving is weakly better
+    # Less accumulated continuous / daily driving is weakly better
     hos_ok = a.drive_since_break_steps <= b.drive_since_break_steps
     hos_strict = a.drive_since_break_steps < b.drive_since_break_steps
+    daily_ok = a.daily_drive_steps <= b.daily_drive_steps
+    daily_strict = a.daily_drive_steps < b.daily_drive_steps
+    # More stationary accumulation toward a break is weakly better (closer to reset)
+    stat_ok = a.stationary_accum_steps >= b.stationary_accum_steps
+    stat_strict = a.stationary_accum_steps > b.stationary_accum_steps
     if a.E_trailer is None and b.E_trailer is None:
         trailer_ok = True
         trailer_strict = False
@@ -30,9 +35,17 @@ def dominates(a: Label, b: Label) -> bool:
         trailer_strict = a.E_trailer > b.E_trailer
     else:
         return False
-    if not (cost_ok and truck_ok and trailer_ok and charge_ok and hos_ok):
+    if not (cost_ok and truck_ok and trailer_ok and charge_ok and hos_ok and daily_ok and stat_ok):
         return False
-    strict = (a.cost < b.cost) or (a.E_truck > b.E_truck) or trailer_strict or charge_strict or hos_strict
+    strict = (
+        (a.cost < b.cost)
+        or (a.E_truck > b.E_truck)
+        or trailer_strict
+        or charge_strict
+        or hos_strict
+        or daily_strict
+        or stat_strict
+    )
     return strict
 
 
@@ -60,6 +73,8 @@ class DominanceStore:
                     and existing.cost == lab.cost
                     and existing.can_charge == lab.can_charge
                     and existing.drive_since_break_steps == lab.drive_since_break_steps
+                    and existing.daily_drive_steps == lab.daily_drive_steps
+                    and existing.stationary_accum_steps == lab.stationary_accum_steps
                 ):
                     self.dominated_count += 1
                     return False

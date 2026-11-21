@@ -1,80 +1,67 @@
 {
+  "contribution_statement": "Moroccan refrigerated eHDT + DEM + directional ADM + operational joint siting under HOS-in-search \u2014 not a new generic LRP.",
   "files": {
-    "amskroud_ca_value.csv": {
-      "bytes": 3593,
-      "sha256": "ee84c3e3f02436b136a67f5369274c7033d2a5720b215f6cfef1946c82f607ba"
-    },
     "blind_greedy_vs_enum.csv": {
-      "bytes": 1875,
-      "sha256": "6e5a2237c9108895b0cf4e30583d47313a0a1a5ec4d55ca84bfcedd90f9e4746"
-    },
-    "hos_in_search_smoke.json": {
-      "bytes": 314,
-      "sha256": "63b8a73a1f51990d3288956a598f625c04091a2fa28ba2861a2f1d57a5a1af0d"
+      "bytes": 470,
+      "sha256": "e4930f39ff0c4e29d9aa390b560f9853bb5e346331c5482703a842132c0d0f5a"
     },
     "hos_mini_panel_gate.csv": {
       "bytes": 525,
-      "sha256": "38062a491ed54a40c4cdb6af4d439017f935d60cf08d30060d9f52b5b0f91e90"
+      "sha256": "45acd9309bb0f74d9206ff112d269dfbf13686c137346c46ad7bdfabe5dbe026"
     },
     "od_dem_site_audit.csv": {
       "bytes": 9961,
       "sha256": "caa7fea0c7e95860a7f2a8e9460538d4a975cbab5f1d8dbc5088abed3af8bc89"
     },
     "operational_efficiency.csv": {
-      "bytes": 14323,
-      "sha256": "c65aade9470cfe3a7c06299adb33e31309982f8845bf81b33d1000cef25637d6"
-    },
-    "payload_soc_frontier.csv": {
-      "bytes": 164149,
-      "sha256": "81c08cf3517cdec06b68355e0dfa833067765d41393efab58f140b2c26d5b118"
-    },
-    "payload_soc_frontier_q2_confirm.csv": {
-      "bytes": 35593,
-      "sha256": "eca4041146f88d7585e622b328bebebed7511fb6021bed834f631c31e53af66c"
+      "bytes": 25419,
+      "sha256": "e16d1e40e20e4b4b0ad72ed1c313d21cc1fc9df35e3dffa5b43cc9140f8145b0"
     },
     "placement_flexibility_ablation.csv": {
-      "bytes": 5272,
-      "sha256": "5df1c827222658d2e5bafe09e373d7159eb5a693fe8f4a6fc874dbc2eb62fb29"
+      "bytes": 4930,
+      "sha256": "97c4caf4e22d66aa3ab03b2b991cd814bd3c72850460379e01322baab0c1f021"
     },
     "q1_boundary_refinement.csv": {
-      "bytes": 2257,
-      "sha256": "f1b0b29bb9571c8dbae39b9fd0811c000b3cf2fe49f4b9174887f485e4b62a9e"
+      "bytes": 2978,
+      "sha256": "8ff68e7cf4ab5e2b7e0a3bf016e336560c02927c2f6c21fb775b67da8861b51a"
     },
     "q2_critical_missions.csv": {
-      "bytes": 1574512,
-      "sha256": "0b59455c7a8db6668c531acce14d551fd3f8682982a17c678f5c128139fa6d92"
+      "bytes": 309318,
+      "sha256": "8292cc2141cb63733f23232481118b484e1a0a4085c46fb40e45316a7504794a"
     },
     "q2_critical_portfolio.csv": {
-      "bytes": 2585,
-      "sha256": "d27ce492e1e34b0206b6591cb3a24c0d741bb68c9156b30c5d68e1212c1454f6"
+      "bytes": 3625,
+      "sha256": "f46ddec9c25803fdac7b131668fe53ac5a100e80c72a715e698e80e0bf0d21c6"
     },
     "q_resolution_flip_inventory.csv": {
-      "bytes": 1153,
-      "sha256": "b97f4e9a2cd4fc22b0bb877daa9f271d556b683161e995acc1a5fe8d3584c675"
-    },
-    "robustness_matrix.csv": {
-      "bytes": 17369,
-      "sha256": "212a2c81794cf55301ad2d95e29ae926f0bfd7f4e273c4882e03d218b4139e84"
+      "bytes": 3057,
+      "sha256": "0608fa1d96e406bbe3dad947ee72d6374c358b765d78d209f7de5dfaa3032e13"
     },
     "scenario_registry_frozen.csv": {
       "bytes": 92393,
       "sha256": "773d8a5a2d8efbbe887cd132721a727d74565a3129256c0e538cefc29cf51a01"
     },
     "solver_certification_table.csv": {
-      "bytes": 4043,
-      "sha256": "2e36ef59e61518a2ae2e02d8780dbd29394c29958cbb9b7055f79c108c1f1d7d"
+      "bytes": 6404,
+      "sha256": "4cbaca5d0af3c6dfa70d0d3e650a341e9015527efb402be5e3e1ebb5ccd3d30e"
     },
     "solver_larger_instance_table.csv": {
-      "bytes": 389,
-      "sha256": "ea8cd2676bc1a9368213047e04e338ddc00bfb8731f56f6078a84ff9e1757822"
+      "bytes": 2864,
+      "sha256": "fe3d06a2f574243fcae10dc390ef6ae3e4387db0117bf2e14d36fe491c0e26be"
     },
     "uncertainty_stability_summary.csv": {
-      "bytes": 744,
-      "sha256": "fd0cba9f2e2405d1a5fde18903608b1175479668c0f893ab39d420013229668f"
+      "bytes": 759,
+      "sha256": "66d5fc9f6b3976c357ef5e3a70f96f1560a352751e44c319b4777fad190f1c26"
     }
   },
-  "generated_at": "2026-11-20T22:34:05",
-  "git_sha": "adc6287ac48ebe9bd9687bd5bd36a335b462b571",
-  "manifest_sha256": "2729746f9e081686067cd713bcc13441afa47e452e1c6905c7b62f464d884f79",
-  "pipeline": "hos_in_search_stage_c"
+  "generated_at": "2026-11-21T21:04:55",
+  "git_sha": "6ac846a434255c0c327488f09f983ae760a81535",
+  "manifest_sha256": "3081ab12001c577b27fc809f350efb0c07d92b327c348411b32730091a28e964",
+  "pipeline": "hos_in_search_stage_c",
+  "release_name": "stage-c-hos-6ac846a43425",
+  "reproduce": [
+    "pip install -e \".[dev]\"",
+    "pytest -q -m \"not integration\"",
+    "python scripts/run_stage_c_hos_national.py --phase all_fast"
+  ]
 }

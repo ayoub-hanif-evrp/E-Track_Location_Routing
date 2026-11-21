@@ -103,5 +103,6 @@ demand_scenarios:
     - {id: M_tangier_rabat_s08, od_id: tangier_rabat, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, commodity: firm_ripe_fresh_tomatoes, od_evidence_class: national_research_proxy}
     - {id: M_rabat_tangier_s08, od_id: rabat_tangier, weight: 1.0, E_truck_init: 0, E_init_soc_frac: 0.8, refrigeration_on: true, terrain_mode: dem, weather_id: cool, gcm: light, cargo_payload_kg: 5300.0, commodity: firm_ripe_fresh_tomatoes, od_evidence_class: national_research_proxy}
 solver:
-  max_seconds: 180.0
-  max_expansions: 250000
+  # Gate 2 uniform wall-clock for HOS-in-search national enum / ablation.
+  max_seconds: 600.0
+  max_expansions: 500000

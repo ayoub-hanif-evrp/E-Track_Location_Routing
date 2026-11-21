@@ -74,26 +74,26 @@ def refresh_crosswalk() -> None:
         (
             "C004",
             "Results",
-            "flex SOC>=0.8 retained via survives_q2_flex",
-            "results/paper_campaign/payload_soc_frontier_q2_confirm.csv",
-            "stage_a_confirm",
-            "do not use survives_q2 alone",
+            "q1 HOS boundary statuses for disputed cells",
+            "results/paper_campaign/q1_boundary_refinement.csv",
+            "stage_c",
+            "prefer q1 over legacy survives_q2_flex for HOS claims",
         ),
         (
             "C005",
             "Results",
             "AC 15t SOC0.8 discretization-sensitive",
-            "results/paper_campaign/q_resolution_flip_inventory.csv",
-            "stage_a",
-            "see also q1_boundary_refinement.csv",
+            "results/paper_campaign/q1_boundary_refinement.csv",
+            "stage_c",
+            "also q_resolution_flip_inventory.csv rebuilt from q1",
         ),
         (
             "C006",
             "Results",
-            "robustness matrix",
-            "results/paper_campaign/robustness_matrix.csv",
-            "legacy_or_stage_c",
-            "refresh under HOS before submission claims",
+            "uncertainty honesty filter (no legacy robustness claim)",
+            "results/paper_campaign/uncertainty_stability_summary.csv",
+            "stage_c",
+            "legacy robustness_matrix.csv removed; do not claim HOS robustness grid",
         ),
         (
             "C007",
@@ -207,42 +207,40 @@ python scripts/run_stage_c_hos_national.py --phase all_fast
 
 
 def patch_manuscript_results_from_csv() -> None:
-    """Rewrite Results subsection numbers from Stage C portfolio when available."""
+    """Rewrite Results headline numbers from Stage C portfolio when available."""
     port = OUT / "q2_critical_portfolio.csv"
     if not port.exists():
         return
     df = pd.read_csv(port)
+    e1 = df[(df.vehicle_key == "eactros_600") & (df.budget.astype(str) == "B1")]
     e2 = df[(df.vehicle_key == "eactros_600") & (df.budget.astype(str) == "B2")]
-    e_all = df[(df.vehicle_key == "eactros_600") & (df.budget.astype(str) == "Ball")]
+    v2 = df[(df.vehicle_key == "volvo_475") & (df.budget.astype(str) == "B2")]
     if e2.empty:
         return
     r = e2.iloc[0]
     pipe = str(r.get("pipeline", "unknown"))
-    ball = ""
-    if not e_all.empty:
-        b = e_all.iloc[0]
-        ball = (
-            f" Ball E$=$F$={float(b.E_ops):.2f}$ vs C$={float(b.C_ops):.2f}$."
+    b1 = ""
+    if not e1.empty:
+        x = e1.iloc[0]
+        b1 = (
+            f" B1 C$={float(x.C_ops):.3f}$, E$=$F$={float(x.E_ops):.3f}$ "
+            f"($\\Delta$E$-$C$={float(x.E_minus_C_ops):.3f}$);"
         )
+    volvo = ""
+    if not v2.empty:
+        v = v2.iloc[0]
+        volvo = f" Volvo B2 C$=$E$=$F$={float(v.E_ops):.3f}$."
     ms = PAPER / "manuscript.tex"
     text = ms.read_text(encoding="utf-8")
-    old = None
     import re
 
     pat = r"\\subsection\{Headline coverage.*?\\subsection\{Discretization"
     repl = (
-        "\\subsection{Headline coverage (Stage~C)}\n"
-        f"Pipeline tag: \\texttt{{{pipe}}}.\n"
-        f"\\texttt{{q2\\_critical\\_portfolio.csv}}: eActros B2 E$=${float(r.E_ops):.2f}$"
-        f" vs C$=${float(r.C_ops):.2f}$"
-        + (
-            f"; E$=$F at B2"
-            if bool(r.E_equals_F_ops)
-            else "; E and F differ at B2 — see blind greedy"
-        )
-        + f".{ball}\n"
-        "\\texttt{placement\\_flexibility\\_ablation.csv}: identical-site cross masks "
-        "decompose placement vs flexibility.\n\n"
+        "\\subsection{Headline coverage (certified)}\n"
+        f"Pipeline \\texttt{{{pipe}}}."
+        f"{b1} B2--Ball C$=$E$=$F$={float(r.E_ops):.3f}$.{volvo}\n"
+        "\\texttt{placement\\_flexibility\\_ablation.csv} matches headline aggregates "
+        "after LIMIT reconcile.\n\n"
         "\\subsection{Discretization"
     )
     new, n = re.subn(pat, lambda _m: repl, text, count=1, flags=re.S)

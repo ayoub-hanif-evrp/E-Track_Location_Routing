@@ -182,6 +182,8 @@ def _eval_installed_on_panel(
     """Evaluate one installed set over the 14-mission panel via single-OD prep."""
     mission_rows: list[dict] = []
     w_ops = w_energy = w_tot = 0.0
+    n_limit = 0
+    n_certified_ops = 0
     for mdef in _corridor_missions():
         od = str(mdef["od_id"])
         if od_filter is not None and od not in od_filter:
@@ -223,13 +225,18 @@ def _eval_installed_on_panel(
         )
         mission_rows.append(row)
         w_tot += weight
-        if mr.get("energy_feasible"):
+        status = str(mr.get("status") or "").upper()
+        if status == "LIMIT_REACHED":
+            n_limit += 1
+        if mr.get("energy_feasible_energy_only") or mr.get("energy_feasible"):
             w_energy += weight
-        if mr.get("operationally_served"):
+        if mr.get("operationally_served") and status == "OPTIMAL":
             w_ops += weight
+            n_certified_ops += 1
         print(
             f"  {method_id}|{budget}|{od}: ops={mr.get('operationally_served')} "
-            f"energy={mr.get('energy_feasible')} audit={mr.get('hos_search_audit_only')} "
+            f"energy={mr.get('energy_feasible_energy_only', mr.get('energy_feasible'))} "
+            f"audit={mr.get('hos_search_audit_only')} "
             f"pad={mr.get('hos_adjusted')} status={mr.get('status')}",
             flush=True,
         )
@@ -243,6 +250,8 @@ def _eval_installed_on_panel(
         "operational_coverage": w_ops / w_tot if w_tot else 0.0,
         "mission_rows": mission_rows,
         "n_missions": len(mission_rows),
+        "n_limit_reached": n_limit,
+        "n_certified_ops": n_certified_ops,
     }
 
 
@@ -378,14 +387,13 @@ def portfolio_rescore(
     )
 
 
-def ablation_live(budgets: tuple[str, ...] = ("B2",)) -> None:
-    """Identical-site cross tables: multi@C, fixed@E, multi@E, fixed@C."""
-    archives = sorted(ARCHIVE.glob("*/q2_critical_portfolio.csv")) if ARCHIVE.exists() else []
-    site_src = (
-        pd.read_csv(archives[-1])
-        if archives
-        else pd.read_csv(OUT / "q2_critical_portfolio.csv")
-    )
+UNIFORM_MAX_SECONDS = 600.0  # Gate 2/3 matched wall-clock
+
+
+def ablation_live(budgets: tuple[str, ...] = ("B2", "Ball")) -> None:
+    """Identical-site cross tables at the same timeout as headline enum."""
+    # Prefer current headline portfolio sites (post Gate-2 enum when available).
+    site_src = pd.read_csv(OUT / "q2_critical_portfolio.csv")
 
     orig = _patch_realistic_speed_policy()
     rows: list[dict] = []
@@ -416,6 +424,7 @@ def ablation_live(budgets: tuple[str, ...] = ("B2",)) -> None:
                         method_id=f"ablation_{name}",
                         budget=budget,
                         q=2,
+                        max_seconds=UNIFORM_MAX_SECONDS,
                     )
                 by_od: dict[str, dict[str, bool]] = {}
                 for name, ev in corner_ev.items():
@@ -460,6 +469,27 @@ def ablation_live(budgets: tuple[str, ...] = ("B2",)) -> None:
         import morocco_etruck.optimization.multiroute_placement_evaluation as mpe
 
         mpe.load_multiroute_pilot_config = orig
+    # Gate 3: reconcile ablation aggregates with headline portfolio
+    port = pd.read_csv(OUT / "q2_critical_portfolio.csv")
+    ab = pd.DataFrame(rows)
+    for _, prow in port.iterrows():
+        vk, bud = prow["vehicle_key"], str(prow["budget"])
+        sub = ab[(ab.vehicle_key == vk) & (ab.budget.astype(str) == bud)]
+        if sub.empty:
+            continue
+        multi_e = float(sub["ops_multi_on_E"].astype(bool).mean())
+        fixed_c = float(sub["ops_fixed_on_C"].astype(bool).mean())
+        print(
+            f"[ablation-reconcile] {vk} {bud}: "
+            f"multi_on_E={multi_e:.3f} vs E_ops={float(prow['E_ops']):.3f}; "
+            f"fixed_on_C={fixed_c:.3f} vs C_ops={float(prow['C_ops']):.3f}",
+            flush=True,
+        )
+        if abs(multi_e - float(prow["E_ops"])) > 1e-9 or abs(fixed_c - float(prow["C_ops"])) > 1e-9:
+            print(
+                "  WARNING: ablation≠headline — check identical max_seconds / site sets",
+                flush=True,
+            )
     print(f"ablation_live rows={len(rows)}", flush=True)
 
 
@@ -589,11 +619,17 @@ def q1_boundary() -> None:
                     "q1_status": "done",
                     "q1_multi_ops": bool(mr.get("operationally_served")),
                     "q1_fixed_ops": bool(fr.get("operationally_served")),
+                    "q1_multi_solver_status": mr.get("status"),
+                    "q1_fixed_solver_status": fr.get("status"),
+                    "q1_multi_energy_only": mr.get("energy_feasible_energy_only"),
+                    "q1_fixed_energy_only": fr.get("energy_feasible_energy_only"),
                     "q1_multi_min_soc": mr.get("min_soc"),
                     "q1_hos_audit_only": mr.get("hos_search_audit_only"),
+                    "q1_daily_driving_ok": mr.get("daily_driving_ok"),
                     "q1_wall_sec": round(time.perf_counter() - t0, 2),
                     "git_sha": SHA,
-                    "note": "q=1 boundary under HOS-in-search",
+                    "pipeline": "hos_in_search",
+                    "note": "q=1 boundary under HOS-in-search; statuses persisted",
                 }
             )
             _write_csv(OUT / "q1_boundary_refinement.csv", rows)
@@ -752,20 +788,91 @@ def larger_instance() -> None:
                     "git_sha": SHA,
                 }
             )
-            # Synthetic larger candidate count marker (path alternatives already unioned)
+            # Denser payload×SOC panel on flagship ODs (certified statuses, not full enum)
+            dense_cells = [
+                ("agadir_casa", 5300.0, 0.8),
+                ("agadir_casa", 15000.0, 0.8),
+                ("agadir_casa", 15000.0, 1.0),
+                ("marrakech_casa", 5300.0, 0.8),
+                ("marrakech_casa", 10000.0, 0.8),
+                ("casa_agadir", 5300.0, 0.8),
+                ("casa_tangier", 5300.0, 0.8),
+                ("tangier_casa", 15000.0, 1.0),
+            ]
+            t1 = time.perf_counter()
+            n_ok = n_lim = n_inf = 0
+            served = 0
+            for od, payload, soc in dense_cells:
+                cfg_d, veh_d, ctx_d, masks_d = _prepare_one(
+                    vehicle_key=vehicle_key,
+                    od_id=od,
+                    payload=payload,
+                    soc=soc,
+                    q=2,
+                )
+                mid = ctx_d["missions"][0].id
+                prep = ctx_d["prepared"][mid]
+                mr = evaluate_mission_operational(
+                    prep=prep,
+                    cfg=cfg_d,
+                    installed=set(FULL_SITE_IDS),
+                    mask=masks_d[mid]["all"],
+                    vehicle=veh_d,
+                    fridge_path=FRIDGE,
+                    max_seconds=UNIFORM_MAX_SECONDS,
+                    max_expansions=cfg_d.solver_max_expansions,
+                )
+                st = str(mr.get("status") or "").upper()
+                if st == "OPTIMAL":
+                    n_ok += 1
+                elif st == "LIMIT_REACHED":
+                    n_lim += 1
+                else:
+                    n_inf += 1
+                if mr.get("operationally_served"):
+                    served += 1
+                print(
+                    f"  dense {od} p={payload} s={soc}: status={st} "
+                    f"ops={mr.get('operationally_served')}",
+                    flush=True,
+                )
             rows.append(
                 {
-                    "instance_id": f"path_union_dense_{vehicle_key}",
+                    "instance_id": f"dense_payload_soc_panel_{vehicle_key}",
+                    "vehicle_key": vehicle_key,
+                    "budget": "Ball",
+                    "n_candidates": len(FULL_SITE_IDS),
+                    "n_missions": len(dense_cells),
+                    "method": "dense_payload_soc_panel_all_sites_multi",
+                    "status": (
+                        "optimal"
+                        if n_lim == 0 and n_inf == 0
+                        else "mixed_with_solver_status"
+                    ),
+                    "ops_coverage": served / len(dense_cells),
+                    "n_optimal": n_ok,
+                    "n_limit_reached": n_lim,
+                    "n_infeasible": n_inf,
+                    "wall_sec": round(time.perf_counter() - t1, 2),
+                    "certification": "denser_payload_soc_panel_with_statuses;_not_full_enum",
+                    "git_sha": SHA,
+                    "note": "Gate 5 denser panel: 8 payload×SOC cells × 9 sites",
+                }
+            )
+            # Documented >9 candidate bound (full enum intractable at 2^12)
+            rows.append(
+                {
+                    "instance_id": f"candidates12_marker_{vehicle_key}",
                     "vehicle_key": vehicle_key,
                     "budget": "B2",
-                    "n_candidates": 9,
+                    "n_candidates": 12,
                     "n_missions": len(context["missions"]),
-                    "method": "blind_greedy_reference",
-                    "status": "see_blind_greedy_vs_enum.csv",
+                    "method": "documented_denser_candidate_bound",
+                    "status": "not_enumerated",
                     "ops_coverage": None,
-                    "certification": "compare_blind_vs_enum_on_B2;_enum_expensive_at_2n_sites",
+                    "certification": "n_candidates>9_documented;_full_enum_intractable_at_2^12",
                     "git_sha": SHA,
-                    "note": "Larger than 9 directional sites deferred; B2 blind greedy is the compute-stressed contrast",
+                    "note": "Gate 5: denser candidate set documented; optimality only on 9-site enum",
                 }
             )
     finally:
@@ -1029,7 +1136,20 @@ def headline_enum() -> None:
     # Monkeypatch cache tag via temporary wrapper
     import run_paper_scientific_results_campaign as camp
 
+    # Separate from shell redirect targets (PermissionError if same path is locked).
+    log_path = OUT / "headline_enum_progress.log"
+    log_fh = open(log_path, "a", encoding="utf-8", buffering=1)
+
+    def _tee(msg: str) -> None:
+        print(msg, flush=True)
+        try:
+            log_fh.write(msg + "\n")
+            log_fh.flush()
+        except Exception:  # noqa: BLE001
+            pass
+
     _orig = camp._run_af_portfolio
+    _tee(f"[headline_enum] start sha={SHA} sites={len(FULL_SITE_IDS)}")
 
     def _run_hos(**kwargs):
         tag = kwargs.get("tag", "q2_headline")
@@ -1042,6 +1162,7 @@ def headline_enum() -> None:
         all_cov: list[dict] = []
         all_m: list[dict] = []
         for veh in ("eactros_600", "volvo_475"):
+            _tee(f"[headline_enum] vehicle={veh}")
             cov, missions, _tr = camp._run_af_portfolio(
                 cfg_path=CFG_HEADLINE,
                 demand_name="corridor_eactros_equal",
@@ -1049,19 +1170,30 @@ def headline_enum() -> None:
                 vehicle_key=veh,
                 site_ids=list(FULL_SITE_IDS),
                 tag=f"q2_headline_{veh}_hos",
+                # Exact enum for B0–B2 (∑ C(9,k) k≤2 = 46) + all-sites for Ball.
+                # B3 uses best-of-cache among |S|≤2 (certified lower bound); escalate via retry_limits.
+                max_enum_cardinality=2,
+                enum_score_seconds=45.0,
             )
             for r in cov:
                 r["pipeline"] = "hos_in_search_full_enum"
+                r["enum_cardinality_cap"] = 2
                 r["git_sha"] = SHA
             for r in missions:
                 r["pipeline"] = "hos_in_search_full_enum"
+                r["enum_cardinality_cap"] = 2
                 r["git_sha"] = SHA
             all_cov.extend(cov)
             all_m.extend(missions)
             _write_csv(OUT / "q2_critical_portfolio.csv", all_cov)
             _write_csv(OUT / "q2_critical_missions.csv", all_m)
+            _tee(f"[headline_enum] wrote portfolio n_budgets={len(cov)} missions={len(missions)}")
     finally:
         camp._run_af_portfolio = _orig  # type: ignore
+        try:
+            log_fh.close()
+        except Exception:  # noqa: BLE001
+            pass
     write_efficiency_from_missions()
     print("headline_enum complete", flush=True)
 

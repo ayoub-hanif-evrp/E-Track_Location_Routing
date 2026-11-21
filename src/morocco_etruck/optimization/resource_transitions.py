@@ -26,6 +26,11 @@ class Label:
     # Continuous driving since last qualifying break (discrete steps). Used when
     # RoutingInstance.hos_in_search is True (decret 2-10-314 art. 18 screen).
     drive_since_break_steps: int = 0
+    # Cumulative driving in the mission day (art. 17 ≤ 9 h).
+    daily_drive_steps: int = 0
+    # Consecutive CHARGE/WAIT steps at the current node since last DRIVE
+    # (matches operational_schedule block aggregation for break qualification).
+    stationary_accum_steps: int = 0
 
 
 @dataclass
@@ -35,8 +40,8 @@ class TransitionResult:
     reason: str | None = None
 
 
-def _hos_limits(inst: RoutingInstance) -> tuple[int, int]:
-    """Return (max_continuous_drive_steps, min_break_steps)."""
+def _hos_limits(inst: RoutingInstance) -> tuple[int, int, int]:
+    """Return (max_continuous_drive_steps, min_break_steps, max_daily_drive_steps)."""
     ts = max(1, int(inst.time_step_min))
     max_drive = inst.hos_max_continuous_driving_steps
     if max_drive is None:
@@ -44,7 +49,10 @@ def _hos_limits(inst: RoutingInstance) -> tuple[int, int]:
     min_break = inst.hos_min_break_steps
     if min_break is None:
         min_break = int(round(45.0 / ts))  # 45 min
-    return int(max_drive), int(min_break)
+    max_daily = inst.hos_max_daily_driving_steps
+    if max_daily is None:
+        max_daily = int(round(540.0 / ts))  # 9 h art. 17
+    return int(max_drive), int(min_break), int(max_daily)
 
 
 def _hos_rest_nodes(inst: RoutingInstance) -> set[str]:
@@ -53,27 +61,38 @@ def _hos_rest_nodes(inst: RoutingInstance) -> set[str]:
     return set(inst.active_stations) | set(inst.stations.keys())
 
 
-def _hos_after_stationary(
+def _hos_stationary_update(
     inst: RoutingInstance,
     lab: Label,
     node: str,
     steps: int,
-) -> int:
-    """Carry or reset drive_since_break after CHARGE/WAIT."""
+) -> tuple[int, int]:
+    """Return (drive_since_break_steps, stationary_accum_steps) after CHARGE/WAIT.
+
+    Consecutive CHARGE+WAIT at the same rest node combine toward the 45 min
+    qualifying break, matching operational_schedule block aggregation.
+    """
     if not getattr(inst, "hos_in_search", False):
-        return int(lab.drive_since_break_steps)
-    _max_drive, min_break = _hos_limits(inst)
-    if steps >= min_break and node in _hos_rest_nodes(inst):
-        return 0
-    return int(lab.drive_since_break_steps)
+        return int(lab.drive_since_break_steps), 0
+    _max_drive, min_break, _max_daily = _hos_limits(inst)
+    prev = str((lab.action or {}).get("type") or "")
+    if prev in ("CHARGE", "WAIT") and lab.node == node:
+        accum = int(lab.stationary_accum_steps) + int(steps)
+    else:
+        accum = int(steps)
+    if accum >= min_break and node in _hos_rest_nodes(inst):
+        return 0, accum
+    return int(lab.drive_since_break_steps), accum
 
 
 def _hos_check_drive(inst: RoutingInstance, lab: Label, dt_steps: int) -> str | None:
     if not getattr(inst, "hos_in_search", False):
         return None
-    max_drive, _ = _hos_limits(inst)
+    max_drive, _min_break, max_daily = _hos_limits(inst)
     if int(lab.drive_since_break_steps) + int(dt_steps) > max_drive:
         return "hos_continuous_driving_exceeded"
+    if int(lab.daily_drive_steps) + int(dt_steps) > max_daily:
+        return "hos_daily_driving_exceeded"
     return None
 
 
@@ -197,6 +216,8 @@ def apply_drive(inst: RoutingInstance, lab: Label, arc: ArcData, new_id: int) ->
                 label_id=new_id,
                 can_charge=True,
                 drive_since_break_steps=int(lab.drive_since_break_steps) + int(entry.dt_steps),
+                daily_drive_steps=int(lab.daily_drive_steps) + int(entry.dt_steps),
+                stationary_accum_steps=0,
             ),
         )
 
@@ -244,6 +265,8 @@ def apply_drive(inst: RoutingInstance, lab: Label, arc: ArcData, new_id: int) ->
             label_id=new_id,
             can_charge=True,
             drive_since_break_steps=int(lab.drive_since_break_steps) + int(arc.dt_steps),
+            daily_drive_steps=int(lab.daily_drive_steps) + int(arc.dt_steps),
+            stationary_accum_steps=0,
         ),
     )
 
@@ -289,6 +312,7 @@ def apply_charge(
         return TransitionResult(False, reason=reason)
     grid = inst.grid_kwh_for_batt(st, delta_e)
     cost2 = lab.cost + st.price_cents_per_grid_kwh * grid
+    drive_clk, accum = _hos_stationary_update(inst, lab, lab.node, int(steps))
     return TransitionResult(
         True,
         Label(
@@ -311,7 +335,9 @@ def apply_charge(
             },
             label_id=new_id,
             can_charge=False,
-            drive_since_break_steps=_hos_after_stationary(inst, lab, lab.node, int(steps)),
+            drive_since_break_steps=drive_clk,
+            daily_drive_steps=int(lab.daily_drive_steps),
+            stationary_accum_steps=accum,
         ),
     )
 
@@ -336,6 +362,7 @@ def apply_wait(inst: RoutingInstance, lab: Label, k_steps: int, new_id: int) -> 
     E_tr, E_tl, reason = _snap_energies_after_stationary(inst, E_tr_cont, E_tl_cont)
     if reason:
         return TransitionResult(False, reason=reason)
+    drive_clk, accum = _hos_stationary_update(inst, lab, lab.node, int(k_steps))
     return TransitionResult(
         True,
         Label(
@@ -353,7 +380,9 @@ def apply_wait(inst: RoutingInstance, lab: Label, k_steps: int, new_id: int) -> 
             },
             label_id=new_id,
             can_charge=lab.can_charge,
-            drive_since_break_steps=_hos_after_stationary(inst, lab, lab.node, int(k_steps)),
+            drive_since_break_steps=drive_clk,
+            daily_drive_steps=int(lab.daily_drive_steps),
+            stationary_accum_steps=accum,
         ),
     )
 
@@ -376,9 +405,19 @@ def expand_actions(inst: RoutingInstance, lab: Label, id_start: int) -> list[Tra
             nid += 1
         _ = st
     if getattr(inst, "hos_in_search", False):
-        # Only attempt a qualifying break duration (avoids WAIT lattice explosion).
-        _max_d, min_break = _hos_limits(inst)
-        wait_ks = [min_break] if 1 <= min_break <= int(inst.wait_max_steps) else []
+        # Qualifying break, or remainder after a short CHARGE/WAIT at this node.
+        _max_d, min_break, _max_daily = _hos_limits(inst)
+        wait_ks: list[int] = []
+        prev = str((lab.action or {}).get("type") or "")
+        accum0 = (
+            int(lab.stationary_accum_steps)
+            if prev in ("CHARGE", "WAIT") and lab.node in _hos_rest_nodes(inst)
+            else 0
+        )
+        need = max(0, int(min_break) - accum0)
+        for k in (need, min_break):
+            if 1 <= k <= int(inst.wait_max_steps) and k not in wait_ks:
+                wait_ks.append(k)
     else:
         wait_ks = list(range(1, inst.wait_max_steps + 1))
     for k in wait_ks:

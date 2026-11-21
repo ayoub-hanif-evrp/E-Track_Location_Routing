@@ -96,3 +96,91 @@ def test_dominance_prefers_lower_drive_clock():
     b = Label("S", 5, 80, None, 10, None, {}, 2, can_charge=True, drive_since_break_steps=5)
     assert dominates(a, b)
     assert not dominates(b, a)
+
+
+def test_hos_daily_driving_blocks_excess():
+    """Art. 17: daily driving > 9 h is rejected in search."""
+    # time_step=60 → max daily = 9 steps; one 10-step drive must fail.
+    stations = {"S": StationData("S", power_kw=60.0, eta=1.0, price_cents_per_grid_kwh=0)}
+    inst = RoutingInstance(
+        name="hos_daily",
+        nodes=["O", "D"],
+        arcs=[
+            ArcData("O", "D", dt_steps=10, dE_truck_kwh=5, dE_trailer_kwh=0, road_cost=1, power_ok=True),
+        ],
+        origin="O",
+        destination="D",
+        deadline_steps=40,
+        E_truck_cap=200,
+        E_truck_min=10,
+        E_truck_init=100,
+        E_trailer_cap=None,
+        E_trailer_min=None,
+        E_trailer_init=None,
+        stations=stations,
+        active_stations=set(),
+        power_source="A",
+        refrigeration_on=False,
+        wait_max_steps=0,
+        time_step_min=60,
+        energy_quantum_kwh=5,
+        hos_in_search=True,
+        hos_max_continuous_driving_steps=20,  # isolate daily check
+        hos_rest_nodes=frozenset({"S"}),
+    )
+    lab = Label("O", 0, 100, None, 0, None, {"type": "START"}, 0, can_charge=True)
+    r = apply_drive(inst, lab, inst.arcs[0], 1)
+    assert not r.ok
+    assert r.reason == "hos_daily_driving_exceeded"
+
+
+def test_hos_combined_charge_wait_resets_clock():
+    """20 min CHARGE + 25 min WAIT at same node qualifies as a 45 min break."""
+    from morocco_etruck.optimization.resource_transitions import apply_charge
+
+    stations = {"S": StationData("S", power_kw=350.0, eta=1.0, price_cents_per_grid_kwh=0)}
+    # time_step=5 → min_break=9 steps (45 min). Charge 4 steps (20 min) then wait 5 (25 min).
+    inst = RoutingInstance(
+        name="hos_combo",
+        nodes=["O", "S", "D"],
+        arcs=[
+            ArcData("O", "S", dt_steps=8, dE_truck_kwh=10, dE_trailer_kwh=0, road_cost=1, power_ok=True),
+            ArcData("S", "D", dt_steps=8, dE_truck_kwh=10, dE_trailer_kwh=0, road_cost=1, power_ok=True),
+        ],
+        origin="O",
+        destination="D",
+        deadline_steps=80,
+        E_truck_cap=200,
+        E_truck_min=10,
+        E_truck_init=100,
+        E_trailer_cap=None,
+        E_trailer_min=None,
+        E_trailer_init=None,
+        stations=stations,
+        active_stations={"S"},
+        power_source="A",
+        refrigeration_on=False,
+        aux_w=0.0,
+        tru_mean_w=0.0,
+        wait_max_steps=9,
+        time_step_min=5,
+        energy_quantum_kwh=5,
+        hos_in_search=True,
+        hos_rest_nodes=frozenset({"S"}),
+    )
+    # Force short charge duration by patching charge_duration_steps
+    inst.charge_duration_steps = lambda st, de, **kw: 4  # type: ignore[method-assign]
+    lab = Label("O", 0, 100, None, 0, None, {"type": "START"}, 0, can_charge=True)
+    r1 = apply_drive(inst, lab, inst.arcs[0], 1)
+    assert r1.ok and r1.label is not None
+    assert r1.label.drive_since_break_steps == 8
+    ch = apply_charge(inst, r1.label, 5, 2)
+    assert ch.ok and ch.label is not None
+    assert ch.label.drive_since_break_steps == 8  # 20 min alone does not reset
+    assert ch.label.stationary_accum_steps == 4
+    w = apply_wait(inst, ch.label, 5, 3)  # +25 min → 45 total
+    assert w.ok and w.label is not None
+    assert w.label.drive_since_break_steps == 0
+    r2 = apply_drive(inst, w.label, inst.arcs[1], 4)
+    assert r2.ok and r2.label is not None
+    assert r2.label.node == "D"

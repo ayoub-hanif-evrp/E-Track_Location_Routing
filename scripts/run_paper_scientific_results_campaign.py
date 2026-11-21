@@ -94,6 +94,15 @@ FRONTIER_ODS = [
     "tangier_rabat",
     "rabat_tangier",
 ]
+# Mechanism-paper lean panel (q-grid + directionality); full FRONTIER_ODS is optional/appendix.
+MECHANISM_FRONTIER_ODS = [
+    "agadir_casa",
+    "casa_agadir",
+    "marrakech_casa",
+    "casa_marrakech",
+]
+MECHANISM_PAYLOADS = [5300.0, 15000.0]
+MECHANISM_SOCS = [0.8, 1.0]
 INFRA_LADDERS = {
     "agadir_casa": [
         ("none", frozenset()),
@@ -315,11 +324,16 @@ def _run_af_portfolio(
     vehicle_key: str,
     site_ids: list[str] | None = None,
     tag: str,
+    max_enum_cardinality: int | None = None,
+    enum_score_seconds: float = 90.0,
 ) -> tuple[list[dict], list[dict], list[dict]]:
     """Exhaustive E + greedy-over-enum-scores F + C/D/B baselines.
 
     F is NOT a blind independent greedy: each trial looks up precomputed
     exhaustive subset evaluations (enum_cache). Do not claim compute savings vs E.
+
+    ``max_enum_cardinality`` limits subset size in the enum cache (e.g. 3 ⇒ exact
+    for B0–B3). Ball then uses best-of-cache plus an explicit all-sites eval.
     """
     orig = _patch_realistic_speed_policy()
     cov_curve: list[dict] = []
@@ -329,6 +343,8 @@ def _run_af_portfolio(
         cfg = load_multiroute_placement_config(cfg_path, root=ROOT)
         vpath = VEHICLES[vehicle_key]
         vehicle = load_vehicle(vpath)
+        # probe_serviceability=False: avoid 14×max_seconds pre-probes before enum
+        # (Gate 2 wall-clock must go to subset evaluation, not a redundant all-sites sweep).
         context = prepare_multiroute_placement_context(
             cfg,
             root=ROOT,
@@ -340,12 +356,45 @@ def _run_af_portfolio(
             fridge_yaml=FRIDGE,
             charger_power_kw=350.0,
             max_alternatives_for_union=2,
+            probe_serviceability=False,
         )
         pilot = load_multiroute_pilot_config(cfg.multiroute_pilot_path, root=ROOT)
         path_rows = pd.read_csv(pilot.path_alternatives_csv).to_dict(orient="records")
         masks = _mission_masks(context, path_rows)
         sites = site_ids or [s.id for s in cfg.sites]
-        print(f"[{tag}] sites={sites} missions={len(context['missions'])} q={q}", flush=True)
+        card_cap = (
+            int(max_enum_cardinality)
+            if max_enum_cardinality is not None
+            else len(sites)
+        )
+        print(
+            f"[{tag}] sites={sites} missions={len(context['missions'])} q={q} "
+            f"max_enum_cardinality={card_cap} score_sec={enum_score_seconds}",
+            flush=True,
+        )
+        progress_path = OUT / f"_enum_progress_{tag}.json"
+
+        def _heartbeat(payload: dict) -> None:
+            try:
+                payload = {
+                    **payload,
+                    "tag": tag,
+                    "ts": __import__("time").strftime("%Y-%m-%dT%H:%M:%S"),
+                }
+                progress_path.write_text(
+                    __import__("json").dumps(payload, indent=2), encoding="utf-8"
+                )
+            except Exception:  # noqa: BLE001
+                pass
+
+        _heartbeat(
+            {
+                "phase": "context_ready",
+                "n_sites": len(sites),
+                "n_missions": len(context["missions"]),
+                "max_enum_cardinality": card_cap,
+            }
+        )
 
         import pickle
 
@@ -354,11 +403,27 @@ def _run_af_portfolio(
         if cache_path.exists():
             enum_cache = pickle.loads(cache_path.read_bytes())
             print(f"[{tag}] Loaded enum cache n={len(enum_cache)} from {cache_path}", flush=True)
-        for r in range(0, len(sites) + 1):
+            _heartbeat({"phase": "cache_loaded", "n_cache": len(enum_cache)})
+        n_total = sum(
+            1
+            for r in range(0, card_cap + 1)
+            for _ in itertools.combinations(sites, r)
+        )
+        for r in range(0, card_cap + 1):
             for combo in itertools.combinations(sites, r):
                 key = frozenset(combo)
                 if key in enum_cache:
                     continue
+                t_sub = __import__("time").perf_counter()
+                _heartbeat(
+                    {
+                        "phase": "enum_subset",
+                        "n_cache": len(enum_cache),
+                        "n_total": n_total,
+                        "current": sorted(combo),
+                        "max_enum_cardinality": card_cap,
+                    }
+                )
                 ev = evaluate_subset(
                     context=context,
                     cfg=cfg,
@@ -369,17 +434,55 @@ def _run_af_portfolio(
                     budget_name="all_subsets",
                     vehicle=vehicle,
                     fridge_path=FRIDGE,
+                    include_energy_only=False,  # ops-only scoring; dual-solve on final B–F
+                    # Enum cache: shorter wall-clock; LIMIT cells escalated on winners at 600s.
+                    max_seconds=float(enum_score_seconds),
+                    max_expansions=cfg.solver_max_expansions,
                 )
                 enum_cache[key] = ev
                 print(
                     f"[{tag}] ENUM {sorted(combo) or ['∅']}: "
-                    f"ops={ev['operational_coverage']:.3f} energy={ev['energy_coverage']:.3f}",
+                    f"ops={ev['operational_coverage']:.3f} energy={ev['energy_coverage']:.3f} "
+                    f"limit={ev.get('n_limit_reached')} "
+                    f"sec={__import__('time').perf_counter()-t_sub:.1f} "
+                    f"[{len(enum_cache)}/{n_total}]",
                     flush=True,
                 )
-                if len(enum_cache) % 16 == 0:
+                if len(enum_cache) % 4 == 0:
                     cache_path.write_bytes(pickle.dumps(enum_cache))
+                    _heartbeat(
+                        {
+                            "phase": "cache_checkpoint",
+                            "n_cache": len(enum_cache),
+                            "n_total": n_total,
+                        }
+                    )
+        # Always evaluate the full install for Ball lower-bound / comparison
+        full_key = frozenset(sites)
+        if full_key not in enum_cache:
+            t_sub = __import__("time").perf_counter()
+            enum_cache[full_key] = evaluate_subset(
+                context=context,
+                cfg=cfg,
+                installed=set(sites),
+                route_mode="multi",
+                masks=masks,
+                method_id="enum_multi",
+                budget_name="all_subsets",
+                vehicle=vehicle,
+                fridge_path=FRIDGE,
+                include_energy_only=False,
+                max_seconds=float(enum_score_seconds),
+                max_expansions=cfg.solver_max_expansions,
+            )
+            print(
+                f"[{tag}] ENUM ALL_SITES: ops={enum_cache[full_key]['operational_coverage']:.3f} "
+                f"sec={__import__('time').perf_counter()-t_sub:.1f}",
+                flush=True,
+            )
         cache_path.write_bytes(pickle.dumps(enum_cache))
-        print(f"[{tag}] Saved enum cache n={len(enum_cache)}", flush=True)
+        print(f"[{tag}] Saved enum cache n={len(enum_cache)} card_cap={card_cap}", flush=True)
+        _heartbeat({"phase": "enum_complete", "n_cache": len(enum_cache), "card_cap": card_cap})
 
         fixed_cache: dict[frozenset, dict] = {}
 
@@ -401,6 +504,9 @@ def _run_af_portfolio(
                             budget_name="all_subsets",
                             vehicle=vehicle,
                             fridge_path=FRIDGE,
+                            include_energy_only=False,
+                            max_seconds=90.0,
+                            max_expansions=cfg.solver_max_expansions,
                         )
                         print(
                             f"[{tag}] FIXED {sorted(key) or ['∅']}: "
@@ -418,7 +524,25 @@ def _run_af_portfolio(
                     cand["selection_engine"] = "exhaustive_enumeration"
                 if best is None or _score(cand) > _score(best):
                     best = cand
-            return best
+            if best is None:
+                return best
+            # Re-evaluate winner at full timeout with energy-only dual solve
+            raw_inst = str(best.get("installed") or "")
+            win_sites = {x for x in raw_inst.split(",") if x.strip()}
+            return evaluate_subset(
+                context=context,
+                cfg=cfg,
+                installed=win_sites,
+                route_mode=route_mode,
+                masks=masks,
+                method_id=method_id,
+                budget_name=bname,
+                vehicle=vehicle,
+                fridge_path=FRIDGE,
+                include_energy_only=True,
+                max_seconds=float(cfg.solver_max_seconds),
+                max_expansions=int(cfg.solver_max_expansions),
+            )
 
         def greedy(nmax: int | None, bname: str):
             chosen: set[str] = set()
@@ -554,6 +678,11 @@ def _run_af_portfolio(
                 < 1e-9,
                 "E_minus_C_ops": float(e["operational_coverage"]) - float(c["operational_coverage"]),
                 "n_missions": e["n_missions"],
+                "n_limit_reached": int(e.get("n_limit_reached") or 0)
+                + int(c.get("n_limit_reached") or 0),
+                "C_n_limit": int(c.get("n_limit_reached") or 0),
+                "E_n_limit": int(e.get("n_limit_reached") or 0),
+                "pipeline": "hos_in_search_full_enum",
                 "git_sha": _git_sha(),
             }
             cov_curve.append(row)
@@ -667,6 +796,11 @@ def run_frontier(
     vehicles: tuple[str, ...] = ("eactros_600", "volvo_475"),
     confirm_mode: str = "decisive",
     append: bool = True,
+    od_ids: list[str] | None = None,
+    payloads: list[float] | None = None,
+    socs: list[float] | None = None,
+    screen_max_seconds: float = 90.0,
+    lean: bool = False,
 ) -> None:
     """Screen frontier at q; optionally confirm decisive cells at confirm_q.
 
@@ -674,9 +808,31 @@ def run_frontier(
       skip — no q=2 confirms
       decisive — flexibility gains + northbound 15t + SOC>=0.8 best ladder only
       full — previous broad confirm set (slow)
+
+    lean=True uses MECHANISM_* OD/payload/SOC panels (mechanism paper default).
     """
     OUT.mkdir(parents=True, exist_ok=True)
     out_path = OUT / "payload_soc_frontier.csv"
+    od_list = list(
+        od_ids
+        if od_ids is not None
+        else (MECHANISM_FRONTIER_ODS if lean else FRONTIER_ODS)
+    )
+    pay_list = list(
+        payloads
+        if payloads is not None
+        else (MECHANISM_PAYLOADS if lean else PAYLOADS)
+    )
+    soc_list = list(
+        socs if socs is not None else (MECHANISM_SOCS if lean else SOCS)
+    )
+    n_expect = sum(len(INFRA_LADDERS.get(od, [("none", frozenset())])) for od in od_list)
+    n_expect *= len(pay_list) * len(soc_list) * len(vehicles)
+    print(
+        f"[frontier] lean={lean} ods={od_list} payloads={pay_list} socs={soc_list} "
+        f"screen_sec={screen_max_seconds} expected_cells≈{n_expect}",
+        flush=True,
+    )
     rows: list[dict] = []
     if append and out_path.exists():
         prev = pd.read_csv(out_path).to_dict(orient="records")
@@ -689,9 +845,9 @@ def run_frontier(
         for vehicle_key in vehicles:
             vpath = VEHICLES[vehicle_key]
             vehicle = load_vehicle(vpath)
-            for od in FRONTIER_ODS:
-                for payload in PAYLOADS:
-                    for soc in SOCS:
+            for od in od_list:
+                for payload in pay_list:
+                    for soc in soc_list:
                         cfg_path = _temp_demand_cfg(od, payload, soc)
                         cfg = load_multiroute_placement_config(cfg_path, root=ROOT)
                         context = prepare_multiroute_placement_context(
@@ -705,6 +861,7 @@ def run_frontier(
                             fridge_yaml=FRIDGE,
                             charger_power_kw=350.0,
                             max_alternatives_for_union=2,
+                            probe_serviceability=False,
                         )
                         pilot = load_multiroute_pilot_config(
                             cfg.multiroute_pilot_path, root=ROOT
@@ -715,6 +872,8 @@ def run_frontier(
                         masks = _mission_masks(context, path_rows)
                         prep = context["prepared"][context["missions"][0].id]
                         dem_ok = bool(getattr(prep.ctx, "dem_complete", False))
+                        sec = float(screen_max_seconds)
+                        exp = int(cfg.solver_max_expansions)
                         for ladder_name, sites in INFRA_LADDERS[od]:
                             mr = evaluate_mission_operational(
                                 prep=prep,
@@ -723,8 +882,9 @@ def run_frontier(
                                 mask=masks[context["missions"][0].id]["all"],
                                 vehicle=vehicle,
                                 fridge_path=FRIDGE,
-                                max_seconds=cfg.solver_max_seconds,
-                                max_expansions=cfg.solver_max_expansions,
+                                max_seconds=sec,
+                                max_expansions=exp,
+                                include_energy_only=False,
                             )
                             fr = evaluate_mission_operational(
                                 prep=prep,
@@ -733,8 +893,9 @@ def run_frontier(
                                 mask=masks[context["missions"][0].id]["short"],
                                 vehicle=vehicle,
                                 fridge_path=FRIDGE,
-                                max_seconds=cfg.solver_max_seconds,
-                                max_expansions=cfg.solver_max_expansions,
+                                max_seconds=sec,
+                                max_expansions=exp,
+                                include_energy_only=False,
                             )
                             row = {
                                 "vehicle_key": vehicle_key,
@@ -747,7 +908,11 @@ def run_frontier(
                                 "installed": ",".join(sorted(sites)),
                                 "n_sites": len(sites),
                                 "multi_ops": bool(mr.get("operationally_served")),
-                                "multi_energy": bool(mr.get("energy_feasible")),
+                                "multi_status": mr.get("status"),
+                                "multi_energy": bool(
+                                    mr.get("energy_feasible_energy_only")
+                                    or mr.get("energy_feasible")
+                                ),
                                 "multi_schedule": bool(mr.get("schedule_valid")),
                                 "multi_min_soc": mr.get("min_soc"),
                                 "multi_arrival_soc": mr.get("arrival_soc"),
@@ -757,19 +922,27 @@ def run_frontier(
                                 "multi_wait_min": mr.get("wait_min_phys"),
                                 "multi_hos_pad_min": mr.get("pad_duration_min"),
                                 "fixed_ops": bool(fr.get("operationally_served")),
-                                "fixed_energy": bool(fr.get("energy_feasible")),
+                                "fixed_status": fr.get("status"),
+                                "fixed_energy": bool(
+                                    fr.get("energy_feasible_energy_only")
+                                    or fr.get("energy_feasible")
+                                ),
                                 "fixed_schedule": bool(fr.get("schedule_valid")),
                                 "fixed_min_soc": fr.get("min_soc"),
                                 "fixed_road_km": fr.get("road_km"),
                                 "flexibility_ops_gain": bool(mr.get("operationally_served"))
                                 and not bool(fr.get("operationally_served")),
+                                "pipeline": "hos_in_search_mechanism_frontier"
+                                if lean
+                                else "hos_in_search_frontier",
                                 "git_sha": _git_sha(),
                             }
                             rows.append(row)
                             print(
                                 f"FRONTIER {vehicle_key} {od} p={payload} soc={soc} "
                                 f"{ladder_name}: multi_ops={row['multi_ops']} "
-                                f"fixed_ops={row['fixed_ops']} flex={row['flexibility_ops_gain']}",
+                                f"fixed_ops={row['fixed_ops']} flex={row['flexibility_ops_gain']} "
+                                f"status={row['multi_status']}/{row['fixed_status']}",
                                 flush=True,
                             )
                             _write_csv(out_path, rows)
@@ -1670,6 +1843,18 @@ def main() -> None:
         default="5,2",
         help="Comma-separated q values for expanded A-F compare",
     )
+    ap.add_argument(
+        "--lean",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Mechanism frontier panel (4 ODs × 2 payloads × 2 SOCs); use --no-lean for full national grid",
+    )
+    ap.add_argument(
+        "--screen-max-seconds",
+        type=float,
+        default=90.0,
+        help="Per-solve wall-clock for frontier screen (confirms still use config timeout)",
+    )
     args = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     vehicles = tuple(v.strip() for v in args.vehicles.split(",") if v.strip())
@@ -1868,7 +2053,9 @@ def main() -> None:
                 confirm_q=2,
                 vehicles=vehicles,
                 confirm_mode=args.confirm_mode,
-                append=True,
+                append=False if args.lean else True,
+                lean=bool(args.lean),
+                screen_max_seconds=float(args.screen_max_seconds),
             )
     if args.phase in ("amskroud", "all"):
         run_amskroud_value()
