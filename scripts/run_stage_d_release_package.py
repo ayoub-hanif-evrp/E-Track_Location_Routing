@@ -165,7 +165,9 @@ def write_release() -> None:
         "reproduce": [
             "pip install -e \".[dev]\"",
             "pytest -q -m \"not integration\"",
-            "python scripts/run_stage_c_hos_national.py --phase all_fast",
+            "python scripts/run_stage_c_hos_national.py --phase headline_enum",
+            "python scripts/run_stage_c_hos_national.py --phase post_portfolio",
+            "python scripts/run_validation_consistency_report.py",
         ],
         "contribution_statement": (
             "Moroccan refrigerated eHDT + DEM + directional ADM + operational joint "

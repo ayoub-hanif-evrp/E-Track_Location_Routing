@@ -1,0 +1,507 @@
+{
+  "n_checks": 61,
+  "n_issues": 0,
+  "n_errors": 0,
+  "issues": [],
+  "checks": [
+    {
+      "kind": "portfolio_row",
+      "vehicle_key": "eactros_600",
+      "budget": "B0",
+      "C_ops": 0.6428571428571429,
+      "E_ops": 0.6428571428571429,
+      "pipeline": "hos_in_search_enum_cap2_screen45_final600",
+      "E_n_limit": 0
+    },
+    {
+      "kind": "portfolio_row",
+      "vehicle_key": "eactros_600",
+      "budget": "B1",
+      "C_ops": 0.7142857142857143,
+      "E_ops": 0.7857142857142857,
+      "pipeline": "hos_in_search_enum_cap2_screen45_final600",
+      "E_n_limit": 0
+    },
+    {
+      "kind": "portfolio_row",
+      "vehicle_key": "eactros_600",
+      "budget": "B2",
+      "C_ops": 0.7857142857142857,
+      "E_ops": 0.7857142857142857,
+      "pipeline": "hos_in_search_enum_cap2_screen45_final600",
+      "E_n_limit": 0
+    },
+    {
+      "kind": "portfolio_row",
+      "vehicle_key": "eactros_600",
+      "budget": "B3",
+      "C_ops": 0.7857142857142857,
+      "E_ops": 0.7857142857142857,
+      "pipeline": "hos_in_search_enum_cap2_screen45_final600",
+      "E_n_limit": 0
+    },
+    {
+      "kind": "portfolio_row",
+      "vehicle_key": "eactros_600",
+      "budget": "Ball",
+      "C_ops": 0.7857142857142857,
+      "E_ops": 0.7857142857142857,
+      "pipeline": "hos_in_search_enum_cap2_screen45_final600",
+      "E_n_limit": 0
+    },
+    {
+      "kind": "portfolio_row",
+      "vehicle_key": "volvo_475",
+      "budget": "B0",
+      "C_ops": 0.5,
+      "E_ops": 0.5,
+      "pipeline": "hos_in_search_enum_cap2_screen45_final600",
+      "E_n_limit": 0
+    },
+    {
+      "kind": "portfolio_row",
+      "vehicle_key": "volvo_475",
+      "budget": "B1",
+      "C_ops": 0.5714285714285714,
+      "E_ops": 0.5714285714285714,
+      "pipeline": "hos_in_search_enum_cap2_screen45_final600",
+      "E_n_limit": 0
+    },
+    {
+      "kind": "portfolio_row",
+      "vehicle_key": "volvo_475",
+      "budget": "B2",
+      "C_ops": 0.5714285714285714,
+      "E_ops": 0.5714285714285714,
+      "pipeline": "hos_in_search_enum_cap2_screen45_final600",
+      "E_n_limit": 0
+    },
+    {
+      "kind": "portfolio_row",
+      "vehicle_key": "volvo_475",
+      "budget": "B3",
+      "C_ops": 0.5714285714285714,
+      "E_ops": 0.5714285714285714,
+      "pipeline": "hos_in_search_enum_cap2_screen45_final600",
+      "E_n_limit": 0
+    },
+    {
+      "kind": "portfolio_row",
+      "vehicle_key": "volvo_475",
+      "budget": "Ball",
+      "C_ops": 0.5714285714285714,
+      "E_ops": 0.5714285714285714,
+      "pipeline": "hos_in_search_enum_cap2_screen45_final600",
+      "E_n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B0",
+      "method_id": "B_fixed_conventional",
+      "ops": 0.6428571428571429,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B0",
+      "method_id": "C_fixed_optimized",
+      "ops": 0.6428571428571429,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B0",
+      "method_id": "D_multi_conventional",
+      "ops": 0.6428571428571429,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B0",
+      "method_id": "E_joint_multi_enum",
+      "ops": 0.6428571428571429,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B0",
+      "method_id": "F_greedy_multi",
+      "ops": 0.6428571428571429,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B1",
+      "method_id": "B_fixed_conventional",
+      "ops": 0.6428571428571429,
+      "n_limit": 1
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B1",
+      "method_id": "C_fixed_optimized",
+      "ops": 0.7142857142857143,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B1",
+      "method_id": "D_multi_conventional",
+      "ops": 0.6428571428571429,
+      "n_limit": 2
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B1",
+      "method_id": "E_joint_multi_enum",
+      "ops": 0.7857142857142857,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B1",
+      "method_id": "F_greedy_multi",
+      "ops": 0.7857142857142857,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B2",
+      "method_id": "B_fixed_conventional",
+      "ops": 0.6428571428571429,
+      "n_limit": 1
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B2",
+      "method_id": "C_fixed_optimized",
+      "ops": 0.7857142857142857,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B2",
+      "method_id": "D_multi_conventional",
+      "ops": 0.6428571428571429,
+      "n_limit": 2
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B2",
+      "method_id": "E_joint_multi_enum",
+      "ops": 0.7857142857142857,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B2",
+      "method_id": "F_greedy_multi",
+      "ops": 0.7857142857142857,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B3",
+      "method_id": "B_fixed_conventional",
+      "ops": 0.6428571428571429,
+      "n_limit": 1
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B3",
+      "method_id": "C_fixed_optimized",
+      "ops": 0.7857142857142857,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B3",
+      "method_id": "D_multi_conventional",
+      "ops": 0.6428571428571429,
+      "n_limit": 2
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B3",
+      "method_id": "E_joint_multi_enum",
+      "ops": 0.7857142857142857,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "B3",
+      "method_id": "F_greedy_multi",
+      "ops": 0.7857142857142857,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "Ball",
+      "method_id": "B_fixed_conventional",
+      "ops": 0.5714285714285714,
+      "n_limit": 3
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "Ball",
+      "method_id": "C_fixed_optimized",
+      "ops": 0.7857142857142857,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "Ball",
+      "method_id": "D_multi_conventional",
+      "ops": 0.5714285714285714,
+      "n_limit": 4
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "Ball",
+      "method_id": "E_joint_multi_enum",
+      "ops": 0.7857142857142857,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "eactros_600",
+      "budget": "Ball",
+      "method_id": "F_greedy_multi",
+      "ops": 0.7857142857142857,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B0",
+      "method_id": "B_fixed_conventional",
+      "ops": 0.5,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B0",
+      "method_id": "C_fixed_optimized",
+      "ops": 0.5,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B0",
+      "method_id": "D_multi_conventional",
+      "ops": 0.5,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B0",
+      "method_id": "E_joint_multi_enum",
+      "ops": 0.5,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B0",
+      "method_id": "F_greedy_multi",
+      "ops": 0.5,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B1",
+      "method_id": "B_fixed_conventional",
+      "ops": 0.5,
+      "n_limit": 1
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B1",
+      "method_id": "C_fixed_optimized",
+      "ops": 0.5714285714285714,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B1",
+      "method_id": "D_multi_conventional",
+      "ops": 0.5714285714285714,
+      "n_limit": 1
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B1",
+      "method_id": "E_joint_multi_enum",
+      "ops": 0.5714285714285714,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B1",
+      "method_id": "F_greedy_multi",
+      "ops": 0.5714285714285714,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B2",
+      "method_id": "B_fixed_conventional",
+      "ops": 0.5,
+      "n_limit": 1
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B2",
+      "method_id": "C_fixed_optimized",
+      "ops": 0.5714285714285714,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B2",
+      "method_id": "D_multi_conventional",
+      "ops": 0.5714285714285714,
+      "n_limit": 1
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B2",
+      "method_id": "E_joint_multi_enum",
+      "ops": 0.5714285714285714,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B2",
+      "method_id": "F_greedy_multi",
+      "ops": 0.5714285714285714,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B3",
+      "method_id": "B_fixed_conventional",
+      "ops": 0.5,
+      "n_limit": 1
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B3",
+      "method_id": "C_fixed_optimized",
+      "ops": 0.5714285714285714,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B3",
+      "method_id": "D_multi_conventional",
+      "ops": 0.5,
+      "n_limit": 2
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B3",
+      "method_id": "E_joint_multi_enum",
+      "ops": 0.5714285714285714,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "B3",
+      "method_id": "F_greedy_multi",
+      "ops": 0.5714285714285714,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "Ball",
+      "method_id": "B_fixed_conventional",
+      "ops": 0.42857142857142855,
+      "n_limit": 2
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "Ball",
+      "method_id": "C_fixed_optimized",
+      "ops": 0.5714285714285714,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "Ball",
+      "method_id": "D_multi_conventional",
+      "ops": 0.42857142857142855,
+      "n_limit": 3
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "Ball",
+      "method_id": "E_joint_multi_enum",
+      "ops": 0.5714285714285714,
+      "n_limit": 0
+    },
+    {
+      "kind": "mission_aggregate",
+      "vehicle_key": "volvo_475",
+      "budget": "Ball",
+      "method_id": "F_greedy_multi",
+      "ops": 0.5714285714285714,
+      "n_limit": 0
+    },
+    {
+      "kind": "ablation_vs_portfolio",
+      "vehicle_key": "eactros_600",
+      "budget": "B2",
+      "ablation_multi_E": 0.7857142857142857,
+      "portfolio_E": 0.7857142857142857,
+      "ablation_fixed_C": 0.7857142857142857,
+      "portfolio_C": 0.7857142857142857
+    }
+  ]
+}

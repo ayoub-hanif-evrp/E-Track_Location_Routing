@@ -1,0 +1,14 @@
+instance_id,vehicle_key,budget,n_candidates,n_missions,method,status,ops_coverage,certification,git_sha,wall_sec,n_optimal,n_limit_reached,n_infeasible,note
+national9_eactros_600_B0,eactros_600,B0,9,14,E_joint_multi_enum,optimal_frozen_sites_rescored,0.6428571428571429,full_enum_pre_hos_sites;_hos_rescore,6ac846a434255c0c327488f09f983ae760a81535,,,,,
+national9_eactros_600_B1,eactros_600,B1,9,14,E_joint_multi_enum,optimal_frozen_sites_rescored,0.7857142857142857,full_enum_pre_hos_sites;_hos_rescore,6ac846a434255c0c327488f09f983ae760a81535,,,,,
+national9_eactros_600_B2,eactros_600,B2,9,14,E_joint_multi_enum,optimal_frozen_sites_rescored,0.7857142857142857,full_enum_pre_hos_sites;_hos_rescore,6ac846a434255c0c327488f09f983ae760a81535,,,,,
+national9_eactros_600_B3,eactros_600,B3,9,14,E_joint_multi_enum,optimal_frozen_sites_rescored,0.7857142857142857,full_enum_pre_hos_sites;_hos_rescore,6ac846a434255c0c327488f09f983ae760a81535,,,,,
+national9_eactros_600_Ball,eactros_600,Ball,9,14,E_joint_multi_enum,optimal_frozen_sites_rescored,0.7857142857142857,full_enum_pre_hos_sites;_hos_rescore,6ac846a434255c0c327488f09f983ae760a81535,,,,,
+national9_volvo_475_B0,volvo_475,B0,9,14,E_joint_multi_enum,optimal_frozen_sites_rescored,0.5,full_enum_pre_hos_sites;_hos_rescore,6ac846a434255c0c327488f09f983ae760a81535,,,,,
+national9_volvo_475_B1,volvo_475,B1,9,14,E_joint_multi_enum,optimal_frozen_sites_rescored,0.5714285714285714,full_enum_pre_hos_sites;_hos_rescore,6ac846a434255c0c327488f09f983ae760a81535,,,,,
+national9_volvo_475_B2,volvo_475,B2,9,14,E_joint_multi_enum,optimal_frozen_sites_rescored,0.5714285714285714,full_enum_pre_hos_sites;_hos_rescore,6ac846a434255c0c327488f09f983ae760a81535,,,,,
+national9_volvo_475_B3,volvo_475,B3,9,14,E_joint_multi_enum,optimal_frozen_sites_rescored,0.5714285714285714,full_enum_pre_hos_sites;_hos_rescore,6ac846a434255c0c327488f09f983ae760a81535,,,,,
+national9_volvo_475_Ball,volvo_475,Ball,9,14,E_joint_multi_enum,optimal_frozen_sites_rescored,0.5714285714285714,full_enum_pre_hos_sites;_hos_rescore,6ac846a434255c0c327488f09f983ae760a81535,,,,,
+national9_allsites_eactros_600,eactros_600,Ball,9,14,evaluate_all_sites_multi,feasible_evaluated,0.5,not_enum;_single_full_install_eval,6ac846a434255c0c327488f09f983ae760a81535,3465.09,,,,
+dense_payload_soc_panel_eactros_600,eactros_600,Ball,9,8,dense_payload_soc_panel_all_sites_multi,mixed_with_solver_status,0.0,denser_payload_soc_panel_with_statuses;_not_full_enum,6ac846a434255c0c327488f09f983ae760a81535,4919.22,0.0,8.0,0.0,Gate 5 denser panel: 8 payload×SOC cells × 9 sites
+candidates12_marker_eactros_600,eactros_600,B2,12,14,documented_denser_candidate_bound,not_enumerated,,n_candidates>9_documented;_full_enum_intractable_at_2^12,6ac846a434255c0c327488f09f983ae760a81535,,,,,Gate 5: denser candidate set documented; optimality only on 9-site enum

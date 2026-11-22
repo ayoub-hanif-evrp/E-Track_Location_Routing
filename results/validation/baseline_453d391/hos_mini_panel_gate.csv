@@ -1,0 +1,7 @@
+vehicle_key,budget,n_missions,n_ops_true,all_ops_audit_only,no_post_pad_on_ops_true,git_sha
+eactros_600,B0,14,9,True,True,6ac846a434255c0c327488f09f983ae760a81535
+eactros_600,B2,14,11,True,True,6ac846a434255c0c327488f09f983ae760a81535
+eactros_600,Ball,14,11,True,True,6ac846a434255c0c327488f09f983ae760a81535
+volvo_475,B0,14,7,True,True,6ac846a434255c0c327488f09f983ae760a81535
+volvo_475,B2,14,8,True,True,6ac846a434255c0c327488f09f983ae760a81535
+volvo_475,Ball,14,8,True,True,6ac846a434255c0c327488f09f983ae760a81535

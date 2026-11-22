@@ -6,24 +6,36 @@
 
 ```bash
 pip install -e ".[dev]"
-# Optional: restore ~95MB graph CSVs for nesting/physics tests (CI uses GRAPH_ARTIFACT_URL secret)
+# Optional: restore graph CSVs for nesting/physics tests (CI uses GRAPH_ARTIFACT_URL secret)
 python scripts/pack_multiroute_graph_artifact.py   # local pack → artifacts/multiroute_graph.zip
 pytest -q -m "not integration"
-python scripts/run_stage_c_hos_national.py --phase headline_enum   # Gate 2; multi-hour/day
+
+# === Canonical reproduction (do NOT run all_fast after this) ===
+python scripts/run_stage_c_hos_national.py --phase headline_enum   # enum_cap≤2; screen 45s; winners 600s
 python scripts/run_stage_c_hos_national.py --phase post_portfolio  # ablation, q1, blind, cert, manifest
-python scripts/run_paper_scientific_results_campaign.py --phase frontier --confirm-mode decisive
-python scripts/run_paper_scientific_results_campaign.py --phase robustness
-python scripts/run_paper_scientific_results_campaign.py --phase figures
-python scripts/run_paper_scientific_results_campaign.py --phase report
+python scripts/run_validation_consistency_report.py
 python scripts/run_stage_d_release_package.py
 ```
 
-`headline_enum` runs full HOS-aware A–F exhaustive enum (pipeline `hos_in_search_full_enum`) with uniform 600~s / 500k limits.
-`post_portfolio` rebuilds matched ablation, LIMIT retry, q=1 boundary, blind greedy, larger-instance cert, stability, mini panel, and `campaign_manifest.json`.
-`all_fast` is the frozen-site rescore path (legacy); prefer `headline_enum` + `post_portfolio` for submission tables.
+**Canonical pipeline id:** `hos_in_search_enum_cap2_screen45_final600` (cardinality cap 2 — **not** full \(2^9\)).
+Winners are re-evaluated at 600s / 500k; screened candidates use 45s and are **not** individually certified as global optima unless escalated.
 
-Authoritative numerics: `results/paper_campaign/` + `campaign_manifest.json` + `paper/claims_to_results_crosswalk.csv`.
-Graph CSVs (`nodes.csv`/`edges.csv`) are not always in git (push size); pack with `pack_multiroute_graph_artifact.py` and host as a release asset for CI.
+`post_portfolio` rebuilds matched ablation (with solver statuses), q=1 boundary, blind greedy (selection ≠ final eval), larger-instance cert, stability, mini panel, and `campaign_manifest.json`.
+
+**Do not** run `--phase all_fast` after `headline_enum`: frozen-site rescore overwrites the same `q2_critical_*.csv` names. Use `archive` first if you need a rescore snapshot.
+
+Authoritative numerics: `results/paper_campaign/` + `campaign_manifest.json` + `paper/claims_to_results_crosswalk.csv` + `SCIENTIFIC_VALIDATION_REPORT.md` (when present).
+Graph CSVs (`nodes.csv`/`edges.csv`) are not in git (~90~MB). Pack and publish for CI:
+
+```bash
+python scripts/pack_multiroute_graph_artifact.py
+# Create GitHub Release tag multiroute-graph-v1 and upload artifacts/multiroute_graph.zip
+# Optional: set repository secret GRAPH_ARTIFACT_URL to the asset URL
+```
+
+CI falls back to `.../releases/download/multiroute-graph-v1/multiroute_graph.zip`.
+
+Campaign outputs are mirrored under `results/paper_campaign/{enum,post,frozen}/` so frozen rescore cannot silently replace enum tables.
 
 ---
 **Provisional title:** Joint Charging Infrastructure Placement and Energy-Feasible Routing for Electric Refrigerated Heavy-Duty Trucks on Moroccan Motorway Corridors

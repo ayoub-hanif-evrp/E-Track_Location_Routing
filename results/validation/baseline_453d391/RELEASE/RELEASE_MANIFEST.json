@@ -1,0 +1,66 @@
+{
+  "contribution_statement": "Moroccan refrigerated eHDT + DEM + directional ADM + operational joint siting under HOS-in-search \u2014 not a new generic LRP.",
+  "files": {
+    "blind_greedy_vs_enum.csv": {
+      "bytes": 470,
+      "sha256": "e4930f39ff0c4e29d9aa390b560f9853bb5e346331c5482703a842132c0d0f5a"
+    },
+    "hos_mini_panel_gate.csv": {
+      "bytes": 525,
+      "sha256": "45acd9309bb0f74d9206ff112d269dfbf13686c137346c46ad7bdfabe5dbe026"
+    },
+    "od_dem_site_audit.csv": {
+      "bytes": 9961,
+      "sha256": "caa7fea0c7e95860a7f2a8e9460538d4a975cbab5f1d8dbc5088abed3af8bc89"
+    },
+    "operational_efficiency.csv": {
+      "bytes": 25419,
+      "sha256": "e16d1e40e20e4b4b0ad72ed1c313d21cc1fc9df35e3dffa5b43cc9140f8145b0"
+    },
+    "placement_flexibility_ablation.csv": {
+      "bytes": 4930,
+      "sha256": "97c4caf4e22d66aa3ab03b2b991cd814bd3c72850460379e01322baab0c1f021"
+    },
+    "q1_boundary_refinement.csv": {
+      "bytes": 2978,
+      "sha256": "8ff68e7cf4ab5e2b7e0a3bf016e336560c02927c2f6c21fb775b67da8861b51a"
+    },
+    "q2_critical_missions.csv": {
+      "bytes": 309318,
+      "sha256": "8292cc2141cb63733f23232481118b484e1a0a4085c46fb40e45316a7504794a"
+    },
+    "q2_critical_portfolio.csv": {
+      "bytes": 3625,
+      "sha256": "f46ddec9c25803fdac7b131668fe53ac5a100e80c72a715e698e80e0bf0d21c6"
+    },
+    "q_resolution_flip_inventory.csv": {
+      "bytes": 3057,
+      "sha256": "0608fa1d96e406bbe3dad947ee72d6374c358b765d78d209f7de5dfaa3032e13"
+    },
+    "scenario_registry_frozen.csv": {
+      "bytes": 92393,
+      "sha256": "773d8a5a2d8efbbe887cd132721a727d74565a3129256c0e538cefc29cf51a01"
+    },
+    "solver_certification_table.csv": {
+      "bytes": 6404,
+      "sha256": "4cbaca5d0af3c6dfa70d0d3e650a341e9015527efb402be5e3e1ebb5ccd3d30e"
+    },
+    "solver_larger_instance_table.csv": {
+      "bytes": 2864,
+      "sha256": "fe3d06a2f574243fcae10dc390ef6ae3e4387db0117bf2e14d36fe491c0e26be"
+    },
+    "uncertainty_stability_summary.csv": {
+      "bytes": 759,
+      "sha256": "66d5fc9f6b3976c357ef5e3a70f96f1560a352751e44c319b4777fad190f1c26"
+    }
+  },
+  "generated_at": "2026-11-21T21:04:55",
+  "git_sha": "6ac846a434255c0c327488f09f983ae760a81535",
+  "pipeline": "hos_in_search_stage_c",
+  "release_name": "stage-c-hos-6ac846a43425",
+  "reproduce": [
+    "pip install -e \".[dev]\"",
+    "pytest -q -m \"not integration\"",
+    "python scripts/run_stage_c_hos_national.py --phase all_fast"
+  ]
+}

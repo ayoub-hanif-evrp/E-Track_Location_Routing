@@ -134,6 +134,53 @@ def test_hos_daily_driving_blocks_excess():
     assert r.reason == "hos_daily_driving_exceeded"
 
 
+def test_hos_break_does_not_reset_daily_drive_clock():
+    """Scope guard: CHARGE+WAIT resets continuous drive, not daily_drive_steps.
+
+    Overnight / Art.16 daily-rest reset is NOT implemented — do not claim it.
+    """
+    from morocco_etruck.optimization.resource_transitions import apply_charge
+
+    stations = {"S": StationData("S", power_kw=350.0, eta=1.0, price_cents_per_grid_kwh=0)}
+    inst = RoutingInstance(
+        name="hos_daily_no_overnight",
+        nodes=["O", "S", "D"],
+        arcs=[
+            ArcData("O", "S", dt_steps=4, dE_truck_kwh=5, dE_trailer_kwh=0, road_cost=1, power_ok=True),
+            ArcData("S", "D", dt_steps=4, dE_truck_kwh=5, dE_trailer_kwh=0, road_cost=1, power_ok=True),
+        ],
+        origin="O",
+        destination="D",
+        deadline_steps=80,
+        E_truck_cap=200,
+        E_truck_min=10,
+        E_truck_init=100,
+        E_trailer_cap=None,
+        E_trailer_min=None,
+        E_trailer_init=None,
+        stations=stations,
+        active_stations={"S"},
+        power_source="A",
+        refrigeration_on=False,
+        wait_max_steps=12,
+        time_step_min=5,
+        energy_quantum_kwh=5,
+        hos_in_search=True,
+        hos_rest_nodes=frozenset({"S"}),
+    )
+    inst.charge_duration_steps = lambda st, de, **kw: 4  # type: ignore[method-assign]
+    lab = Label("O", 0, 100, None, 0, None, {"type": "START"}, 0, can_charge=True)
+    r1 = apply_drive(inst, lab, inst.arcs[0], 1)
+    assert r1.ok and r1.label is not None
+    assert r1.label.daily_drive_steps == 4
+    ch = apply_charge(inst, r1.label, 5, 2)
+    assert ch.ok and ch.label is not None
+    w = apply_wait(inst, ch.label, 5, 3)  # complete 45 min break
+    assert w.ok and w.label is not None
+    assert w.label.drive_since_break_steps == 0
+    assert w.label.daily_drive_steps == 4  # daily clock unchanged
+
+
 def test_hos_combined_charge_wait_resets_clock():
     """20 min CHARGE + 25 min WAIT at same node qualifies as a 45 min break."""
     from morocco_etruck.optimization.resource_transitions import apply_charge

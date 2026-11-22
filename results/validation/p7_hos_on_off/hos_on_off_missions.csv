@@ -1,0 +1,15 @@
+od_id,status_ops,status_energy,ops_hos_on,energy_hos_off,min_soc,hos_search_audit_only,solve_sec,installed,git_sha,pipeline,weight
+casa_marrakech,OPTIMAL,OPTIMAL,True,True,0.11435337209637957,True,20.948712400044315,y_benguerir_ca,453d391ab3dd1d18d9c1710f20c74059f6af03aa,p7_hos_on_off,1.0
+casa_agadir,OPTIMAL,OPTIMAL,True,True,0.11815326424509325,True,72.3227113999892,y_benguerir_ca,453d391ab3dd1d18d9c1710f20c74059f6af03aa,p7_hos_on_off,1.0
+marrakech_agadir,INFEASIBLE,INFEASIBLE,False,False,,False,0.00014680007006973028,y_benguerir_ca,453d391ab3dd1d18d9c1710f20c74059f6af03aa,p7_hos_on_off,1.0
+agadir_casa,INFEASIBLE,INFEASIBLE,False,False,,False,0.0004110999871045351,y_benguerir_ca,453d391ab3dd1d18d9c1710f20c74059f6af03aa,p7_hos_on_off,1.0
+agadir_marrakech,OPTIMAL,OPTIMAL,True,True,0.30604901280417635,True,0.21736919996328652,y_benguerir_ca,453d391ab3dd1d18d9c1710f20c74059f6af03aa,p7_hos_on_off,1.0
+marrakech_casa,OPTIMAL,OPTIMAL,True,True,0.3965004133258717,True,0.12445489992387593,y_benguerir_ca,453d391ab3dd1d18d9c1710f20c74059f6af03aa,p7_hos_on_off,1.0
+tangier_casa,OPTIMAL,OPTIMAL,True,True,0.1484511947327078,True,0.19773379992693663,y_benguerir_ca,453d391ab3dd1d18d9c1710f20c74059f6af03aa,p7_hos_on_off,1.0
+casa_tangier,INFEASIBLE,INFEASIBLE,False,False,,False,0.013573899981565773,y_benguerir_ca,453d391ab3dd1d18d9c1710f20c74059f6af03aa,p7_hos_on_off,1.0
+casa_rabat,OPTIMAL,OPTIMAL,True,True,0.5868675086860072,True,0.04277300008106977,y_benguerir_ca,453d391ab3dd1d18d9c1710f20c74059f6af03aa,p7_hos_on_off,1.0
+rabat_casa,OPTIMAL,OPTIMAL,True,True,0.5931142844545387,True,0.06404359999578446,y_benguerir_ca,453d391ab3dd1d18d9c1710f20c74059f6af03aa,p7_hos_on_off,1.0
+rabat_fes,OPTIMAL,OPTIMAL,True,True,0.2998576908997194,True,0.1289703999646008,y_benguerir_ca,453d391ab3dd1d18d9c1710f20c74059f6af03aa,p7_hos_on_off,1.0
+fes_rabat,OPTIMAL,OPTIMAL,True,True,0.48490620567910886,True,0.11867980007082224,y_benguerir_ca,453d391ab3dd1d18d9c1710f20c74059f6af03aa,p7_hos_on_off,1.0
+tangier_rabat,OPTIMAL,OPTIMAL,True,True,0.35983124641069547,True,0.13630490005016327,y_benguerir_ca,453d391ab3dd1d18d9c1710f20c74059f6af03aa,p7_hos_on_off,1.0
+rabat_tangier,OPTIMAL,OPTIMAL,True,True,0.2639909711162522,True,0.1318774000974372,y_benguerir_ca,453d391ab3dd1d18d9c1710f20c74059f6af03aa,p7_hos_on_off,1.0

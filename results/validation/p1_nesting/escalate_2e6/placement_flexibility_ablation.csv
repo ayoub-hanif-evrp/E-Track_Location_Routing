@@ -1,0 +1,3 @@
+vehicle_key,budget,od_id,C_sites,E_sites,ops_fixed_on_C,ops_multi_on_C,ops_fixed_on_E,ops_multi_on_E,status_fixed_on_C,status_multi_on_C,status_fixed_on_E,status_multi_on_E,nesting_class_on_C,nesting_class_on_E,max_expansions,git_sha
+eactros_600,B2,casa_agadir,"y_benguerir_ca,y_larache_rt",y_benguerir_ca,True,True,True,True,OPTIMAL,OPTIMAL,OPTIMAL,OPTIMAL,BOTH_OPS,BOTH_OPS,2000000,453d391ab3dd1d18d9c1710f20c74059f6af03aa
+eactros_600,B2,casa_tangier,"y_benguerir_ca,y_larache_rt",y_benguerir_ca,True,True,False,False,OPTIMAL,OPTIMAL,INFEASIBLE,INFEASIBLE,BOTH_OPS,BOTH_FAIL,2000000,453d391ab3dd1d18d9c1710f20c74059f6af03aa

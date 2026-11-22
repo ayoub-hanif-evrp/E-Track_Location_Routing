@@ -86,6 +86,44 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def coverage_from_mission_rows(mission_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Shared coverage aggregator for blind greedy and enum paths.
+
+    Operational coverage counts ``operationally_served`` only. Solver status is
+    tracked separately so LIMIT_REACHED is never silently treated as INFEASIBLE.
+    """
+    w_ops = w_energy = w_tot = 0.0
+    n_limit = n_optimal = n_infeasible = n_ops = 0
+    for mr in mission_rows:
+        w = float(mr.get("weight") or 1.0)
+        w_tot += w
+        status = str(mr.get("status") or "").upper()
+        if status == "LIMIT_REACHED":
+            n_limit += 1
+        elif status == "OPTIMAL":
+            n_optimal += 1
+        elif status == "INFEASIBLE":
+            n_infeasible += 1
+        if mr.get("energy_feasible_energy_only") or mr.get("energy_feasible"):
+            w_energy += w
+        if mr.get("operationally_served"):
+            w_ops += w
+            n_ops += 1
+    n_missions = len(mission_rows)
+    return {
+        "energy_coverage": w_energy / w_tot if w_tot else 0.0,
+        "operational_coverage": w_ops / w_tot if w_tot else 0.0,
+        "n_missions": n_missions,
+        "n_operationally_served": n_ops,
+        "n_limit_reached": n_limit,
+        "n_optimal": n_optimal,
+        "n_infeasible": n_infeasible,
+        "certified_ops_among_resolved": (
+            (n_ops / max(1, n_missions - n_limit)) if n_missions > n_limit else None
+        ),
+    }
+
+
 def evaluate_mission_operational(
     *,
     prep,
@@ -365,13 +403,10 @@ def evaluate_subset(
     max_expansions: int | None = None,
 ) -> dict[str, Any]:
     mission_rows = []
-    w_ops = w_energy = w_tot = 0.0
-    n_limit = 0
     sec = float(max_seconds) if max_seconds is not None else float(cfg.solver_max_seconds)
     exp = int(max_expansions) if max_expansions is not None else int(cfg.solver_max_expansions)
     for m in context["missions"]:
         prep = context["prepared"][m.id]
-        w_tot += float(m.weight)
         mask = masks[m.id]["short"] if route_mode == "fixed" else masks[m.id]["all"]
         mr = evaluate_mission_operational(
             prep=prep,
@@ -384,13 +419,10 @@ def evaluate_subset(
             max_expansions=exp,
             include_energy_only=include_energy_only,
         )
+        # Ensure weight present for shared aggregator.
+        mr = dict(mr)
+        mr.setdefault("weight", float(m.weight))
         mission_rows.append(mr)
-        if mr.get("energy_feasible_energy_only") or mr.get("energy_feasible"):
-            w_energy += float(m.weight)
-        if mr.get("operationally_served"):
-            w_ops += float(m.weight)
-        if str(mr.get("status") or "").upper() == "LIMIT_REACHED":
-            n_limit += 1
         print(
             f"  {method_id}|{budget_name}|{m.od_id}: "
             f"energy_only={mr.get('energy_feasible_energy_only')} "
@@ -399,6 +431,7 @@ def evaluate_subset(
             flush=True,
         )
 
+    cov = coverage_from_mission_rows(mission_rows)
     secondary = 0.0
     for mr in mission_rows:
         if mr.get("objective") is not None and mr.get("operationally_served"):
@@ -410,28 +443,19 @@ def evaluate_subset(
         "budget_name": budget_name,
         "installed": ",".join(sorted(installed)),
         "n_sites": len(installed),
-        "energy_coverage": w_energy / w_tot if w_tot else 0.0,
-        "operational_coverage": w_ops / w_tot if w_tot else 0.0,
+        "energy_coverage": cov["energy_coverage"],
+        "operational_coverage": cov["operational_coverage"],
         "n_energy_served": sum(
             1
             for r in mission_rows
             if r.get("energy_feasible_energy_only") or r.get("energy_feasible")
         ),
-        "n_operationally_served": sum(
-            1 for r in mission_rows if r.get("operationally_served")
-        ),
-        "n_limit_reached": n_limit,
-        "n_missions": len(mission_rows),
+        "n_operationally_served": cov["n_operationally_served"],
+        "n_limit_reached": cov["n_limit_reached"],
+        "n_missions": cov["n_missions"],
         # Gate 2: unresolved LIMIT cells are not treated as infeasible in the
         # resolved-only rate (certified among non-LIMIT missions).
-        "certified_ops_among_resolved": (
-            (
-                sum(1 for r in mission_rows if r.get("operationally_served"))
-                / max(1, len(mission_rows) - n_limit)
-            )
-            if len(mission_rows) > n_limit
-            else None
-        ),
+        "certified_ops_among_resolved": cov["certified_ops_among_resolved"],
         "secondary_cost_proxy": secondary,
         "missions_json": json.dumps(
             [{k: v for k, v in r.items() if k != "action_trace_json"} for r in mission_rows]

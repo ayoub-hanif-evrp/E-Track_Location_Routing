@@ -14,9 +14,11 @@ jobs:
           python-version: "3.12"
       - name: Install package
         run: pip install -e ".[dev]"
-      - name: Restore multiroute graph artifact (optional)
+      - name: Restore multiroute graph artifact
         env:
           GRAPH_ARTIFACT_URL: ${{ secrets.GRAPH_ARTIFACT_URL }}
+          # Public fallback: GitHub Release asset (set when publishing multiroute-graph-v1)
+          GRAPH_ARTIFACT_FALLBACK_URL: https://github.com/ayoub-hanif-evrp/E-Track_Location_Routing/releases/download/multiroute-graph-v1/multiroute_graph.zip
         run: |
           set -e
           DEST=data/processed/multiroute
@@ -25,11 +27,12 @@ jobs:
             echo "Graph CSVs already present in checkout"
             exit 0
           fi
-          if [ -z "${GRAPH_ARTIFACT_URL}" ]; then
-            echo "GRAPH_ARTIFACT_URL secret unset — graph-dependent tests will skip"
+          URL="${GRAPH_ARTIFACT_URL:-$GRAPH_ARTIFACT_FALLBACK_URL}"
+          echo "Fetching graph from $URL"
+          if ! curl -fsSL "$URL" -o /tmp/multiroute_graph.zip; then
+            echo "Graph download failed — graph-dependent tests will skip"
             exit 0
           fi
-          curl -fsSL "$GRAPH_ARTIFACT_URL" -o /tmp/multiroute_graph.zip
           python - <<'PY'
           import zipfile
           from pathlib import Path

@@ -1,0 +1,5 @@
+vehicle_key,budget,installed,final_ops,final_energy,n_limit,n_optimal,n_infeasible,n_ops,E_ops_reference,E_sites_reference,matches_E_sites,matches_E_ops,max_seconds,git_sha,note,max_expansions
+eactros_600,B1,y_benguerir_ca,0.7142857142857143,0.7857142857142857,1,10,3,10,0.7857142857142857,y_benguerir_ca,True,False,600.0,453d391ab3dd1d18d9c1710f20c74059f6af03aa,frozen site set scored with coverage_from_mission_rows,
+eactros_600,B2,y_benguerir_ca,0.7142857142857143,0.7857142857142857,1,10,3,10,0.7857142857142857,y_benguerir_ca,True,False,600.0,453d391ab3dd1d18d9c1710f20c74059f6af03aa,frozen site set scored with coverage_from_mission_rows,
+eactros_600,B1,y_benguerir_ca,0.7857142857142857,0.7857142857142857,0,11,3,11,0.7857142857142857,y_benguerir_ca,True,True,600.0,453d391ab3dd1d18d9c1710f20c74059f6af03aa,casa_agadir escalated to 2e6; other ODs from 500k fair eval,2000000.0
+eactros_600,B2,y_benguerir_ca,0.7857142857142857,0.7857142857142857,0,11,3,11,0.7857142857142857,y_benguerir_ca,True,True,600.0,453d391ab3dd1d18d9c1710f20c74059f6af03aa,casa_agadir escalated to 2e6; other ODs from 500k fair eval,2000000.0

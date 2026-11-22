@@ -484,6 +484,31 @@ def _run_af_portfolio(
         print(f"[{tag}] Saved enum cache n={len(enum_cache)} card_cap={card_cap}", flush=True)
         _heartbeat({"phase": "enum_complete", "n_cache": len(enum_cache), "card_cap": card_cap})
 
+        # Durable candidate ledger (Priority 3) — screen phase only.
+        cand_rows: list[dict] = []
+        for key, ev in enum_cache.items():
+            cand_rows.append(
+                {
+                    "tag": tag,
+                    "vehicle_key": vehicle_key,
+                    "q": q,
+                    "route_mode": "multi",
+                    "sites": ",".join(sorted(key)),
+                    "n_sites": len(key),
+                    "ops_screen": float(ev.get("operational_coverage") or 0.0),
+                    "energy_screen": float(ev.get("energy_coverage") or 0.0),
+                    "n_limit_screen": int(ev.get("n_limit_reached") or 0),
+                    "n_ops_screen": int(ev.get("n_operationally_served") or 0),
+                    "max_seconds_screen": float(enum_score_seconds),
+                    "include_energy_only": False,
+                    "cardinality_cap": card_cap,
+                    "eval_phase": "screen",
+                    "git_sha": _git_sha(),
+                }
+            )
+        _write_csv(OUT / f"enum_candidates_{tag}.csv", cand_rows)
+        print(f"[{tag}] Wrote enum_candidates n={len(cand_rows)}", flush=True)
+
         fixed_cache: dict[frozenset, dict] = {}
 
         def best_under(nmax: int | None, route_mode: str, method_id: str, bname: str):
@@ -682,7 +707,18 @@ def _run_af_portfolio(
                 + int(c.get("n_limit_reached") or 0),
                 "C_n_limit": int(c.get("n_limit_reached") or 0),
                 "E_n_limit": int(e.get("n_limit_reached") or 0),
-                "pipeline": "hos_in_search_full_enum",
+                "pipeline": "hos_in_search_enum_cap2_screen45_final600",
+                "enum_cardinality_cap": card_cap,
+                "enum_score_seconds": float(enum_score_seconds),
+                "final_max_seconds": float(cfg.solver_max_seconds),
+                "E_certification": (
+                    "certified_exact_under_cap"
+                    if int(e.get("n_limit_reached") or 0) == 0
+                    and int(c.get("n_limit_reached") or 0) == 0
+                    else "best_of_screened_cache_limit_contaminated"
+                ),
+                "B_n_limit": int(b.get("n_limit_reached") or 0),
+                "D_n_limit": int(d.get("n_limit_reached") or 0),
                 "git_sha": _git_sha(),
             }
             cov_curve.append(row)

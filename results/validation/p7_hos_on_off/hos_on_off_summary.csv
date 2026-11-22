@@ -1,0 +1,4 @@
+metric,value,n,git_sha,note
+energy_hos_off_coverage,0.7857142857142857,11,453d391ab3dd1d18d9c1710f20c74059f6af03aa,
+ops_hos_on_coverage,0.7857142857142857,11,453d391ab3dd1d18d9c1710f20c74059f6af03aa,
+energy_true_ops_false,0.0,0,453d391ab3dd1d18d9c1710f20c74059f6af03aa,HOS/search operational gap vs energy-only

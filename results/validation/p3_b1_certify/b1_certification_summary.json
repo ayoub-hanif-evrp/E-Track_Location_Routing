@@ -1,0 +1,9 @@
+{
+  "best_sites": "y_benguerir_ca",
+  "best_ops": 0.7857142857142857,
+  "any_limit": true,
+  "E_certification": "best_of_matched_B1_singles_limit_contaminated",
+  "n_candidates": 10,
+  "settat_ops_after_escalate": 0.7142857142857143,
+  "git_sha": "453d391ab3dd1d18d9c1710f20c74059f6af03aa"
+}

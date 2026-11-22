@@ -38,7 +38,11 @@ from morocco_etruck.optimization.multiroute_placement import load_multiroute_pla
 from morocco_etruck.optimization.multiroute_placement_evaluation import (
     prepare_multiroute_placement_context,
 )
-from run_final_operational_correction import evaluate_mission_operational, evaluate_subset
+from run_final_operational_correction import (
+    coverage_from_mission_rows,
+    evaluate_mission_operational,
+    evaluate_subset,
+)
 from run_paper_scientific_results_campaign import (
     CFG_HEADLINE,
     FRIDGE,
@@ -58,7 +62,20 @@ from run_paper_scientific_results_campaign import (
 )
 
 ARCHIVE = OUT / "_pre_hos_archive"
+DIR_FROZEN = OUT / "frozen"
+DIR_ENUM = OUT / "enum"
+DIR_POST = OUT / "post"
 SHA = _git_sha()
+
+
+def _mirror_outputs(dest: Path, names: list[str]) -> None:
+    """Copy selected campaign root files into a versioned subfolder (no overwrite of peers)."""
+    dest.mkdir(parents=True, exist_ok=True)
+    for name in names:
+        src = OUT / name
+        if src.is_file():
+            shutil.copy2(src, dest / name)
+    print(f"[mirror] {len(names)} files -> {dest}", flush=True)
 
 
 def _parse_sites(raw: Any) -> set[str]:
@@ -177,13 +194,17 @@ def _eval_installed_on_panel(
     budget: str,
     q: int = 2,
     max_seconds: float | None = None,
+    max_expansions: int | None = None,
     od_filter: set[str] | None = None,
+    include_energy_only: bool = True,
 ) -> dict[str, Any]:
-    """Evaluate one installed set over the 14-mission panel via single-OD prep."""
+    """Evaluate one installed set over the 14-mission panel via single-OD prep.
+
+    Operational coverage uses the same aggregator as ``evaluate_subset``
+    (``operationally_served`` only; LIMIT tracked separately).
+    """
     mission_rows: list[dict] = []
-    w_ops = w_energy = w_tot = 0.0
-    n_limit = 0
-    n_certified_ops = 0
+    mask_audit: list[dict] = []
     for mdef in _corridor_missions():
         od = str(mdef["od_id"])
         if od_filter is not None and od not in od_filter:
@@ -196,8 +217,24 @@ def _eval_installed_on_panel(
         )
         mid = context["missions"][0].id
         prep = context["prepared"][mid]
-        mask = masks[mid]["short"] if route_mode == "fixed" else masks[mid]["all"]
+        short = frozenset(masks[mid]["short"])
+        all_mask = frozenset(masks[mid]["all"])
+        mask_audit.append(
+            {
+                "od_id": od,
+                "n_short": len(short),
+                "n_all": len(all_mask),
+                "short_subseteq_all": short <= all_mask,
+                "n_missing_from_all": len(short - all_mask),
+            }
+        )
+        mask = short if route_mode == "fixed" else all_mask
         sec = float(max_seconds) if max_seconds is not None else float(cfg.solver_max_seconds)
+        exp = (
+            int(max_expansions)
+            if max_expansions is not None
+            else int(cfg.solver_max_expansions)
+        )
         mr = evaluate_mission_operational(
             prep=prep,
             cfg=cfg,
@@ -206,7 +243,8 @@ def _eval_installed_on_panel(
             vehicle=vehicle,
             fridge_path=FRIDGE,
             max_seconds=sec,
-            max_expansions=cfg.solver_max_expansions,
+            max_expansions=exp,
+            include_energy_only=include_energy_only,
         )
         row = dict(mr)
         row.update(
@@ -216,23 +254,20 @@ def _eval_installed_on_panel(
                 "q": q,
                 "budget": budget,
                 "method_id": method_id,
+                "route_mode": route_mode,
                 "installed": ",".join(sorted(installed)),
                 "od_id": od,
                 "weight": weight,
+                "n_short_arcs": len(short),
+                "n_all_arcs": len(all_mask),
+                "short_subseteq_all": short <= all_mask,
+                "max_seconds": sec,
+                "max_expansions": exp,
                 "git_sha": SHA,
                 "pipeline": "hos_in_search",
             }
         )
         mission_rows.append(row)
-        w_tot += weight
-        status = str(mr.get("status") or "").upper()
-        if status == "LIMIT_REACHED":
-            n_limit += 1
-        if mr.get("energy_feasible_energy_only") or mr.get("energy_feasible"):
-            w_energy += weight
-        if mr.get("operationally_served") and status == "OPTIMAL":
-            w_ops += weight
-            n_certified_ops += 1
         print(
             f"  {method_id}|{budget}|{od}: ops={mr.get('operationally_served')} "
             f"energy={mr.get('energy_feasible_energy_only', mr.get('energy_feasible'))} "
@@ -240,18 +275,24 @@ def _eval_installed_on_panel(
             f"pad={mr.get('hos_adjusted')} status={mr.get('status')}",
             flush=True,
         )
+    cov = coverage_from_mission_rows(mission_rows)
     return {
         "method_id": method_id,
         "route_mode": route_mode,
         "budget_name": budget,
         "installed": ",".join(sorted(installed)),
         "n_sites": len(installed),
-        "energy_coverage": w_energy / w_tot if w_tot else 0.0,
-        "operational_coverage": w_ops / w_tot if w_tot else 0.0,
+        "energy_coverage": cov["energy_coverage"],
+        "operational_coverage": cov["operational_coverage"],
         "mission_rows": mission_rows,
-        "n_missions": len(mission_rows),
-        "n_limit_reached": n_limit,
-        "n_certified_ops": n_certified_ops,
+        "mask_audit": mask_audit,
+        "n_missions": cov["n_missions"],
+        "n_limit_reached": cov["n_limit_reached"],
+        "n_optimal": cov["n_optimal"],
+        "n_infeasible": cov["n_infeasible"],
+        "n_operationally_served": cov["n_operationally_served"],
+        "n_certified_ops": cov["n_operationally_served"],
+        "certified_ops_among_resolved": cov["certified_ops_among_resolved"],
     }
 
 
@@ -388,17 +429,64 @@ def portfolio_rescore(
 
 
 UNIFORM_MAX_SECONDS = 600.0  # Gate 2/3 matched wall-clock
+# Nesting diagnosis (P1): 500k expansions is insufficient for some multi-mask
+# HOS cells (LIMIT_ARTIFACT). Certified ablation corners use 2e6.
+ABLATION_MAX_EXPANSIONS = 2_000_000
 
 
-def ablation_live(budgets: tuple[str, ...] = ("B2", "Ball")) -> None:
-    """Identical-site cross tables at the same timeout as headline enum."""
+def _classify_nesting_corner(
+    *,
+    ops_fixed: bool | None,
+    ops_multi: bool | None,
+    status_fixed: str | None,
+    status_multi: str | None,
+) -> str:
+    """Classify fixed⊆multi ops relationship with solver statuses."""
+    sf = str(status_fixed or "").upper()
+    sm = str(status_multi or "").upper()
+    of = bool(ops_fixed)
+    om = bool(ops_multi)
+    if of and not om:
+        if sm == "LIMIT_REACHED":
+            return "LIMIT_ARTIFACT"
+        if sf == "OPTIMAL" and sm == "OPTIMAL":
+            return "AUDIT_NONNESTED"
+        if sf == "OPTIMAL" and sm == "INFEASIBLE":
+            return "TRUE_MODEL_INFEAS"
+        return "UNRESOLVED"
+    if (not of) and om:
+        return "FLEX_GAIN"
+    if of and om:
+        return "BOTH_OPS"
+    if sf == "LIMIT_REACHED" or sm == "LIMIT_REACHED":
+        return "LIMIT_CONTAMINATED"
+    return "BOTH_FAIL"
+
+
+def ablation_live(
+    budgets: tuple[str, ...] = ("B2", "Ball"),
+    *,
+    od_filter: set[str] | None = None,
+    vehicle_filter: set[str] | None = None,
+    out_dir: Path | None = None,
+) -> None:
+    """Identical-site cross tables at the same timeout as headline enum.
+
+    Persists per-corner solver status so LIMIT_REACHED is never collapsed into
+    a physical infeasible False.
+    """
+    dest = Path(out_dir) if out_dir is not None else OUT
+    dest.mkdir(parents=True, exist_ok=True)
     # Prefer current headline portfolio sites (post Gate-2 enum when available).
     site_src = pd.read_csv(OUT / "q2_critical_portfolio.csv")
 
     orig = _patch_realistic_speed_policy()
     rows: list[dict] = []
+    mission_dump: list[dict] = []
     try:
         for vehicle_key, gv in site_src.groupby("vehicle_key"):
+            if vehicle_filter is not None and str(vehicle_key) not in vehicle_filter:
+                continue
             for _, prow in gv.iterrows():
                 budget = str(prow["budget"])
                 if budget not in budgets:
@@ -425,13 +513,38 @@ def ablation_live(budgets: tuple[str, ...] = ("B2", "Ball")) -> None:
                         budget=budget,
                         q=2,
                         max_seconds=UNIFORM_MAX_SECONDS,
+                        max_expansions=ABLATION_MAX_EXPANSIONS,
+                        od_filter=od_filter,
                     )
-                by_od: dict[str, dict[str, bool]] = {}
+                by_od: dict[str, dict[str, Any]] = {}
                 for name, ev in corner_ev.items():
                     for mr in ev.get("mission_rows") or []:
                         od = str(mr.get("od_id") or mr.get("mission_id"))
-                        by_od.setdefault(od, {})[name] = bool(mr.get("operationally_served"))
+                        slot = by_od.setdefault(od, {})
+                        slot[name] = bool(mr.get("operationally_served"))
+                        slot[f"status_{name}"] = str(mr.get("status") or "")
+                        slot[f"solve_sec_{name}"] = mr.get("solve_sec")
+                        slot[f"objective_{name}"] = mr.get("objective")
+                        slot[f"audit_{name}"] = mr.get("hos_search_audit_only")
+                        slot[f"short_subseteq_all_{name}"] = mr.get("short_subseteq_all")
+                        dump = dict(mr)
+                        dump["ablation_corner"] = name
+                        dump["budget"] = budget
+                        dump["vehicle_key"] = vehicle_key
+                        mission_dump.append(dump)
                 for od, flags in sorted(by_od.items()):
+                    nest_c = _classify_nesting_corner(
+                        ops_fixed=flags.get("fixed_on_C"),
+                        ops_multi=flags.get("multi_on_C"),
+                        status_fixed=flags.get("status_fixed_on_C"),
+                        status_multi=flags.get("status_multi_on_C"),
+                    )
+                    nest_e = _classify_nesting_corner(
+                        ops_fixed=flags.get("fixed_on_E"),
+                        ops_multi=flags.get("multi_on_E"),
+                        status_fixed=flags.get("status_fixed_on_E"),
+                        status_multi=flags.get("status_multi_on_E"),
+                    )
                     rows.append(
                         {
                             "vehicle_key": vehicle_key,
@@ -444,6 +557,16 @@ def ablation_live(budgets: tuple[str, ...] = ("B2", "Ball")) -> None:
                             "ops_multi_on_C": flags.get("multi_on_C"),
                             "ops_fixed_on_E": flags.get("fixed_on_E"),
                             "ops_multi_on_E": flags.get("multi_on_E"),
+                            "status_fixed_on_C": flags.get("status_fixed_on_C"),
+                            "status_multi_on_C": flags.get("status_multi_on_C"),
+                            "status_fixed_on_E": flags.get("status_fixed_on_E"),
+                            "status_multi_on_E": flags.get("status_multi_on_E"),
+                            "solve_sec_fixed_on_C": flags.get("solve_sec_fixed_on_C"),
+                            "solve_sec_multi_on_C": flags.get("solve_sec_multi_on_C"),
+                            "solve_sec_fixed_on_E": flags.get("solve_sec_fixed_on_E"),
+                            "solve_sec_multi_on_E": flags.get("solve_sec_multi_on_E"),
+                            "nesting_class_on_C": nest_c,
+                            "nesting_class_on_E": nest_e,
                             "flexibility_effect_on_E": int(flags.get("multi_on_E", False))
                             - int(flags.get("fixed_on_E", False)),
                             "flexibility_effect_on_C": int(flags.get("multi_on_C", False))
@@ -460,11 +583,16 @@ def ablation_live(budgets: tuple[str, ...] = ("B2", "Ball")) -> None:
                                 flags.get("multi_on_E", False)
                             )
                             - int(flags.get("fixed_on_C", False)),
+                            "flexibility_certified_on_C": nest_c
+                            in {"FLEX_GAIN", "BOTH_OPS"}
+                            and nest_c != "LIMIT_ARTIFACT",
                             "git_sha": SHA,
                             "pipeline": "hos_in_search",
+                            "max_seconds": UNIFORM_MAX_SECONDS,
                         }
                     )
-                _write_csv(OUT / "placement_flexibility_ablation.csv", rows)
+                _write_csv(dest / "placement_flexibility_ablation.csv", rows)
+                _write_csv(dest / "placement_flexibility_ablation_missions.csv", mission_dump)
     finally:
         import morocco_etruck.optimization.multiroute_placement_evaluation as mpe
 
@@ -477,12 +605,18 @@ def ablation_live(budgets: tuple[str, ...] = ("B2", "Ball")) -> None:
         sub = ab[(ab.vehicle_key == vk) & (ab.budget.astype(str) == bud)]
         if sub.empty:
             continue
+        # Exclude LIMIT_ARTIFACT rows from certified flexibility aggregates
+        certified = sub[sub["nesting_class_on_C"] != "LIMIT_ARTIFACT"]
+        if certified.empty:
+            continue
         multi_e = float(sub["ops_multi_on_E"].astype(bool).mean())
         fixed_c = float(sub["ops_fixed_on_C"].astype(bool).mean())
+        n_limit_art = int((sub["nesting_class_on_C"] == "LIMIT_ARTIFACT").sum())
         print(
             f"[ablation-reconcile] {vk} {bud}: "
             f"multi_on_E={multi_e:.3f} vs E_ops={float(prow['E_ops']):.3f}; "
-            f"fixed_on_C={fixed_c:.3f} vs C_ops={float(prow['C_ops']):.3f}",
+            f"fixed_on_C={fixed_c:.3f} vs C_ops={float(prow['C_ops']):.3f}; "
+            f"LIMIT_ARTIFACT_on_C={n_limit_art}",
             flush=True,
         )
         if abs(multi_e - float(prow["E_ops"])) > 1e-9 or abs(fixed_c - float(prow["C_ops"])) > 1e-9:
@@ -490,7 +624,7 @@ def ablation_live(budgets: tuple[str, ...] = ("B2", "Ball")) -> None:
                 "  WARNING: ablation≠headline — check identical max_seconds / site sets",
                 flush=True,
             )
-    print(f"ablation_live rows={len(rows)}", flush=True)
+    print(f"ablation_live rows={len(rows)} missions={len(mission_dump)} -> {dest}", flush=True)
 
 
 def q1_boundary() -> None:
@@ -645,10 +779,21 @@ def q1_boundary() -> None:
     print(f"q1_boundary done n={len(rows)}", flush=True)
 
 
-def blind_greedy(budgets: tuple[str, ...] = ("B0", "B2")) -> None:
-    """Greedy that evaluates trial subsets live (no enum_cache oracle)."""
+def blind_greedy(
+    budgets: tuple[str, ...] = ("B0", "B2"),
+    *,
+    out_dir: Path | None = None,
+) -> None:
+    """Independent live greedy; final coverage via matched panel eval (not enum oracle).
+
+    Selection may use trial scores; published comparison uses a frozen final eval of
+    the selected install under the same aggregator as E (``coverage_from_mission_rows``).
+    """
+    dest = Path(out_dir) if out_dir is not None else OUT
+    dest.mkdir(parents=True, exist_ok=True)
     orig = _patch_realistic_speed_policy()
     rows: list[dict] = []
+    trial_rows: list[dict] = []
     try:
         for vehicle_key in ("eactros_600",):
             sites = list(FULL_SITE_IDS)
@@ -659,6 +804,7 @@ def blind_greedy(budgets: tuple[str, ...] = ("B0", "B2")) -> None:
                 method_id="blind_empty",
                 budget="B0",
                 q=2,
+                max_seconds=UNIFORM_MAX_SECONDS,
             )
             for bname, nmax in [("B0", 0), ("B1", 1), ("B2", 2)]:
                 if bname not in budgets:
@@ -667,7 +813,10 @@ def blind_greedy(budgets: tuple[str, ...] = ("B0", "B2")) -> None:
                 chosen: set[str] = set()
                 best_ev = empty
                 remaining = set(sites)
+                n_evals = 1  # empty
+                step = 0
                 while remaining and len(chosen) < nmax:
+                    step += 1
                     ranked = []
                     for s in sorted(remaining):
                         trial = chosen | {s}
@@ -679,10 +828,27 @@ def blind_greedy(budgets: tuple[str, ...] = ("B0", "B2")) -> None:
                             method_id="blind_trial",
                             budget=bname,
                             q=2,
+                            max_seconds=UNIFORM_MAX_SECONDS,
                         )
+                        n_evals += 1
                         ranked.append((trial, ev))
+                        trial_rows.append(
+                            {
+                                "vehicle_key": vehicle_key,
+                                "budget": bname,
+                                "step": step,
+                                "trial_sites": ",".join(sorted(trial)),
+                                "ops": float(ev["operational_coverage"]),
+                                "energy": float(ev["energy_coverage"]),
+                                "n_limit": int(ev.get("n_limit_reached") or 0),
+                                "n_optimal": int(ev.get("n_optimal") or 0),
+                                "accepted": False,
+                                "git_sha": SHA,
+                            }
+                        )
                         print(
-                            f"  ops={ev['operational_coverage']:.3f}",
+                            f"  ops={ev['operational_coverage']:.3f} "
+                            f"limit={ev.get('n_limit_reached')}",
                             flush=True,
                         )
                     ranked.sort(key=lambda x: _score(x[1]), reverse=True)
@@ -693,37 +859,82 @@ def blind_greedy(budgets: tuple[str, ...] = ("B0", "B2")) -> None:
                         chosen = set(trial)
                         best_ev = ev
                         remaining = set(sites) - chosen
+                        for tr in trial_rows:
+                            if (
+                                tr["budget"] == bname
+                                and tr["step"] == step
+                                and tr["trial_sites"] == ",".join(sorted(trial))
+                            ):
+                                tr["accepted"] = True
                     else:
                         break
+                wall_selection = time.perf_counter() - t0
+                # Frozen final eval of selected install (matched protocol).
+                t1 = time.perf_counter()
+                print(
+                    f"[blind_greedy] final_eval {bname} {sorted(chosen)}",
+                    flush=True,
+                )
+                final_ev = _eval_installed_on_panel(
+                    vehicle_key=vehicle_key,
+                    installed=chosen,
+                    route_mode="multi",
+                    method_id="blind_final",
+                    budget=bname,
+                    q=2,
+                    max_seconds=UNIFORM_MAX_SECONDS,
+                )
+                n_evals += 1
+                wall_final = time.perf_counter() - t1
                 port = pd.read_csv(OUT / "q2_critical_portfolio.csv")
                 er = port[
                     (port.vehicle_key == vehicle_key) & (port.budget.astype(str) == bname)
                 ]
                 e_ops = float(er.iloc[0]["E_ops"]) if not er.empty else None
-                e_sites = str(er.iloc[0]["E_sites"]) if not er.empty else ""
+                e_sites_raw = str(er.iloc[0]["E_sites"]) if not er.empty else ""
+                e_sites = _parse_sites(e_sites_raw)
+                blind_sites = set(chosen)
                 rows.append(
                     {
                         "vehicle_key": vehicle_key,
                         "budget": bname,
-                        "blind_ops": float(best_ev["operational_coverage"]),
-                        "blind_energy": float(best_ev["energy_coverage"]),
+                        "blind_selected_sites": ",".join(sorted(chosen)),
+                        "n_evals": n_evals,
+                        "wall_sec_selection": round(wall_selection, 2),
+                        "wall_sec_final": round(wall_final, 2),
+                        "blind_ops_selection": float(best_ev["operational_coverage"]),
+                        "blind_ops_final": float(final_ev["operational_coverage"]),
+                        "blind_energy_final": float(final_ev["energy_coverage"]),
+                        "blind_n_limit_final": int(final_ev.get("n_limit_reached") or 0),
+                        "blind_n_infeasible": int(final_ev.get("n_infeasible") or 0),
+                        "blind_n_optimal": int(final_ev.get("n_optimal") or 0),
+                        # Legacy aliases
+                        "blind_ops": float(final_ev["operational_coverage"]),
+                        "blind_energy": float(final_ev["energy_coverage"]),
                         "blind_sites": ",".join(sorted(chosen)),
                         "E_ops_reference": e_ops,
-                        "E_sites_reference": e_sites,
+                        "E_sites_reference": ",".join(sorted(e_sites)),
+                        "matches_E_sites": blind_sites == e_sites,
                         "matches_E_ops": e_ops is not None
-                        and abs(float(best_ev["operational_coverage"]) - e_ops) < 1e-12,
-                        "wall_sec": round(time.perf_counter() - t0, 2),
+                        and abs(float(final_ev["operational_coverage"]) - e_ops) < 1e-12,
+                        "wall_sec": round(wall_selection + wall_final, 2),
                         "selection_engine": "blind_greedy_live_eval",
+                        "eval_context": "per_od_prepare_one_matched_aggregator",
                         "git_sha": SHA,
                     }
                 )
-                _write_csv(OUT / "blind_greedy_vs_enum.csv", rows)
-                print(f"  {bname} blind={rows[-1]['blind_ops']} E_ref={e_ops}", flush=True)
+                _write_csv(dest / "blind_greedy_vs_enum.csv", rows)
+                _write_csv(dest / "blind_greedy_trials.csv", trial_rows)
+                print(
+                    f"  {bname} blind_final={rows[-1]['blind_ops_final']} "
+                    f"E_ref={e_ops} sites_match={rows[-1]['matches_E_sites']}",
+                    flush=True,
+                )
     finally:
         import morocco_etruck.optimization.multiroute_placement_evaluation as mpe
 
         mpe.load_multiroute_pilot_config = orig
-    print(f"blind_greedy done n={len(rows)}", flush=True)
+    print(f"blind_greedy done n={len(rows)} -> {dest}", flush=True)
 
 
 def larger_instance() -> None:
@@ -744,14 +955,16 @@ def larger_instance() -> None:
                         "n_missions": r.get("n_missions", 14),
                         "method": "E_joint_multi_enum",
                         "status": (
-                            "optimal_frozen_sites_rescored"
+                            "best_known_under_cardinality_cap"
                             if str(r.get("pipeline", "")).startswith("hos")
-                            else "optimal_legacy_enum"
+                            else "legacy_enum_unverified"
                         ),
                         "ops_coverage": r.get("E_ops"),
-                        "certification": "full_enum_pre_hos_sites;_hos_rescore"
-                        if "hos" in str(r.get("pipeline", ""))
-                        else "exhaustive_enum",
+                        "certification": (
+                            "enum_cap2_screen45_final600;_not_full_2^9"
+                            if "hos" in str(r.get("pipeline", ""))
+                            else "legacy_label_unverified"
+                        ),
                         "git_sha": SHA,
                     }
                 )
@@ -1176,17 +1389,31 @@ def headline_enum() -> None:
                 enum_score_seconds=45.0,
             )
             for r in cov:
-                r["pipeline"] = "hos_in_search_full_enum"
+                r["pipeline"] = "hos_in_search_enum_cap2_screen45_final600"
                 r["enum_cardinality_cap"] = 2
+                r["enum_score_seconds"] = 45.0
+                r["final_max_seconds"] = float(UNIFORM_MAX_SECONDS)
+                r["E_certification"] = "best_of_screened_cache_until_competitors_certified"
                 r["git_sha"] = SHA
             for r in missions:
-                r["pipeline"] = "hos_in_search_full_enum"
+                r["pipeline"] = "hos_in_search_enum_cap2_screen45_final600"
                 r["enum_cardinality_cap"] = 2
                 r["git_sha"] = SHA
             all_cov.extend(cov)
             all_m.extend(missions)
             _write_csv(OUT / "q2_critical_portfolio.csv", all_cov)
             _write_csv(OUT / "q2_critical_missions.csv", all_m)
+            _mirror_outputs(
+                DIR_ENUM,
+                [
+                    "q2_critical_portfolio.csv",
+                    "q2_critical_missions.csv",
+                    "operational_efficiency.csv",
+                ],
+            )
+            # Also copy any enum_candidates_*.csv written by campaign
+            for p in OUT.glob("enum_candidates_*.csv"):
+                shutil.copy2(p, DIR_ENUM / p.name)
             _tee(f"[headline_enum] wrote portfolio n_budgets={len(cov)} missions={len(missions)}")
     finally:
         camp._run_af_portfolio = _orig  # type: ignore
@@ -1273,6 +1500,24 @@ def main() -> None:
         write_manifest()
     if phase in ("report", "post_portfolio", "all_fast", "all"):
         write_report()
+    if phase in ("post_portfolio", "all_fast"):
+        _mirror_outputs(
+            DIR_POST if phase == "post_portfolio" else DIR_FROZEN,
+            [
+                "placement_flexibility_ablation.csv",
+                "placement_flexibility_ablation_missions.csv",
+                "blind_greedy_vs_enum.csv",
+                "blind_greedy_trials.csv",
+                "q1_boundary_refinement.csv",
+                "solver_certification_table.csv",
+                "solver_larger_instance_table.csv",
+                "hos_mini_panel_gate.csv",
+                "uncertainty_stability_summary.csv",
+                "campaign_manifest.json",
+                "q2_critical_portfolio.csv",
+                "q2_critical_missions.csv",
+            ],
+        )
 
 
 if __name__ == "__main__":
