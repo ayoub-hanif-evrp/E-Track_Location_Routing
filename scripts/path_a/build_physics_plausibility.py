@@ -26,7 +26,9 @@ def main() -> None:
 
     OUT.mkdir(parents=True, exist_ok=True)
     vehicle = load_vehicle(ROOT / "configs" / "vehicles" / "eactros_600.yaml")
-    fridge = load_refrigeration(ROOT / "configs" / "energy" / "refrigeration_approx.yaml")
+    # Headline commodity fridge (firm-ripe tomato UNECE mid-band), not +2 °C approx.
+    fridge = load_refrigeration(ROOT / "configs" / "energy" / "pass2_tomato_firm_ripe.yaml")
+    approx = load_refrigeration(ROOT / "configs" / "energy" / "refrigeration_approx.yaml")
 
     # Steady cruise traction estimate at 80 km/h on flat road (order-of-magnitude).
     v_mps = 80.0 / 3.6
@@ -82,11 +84,13 @@ def main() -> None:
                 "value": round(p_w, 1),
                 "unit": "W",
                 "assumptions": (
-                    f"setpoint={fridge.setpoint_c}C; UA={fridge.UA_w_per_k} W/K; "
+                    f"tomato setpoint={fridge.setpoint_c}C (UNECE 8–10); "
+                    f"UA={fridge.UA_w_per_k} W/K; "
                     f"infiltration={fridge.infiltration_w} W; ambient={t_amb}C; "
-                    "applied on DRIVE/CHARGE/WAIT when refrigeration_on"
+                    "applied on DRIVE/CHARGE/WAIT when refrigeration_on; "
+                    f"legacy_approx_2C_tru_W={tru_electrical_power_w(t_amb, approx):.1f}"
                 ),
-                "reference": "refrigerated EVRP / TRU order-of-magnitude (few kW)",
+                "reference": "UNECE ECE/TRADE/470 tomato guidance + refrigerated EVRP OOM",
                 "plausible": bool(0.0 <= p_w <= 8000.0),
                 "caveat": "engineering UA–COP model; not Bank-calibrated; Wh = P*dt on stationary+drive",
             }

@@ -1,23 +1,19 @@
-# Coverage reconciliation (Path A Gate 0)
+# Coverage reconciliation (Path A corrected)
 
-## Authoritative manuscript ladder (eActros ops)
+## Do not confuse these tables
 
-| Budget | C fixed | E multi | Sites C | Sites E |
-|--------|---------|---------|---------|---------|
-| B0 | 9/14 | 9/14 | — | — |
-| B1 | 10/14 (Larache) | 11/14 (Benguerir CA) | y_larache_rt | y_benguerir_ca |
-| B2 | 11/14 (Benguerir+Larache) | 11/14 (Benguerir CA) | both | y_benguerir_ca |
+1. **historical_enum_selection** — screened E/C under card_cap≤2 (E at Benguerir = **11/14**). Preserve as algorithm-selection history.
+2. **observed_infra_ladder / ablation_multi_on_C** — matched multi-route evaluation of infrastructure configs. Benguerir+Larache multi can be **12/14**; that is better observed coverage than screened E and must be reported.
 
-## Why 12/14 must not be the B2 headline
+## B_fixed_conventional (not baseline_none)
 
-- Ablation **multi_on_C** = **12/14** because `casa_marrakech` is INFEASIBLE under fixed but OPTIMAL under multi on C sites (FLEX_GAIN).
-- Headline **C** optimizes the **fixed-route** mask → still **11/14**.
-- Headline **E** installs only Benguerir → `casa_tangier` fails (needs Larache direction) → **11/14**.
-- Ball `D_energy=12/14` is an energy-only figure under a larger charger set — not B2 operational coverage.
+- B0: no sites, fixed route
+- B1: `y_settat_ca`, fixed route
+- B2: `y_settat_ca,y_settat_ac`, fixed route
 
-## OD footnotes
+## Energy ≠ ops on B1/B2 conventional
 
-- FLEX_GAIN on C sites: casa_marrakech
-- served with Larache on C but not Benguerir-only E: casa_tangier
+Mission cells where energy OPTIMAL but ops false under LIMIT: **2** (see `energy_ops_limit_contamination.csv`).
+Typical OD: `casa_agadir` with Settat. Do not attribute to HOS physics without a conclusive OPTIMAL/INFEASIBLE re-solve.
 
-Source table: `results/validation/path_a/coverage_reconciliation.csv`
+Source: `results/validation/path_a/coverage_reconciliation.csv`

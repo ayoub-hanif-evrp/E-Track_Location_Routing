@@ -1,14 +1,16 @@
 #!/usr/bin/env python
-"""P6 extras: aero / aux / weather on southbound Benguerir cells.
+"""P6 extras: aero / aux / weather / charger-power with re-baked DRIVE tables.
 
-Gate 1 fix: CdA / aux / weather variants **re-bake DRIVE tables** via patched
-temporary vehicle YAML and demand weather_id (fresh prepare; no stale cache).
+Real charger_power_kw variation is passed into prepare (not a label-only stub).
 """
 from __future__ import annotations
 
 import copy
+import json
+import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -34,12 +36,21 @@ from morocco_etruck.optimization.multiroute_placement_evaluation import (  # noq
 OUT = ROOT / "results" / "validation" / "p6_extras"
 SITE = {"y_benguerir_ca"}
 CELLS = [
-    ("casa_marrakech", 5300.0, 0.5),
-    ("casa_agadir", 5300.0, 0.5),
     ("casa_marrakech", 15000.0, 0.8),
     ("casa_agadir", 15000.0, 0.8),
 ]
 VEHICLE_YAML = Path(stage_c.VEHICLES["eactros_600"])
+
+
+def _sha() -> str:
+    try:
+        return (
+            subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT)
+            .decode()
+            .strip()
+        )
+    except Exception:  # noqa: BLE001
+        return stage_c.SHA
 
 
 def _write_variant_vehicle_yaml(
@@ -64,7 +75,6 @@ def _write_variant_vehicle_yaml(
 def _temp_demand_cfg_weather(
     od_id: str, payload: float, soc: float, weather_id: str
 ) -> Path:
-    """Like stage_c._temp_demand_cfg but with explicit weather_id (rebakes DRIVE)."""
     cfg_path = stage_c._temp_demand_cfg(od_id, float(payload), float(soc))
     raw = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
     for m in raw["demand_scenarios"]["frontier_cell"]["missions"]:
@@ -81,6 +91,7 @@ def _prepare_variant(
     soc: float,
     vehicle_yaml: Path,
     weather_id: str = "cool",
+    charger_power_kw: float = 350.0,
     cache_tag: str,
 ):
     key = (
@@ -92,6 +103,7 @@ def _prepare_variant(
         2,
         str(vehicle_yaml.resolve()),
         weather_id,
+        float(charger_power_kw),
     )
     if key in stage_c._PREP_CACHE:
         return stage_c._PREP_CACHE[key]
@@ -108,20 +120,30 @@ def _prepare_variant(
         vehicle_yaml=vehicle_yaml,
         road_cost_per_km=stage_c.ROAD_CENTS,
         fridge_yaml=stage_c.FRIDGE,
-        charger_power_kw=350.0,
+        charger_power_kw=float(charger_power_kw),
         max_alternatives_for_union=2,
         probe_serviceability=False,
     )
+    # Sanity: station power must reflect charger_power_kw
+    prep0 = next(iter(context["prepared"].values()))
+    for st in prep0.template.stations.values():
+        assert abs(float(st.power_kw) - float(charger_power_kw)) < 1e-6, (
+            st.power_kw,
+            charger_power_kw,
+        )
+        break
+
     pilot = load_multiroute_pilot_config(cfg.multiroute_pilot_path, root=ROOT)
     path_rows = pd.read_csv(pilot.path_alternatives_csv).to_dict(orient="records")
     masks = stage_c._mission_masks(context, path_rows)
-    out = (cfg, vehicle, context, masks)
+    out = (cfg, vehicle, context, masks, float(charger_power_kw))
     stage_c._PREP_CACHE[key] = out
     return out
 
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
+    sha = _sha()
     orig = stage_c._patch_realistic_speed_policy()
     rows = []
     variants = [
@@ -131,6 +153,7 @@ def main() -> None:
         ("aux_x1p25", {"aux_mult": 1.25}),
         ("aux_x0p75", {"aux_mult": 0.75}),
         ("charger_250kW", {"charger_kw": 250.0}),
+        ("charger_350kW", {"charger_kw": 350.0}),
         ("weather_hot", {"weather": "hot"}),
     ]
     try:
@@ -144,22 +167,29 @@ def main() -> None:
                         aux_mult=opts.get("aux_mult"),
                     )
                 weather = str(opts.get("weather") or "cool")
-                cfg, vehicle, context, masks = _prepare_variant(
+                chg = float(opts.get("charger_kw") or 350.0)
+                cfg, vehicle, context, masks, chg_used = _prepare_variant(
                     od_id=od,
                     payload=payload,
                     soc=soc,
                     vehicle_yaml=v_yaml,
                     weather_id=weather,
+                    charger_power_kw=chg,
                     cache_tag=vname,
                 )
                 mid = context["missions"][0].id
                 prep = context["prepared"][mid]
-                mask = frozenset(masks[mid]["all"])
+                # Verify vehicle physics fingerprint inputs changed when intended
+                if "cda_mult" in opts:
+                    assert abs(vehicle.CdA_m2 - 6.5 * float(opts["cda_mult"])) < 1e-9
+                if "aux_mult" in opts:
+                    assert abs(vehicle.P_aux_w - 2500.0 * float(opts["aux_mult"])) < 1e-6
+
                 mr = evaluate_mission_operational(
                     prep=prep,
                     cfg=cfg,
                     installed=SITE,
-                    mask=mask,
+                    mask=frozenset(masks[mid]["all"]),
                     vehicle=vehicle,
                     fridge_path=stage_c.FRIDGE,
                     max_seconds=stage_c.UNIFORM_MAX_SECONDS,
@@ -174,29 +204,43 @@ def main() -> None:
                         "payload_kg": payload,
                         "soc_frac": soc,
                         "installed": ",".join(sorted(SITE)),
-                        "charger_kw_note": opts.get("charger_kw", 350.0),
-                        "git_sha": stage_c.SHA,
+                        "charger_power_kw": chg_used,
+                        "vehicle_CdA_m2": float(vehicle.CdA_m2),
+                        "vehicle_P_aux_w": float(vehicle.P_aux_w),
+                        "weather_id": weather,
+                        "git_sha": sha,
                         "pipeline": "p6_extras_rebake",
                         "drive_tables_rebaked": True,
-                        "note": (
-                            "charger_kw variant is labeled only; physics uses site power in graph"
-                            if "charger_kw" in opts
-                            else "re-baked DRIVE tables for CdA/aux/weather; not calibrated probability"
-                        ),
+                        "note": "re-baked DRIVE tables; charger_power_kw applied in prepare",
                     }
                 )
                 rows.append(row)
                 stage_c._write_csv(OUT / "southbound_extras.csv", rows)
                 print(
                     f"  status={row.get('status')} ops={row.get('operationally_served')} "
-                    f"energy={row.get('energy_feasible_energy_only')} "
-                    f"duty={row.get('duty_scope')} min_soc={row.get('min_soc')}",
+                    f"chg={chg_used} CdA={vehicle.CdA_m2:.3f} "
+                    f"min_soc={row.get('min_soc')}",
                     flush=True,
                 )
     finally:
         import morocco_etruck.optimization.multiroute_placement_evaluation as mpe
 
         mpe.load_multiroute_pilot_config = orig
+
+    (OUT / "run_fingerprint.json").write_text(
+        json.dumps(
+            {
+                "git_sha": sha,
+                "pipeline": "p6_extras_rebake",
+                "charger_variation": "real_prepare_override",
+                "n_rows": len(rows),
+                "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     print(f"[p6x] wrote {OUT} n={len(rows)}", flush=True)
 
 

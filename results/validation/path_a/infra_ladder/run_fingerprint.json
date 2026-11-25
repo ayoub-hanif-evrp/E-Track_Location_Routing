@@ -1,0 +1,12 @@
+{
+  "git_sha": "c8d9769ba84469dc65ea434a636949a077aad053",
+  "checkpoint_tag": "path-a-pre-correction-c8d9769",
+  "vehicle_key": "eactros_600",
+  "q": 2,
+  "route_mode": "multi",
+  "max_seconds": 600.0,
+  "max_expansions": 2000000,
+  "fridge": "configs/energy/pass2_tomato_firm_ripe.yaml",
+  "pipeline": "path_a_infra_ladder_matched_multi",
+  "generated_at": "2026-11-25T09:11:51"
+}

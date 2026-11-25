@@ -15,10 +15,17 @@ FILES = [
     "coverage_reconciliation_notes.md",
     "energy_ops_dual_check.csv",
     "energy_ops_dual_notes.md",
+    "energy_ops_limit_contamination.csv",
     "physics_plausibility.csv",
     "physics_plausibility_notes.md",
     "experimental_design_freeze.md",
+    "hos_single_duty_policy.md",
+    "ci_graph_check.json",
     "RELEASE_NOTES.md",
+    "infra_ladder/infra_ladder_summary.csv",
+    "infra_ladder/run_fingerprint.json",
+    "coldchain/coldchain_variants.csv",
+    "coldchain/coldchain_parameter_sources.csv",
 ]
 
 

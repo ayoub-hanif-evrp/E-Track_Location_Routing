@@ -1,37 +1,40 @@
 ﻿# E-Track_Location_Routing
 
-**Path A paper (feasibility / infrastructure assessment):** `paper/manuscript.tex` (TRIP-oriented) + `results/validation/path_a/` + `paper/claims_to_results_crosswalk.csv`.  
-**Instrument numerics:** `results/paper_campaign/` (solver as instrument — not algorithm novelty).
+**Path A (approved research direction):** operational feasibility and charging-infrastructure assessment for refrigerated eHDT on Moroccan motorways.  
+**Authoritative Path A evidence:** `results/validation/path_a/` (observed infra ladder, cold-chain, physics, HOS policy).  
+**Historical algorithm-selection tables:** `results/paper_campaign/` (screened E=11/14 at Benguerir — preserve; do not call it best observed B2 coverage).  
+**Archive:** superseded development scripts/reports live under `archive/`.
 
-## One-command path: clone → tests → regenerate paper tables
+### Observed infrastructure ladder (matched multi-route, 600 s / 2e6)
+
+| Config | Sites | Ops |
+|--------|-------|-----|
+| I0 | none | 9/14 |
+| I1 | Benguerir CA | 11/14 |
+| I2 | Benguerir CA + Larache | **12/14** |
+
+Historical screened E (Benguerir alone) remains 11/14. Report I2 separately.
+
+## Reproduce Path A evidence
 
 ```bash
 pip install -e ".[dev]"
-# Optional: restore graph CSVs for nesting/physics tests (CI uses GRAPH_ARTIFACT_URL secret)
-python scripts/pack_multiroute_graph_artifact.py   # local pack → artifacts/multiroute_graph.zip
 pytest -q -m "not integration"
 
-# === Path A Gate 0–1 consistency (fast) ===
+# Matched infra ladder + consistency
+python scripts/path_a/run_infrastructure_ladder.py
 python scripts/path_a/build_coverage_reconciliation.py
 python scripts/path_a/verify_energy_ops_dual.py
 python scripts/path_a/build_physics_plausibility.py
-
-# === Canonical Stage C reproduction (do NOT run all_fast after this) ===
-python scripts/run_stage_c_hos_national.py --phase headline_enum   # enum_cap≤2; screen 45s; winners 600s
-python scripts/run_stage_c_hos_national.py --phase post_portfolio  # ablation, q1, blind, cert, manifest
+python scripts/path_a/build_coldchain_comparison.py
+python scripts/run_remaining_p6_extras.py          # rebaked CdA/aux/weather + real 250 kW
 python scripts/run_validation_consistency_report.py
-python scripts/run_stage_d_release_package.py
+
+# Optional: escalate Settat casa_agadir LIMIT (do not call HOS-infeasible while LIMIT)
+python scripts/path_a/escalate_settat_casa_agadir.py
 ```
 
-**Canonical pipeline id:** `hos_in_search_enum_cap2_screen45_final600` (cardinality cap 2 — **not** full \(2^9\)).
-Winners are re-evaluated at 600s / 500k; screened candidates use 45s and are **not** individually certified as global optima unless escalated.
-
-`post_portfolio` rebuilds matched ablation (with solver statuses), q=1 boundary, blind greedy (selection ≠ final eval), larger-instance cert, stability, mini panel, and `campaign_manifest.json`.
-
-**Do not** run `--phase all_fast` after `headline_enum`: frozen-site rescore overwrites the same `q2_critical_*.csv` names. Use `archive` first if you need a rescore snapshot.
-
-Authoritative numerics: `results/paper_campaign/` + `campaign_manifest.json` + `paper/claims_to_results_crosswalk.csv` + `SCIENTIFIC_VALIDATION_REPORT.md` (when present).
-Graph CSVs (`nodes.csv`/`edges.csv`) are not in git (~90~MB). Pack and publish for CI:
+Graph CSVs (`nodes.csv`/`edges.csv`) are not in git (~45 MB zip). CI downloads `multiroute-graph-v1`:
 
 ```bash
 python scripts/pack_multiroute_graph_artifact.py

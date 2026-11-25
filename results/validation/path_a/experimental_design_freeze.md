@@ -1,46 +1,29 @@
-# Path A Gate 2 — Experimental design freeze
+# Path A experimental design (corrected)
 
-Frozen before any Gate 3 re-runs. Do not expand geography, enum beyond card≤2, or multi-day Art.16 overnight rest for the paper core.
+## Observed infrastructure configs (authoritative for RQ2)
 
-## Panel and sites
+Protocol: multi-route, eActros, q=2, 600 s / 2e6 expansions.
 
-| Item | Freeze |
-|------|--------|
-| OD panel | 14 equal-weight missions (headline corridor panel) |
-| Candidate sites | 9 directional ADM sites |
-| Primary vehicle | eActros 600 |
-| Primary q | 2 kWh |
-| Certification protocol | 600 s / 2×10⁶ expansions; status ∈ {OPTIMAL, INFEASIBLE, LIMIT_REACHED} |
-| Enum | card_cap ≤ 2; screen 45 s; winners 600 s |
-| Pipeline id | `hos_in_search_enum_cap2_screen45_final600` |
+| ID | Sites | Expected role |
+|----|-------|---------------|
+| I0 | ∅ | no new chargers |
+| I1 | `y_benguerir_ca` | matched counterpart of historical E |
+| I2 | `y_benguerir_ca` + `y_larache_rt` | two-site observed coverage |
 
-## Blocks
+**Observed results:** I0=9/14, I1=11/14, I2=12/14 (0 LIMIT) — see `infra_ladder/`.
 
-| Block | Content | Acceptance |
-|-------|---------|------------|
-| Infra ladder | B0 / B1 (Benguerir E; Larache C) / B2 (Benguerir+Larache C; Benguerir E) | Ops totals match `coverage_reconciliation.csv`; 0 unexplained LIMIT in reported cells |
-| Flexibility | Matched fixed vs multi on identical C and E installs | Nesting classes; report zero-gain honestly; **do not** cite ablation multi_on_C=12/14 as B2 headline |
-| Thresholds | SOC×payload southbound + critical ODs | Feasible/infeasible frontier; statuses complete |
-| Discretization | q ∈ {5,2,1} Agadir→Casa 15 t SOC 0.8 | Retain false-infeasibility at q=5 |
-| Directionality | AC vs CA Benguerir on disputed ODs | Show which direction unlocks service |
+## Historical algorithm-selection (separate table)
 
-## Authoritative coverage ladder (manuscript only)
+Screened enum_cap≤2 E at Benguerir = 11/14. Preserve; do not call best-known B2 coverage.
 
-From `results/validation/path_a/coverage_reconciliation.csv` (`authoritative_for_manuscript=True`):
+## Energy / ops
 
-- B0: 9/14
-- B1: C=10/14 (Larache), E=11/14 (Benguerir CA)
-- B2: C=11/14 (Benguerir+Larache), E=11/14 (Benguerir CA)
+Never attribute energy≠ops to HOS physics while status is LIMIT_REACHED.
 
-**12/14** is ablation multi-on-C only (FLEX_GAIN on `casa_marrakech`) — not the B2 headline.
+## Cold-chain
 
-## Non-goals
+Headline: tomato 9 °C (`pass2_tomato_firm_ripe.yaml`). Compare on/off + UA demand; re-bake DRIVE tables.
 
-- New optimization algorithm / SOTA benchmarks
-- Full multi-day Art.16 overnight 12 h rest
-- Hundreds of sites / national CAPEX without cost data
-- Designing experiments to force a predetermined coverage gain
+## Robustness
 
-## Settat footnote
-
-B1 Settat `casa_agadir` LIMIT: either escalate that single cell to OPTIMAL/INFEASIBLE or footnote as unresolved and keep “best among resolved.”
+CdA / aux / weather / **real** `charger_power_kw` via prepare; assert station power matches.

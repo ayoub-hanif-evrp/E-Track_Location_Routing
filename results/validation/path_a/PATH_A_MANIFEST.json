@@ -3,40 +3,68 @@
   "claims_subseteq_evidence": true,
   "files": {
     "RELEASE_NOTES.md": {
-      "bytes": 1325,
-      "sha256_lf": "f26665ada7fda33175a3c2aeb71c8bbfd6242e27bc6cdd23aa549e7d2b1889e4"
+      "bytes": 953,
+      "sha256_lf": "973aeb7f2b75a47e041f02dfc8ef7d8f1c0ca617aac14fe7c7b0b562b0cbebe2"
+    },
+    "ci_graph_check.json": {
+      "bytes": 195,
+      "sha256_lf": "2242d620c6de8d09ebd57274f6c062b48b3f689467a3c8cf5718483feda1cb0a"
+    },
+    "coldchain/coldchain_parameter_sources.csv": {
+      "bytes": 1069,
+      "sha256_lf": "d5ff2e9437bee52fcdaa119f57753d94127dd7036e6e23bc44434a4914d37fef"
+    },
+    "coldchain/coldchain_variants.csv": {
+      "bytes": 40214,
+      "sha256_lf": "cebc586ca47712a56ac8601cadf5f5eea78b2e33f982d04b2906e1e0f411d5c6"
     },
     "coverage_reconciliation.csv": {
-      "bytes": 4042,
-      "sha256_lf": "ac4d186f3e67385c670f9906b2a687023b944113f7818441ba60864695ae9e06"
+      "bytes": 5804,
+      "sha256_lf": "a7e6ec4e06c712fc913e6f20172337b71fcc2890f883568741a8fdc61e51530c"
     },
     "coverage_reconciliation_notes.md": {
-      "bytes": 1076,
-      "sha256_lf": "2ea9dbc10fed66ff30fbb65c6971fe371bbd5b7577330b89bb9a8350590dff22"
+      "bytes": 955,
+      "sha256_lf": "0481ea73260efa321f1bed6e5123edc1b0a82301a10351f7868467c6c74f5e64"
     },
     "energy_ops_dual_check.csv": {
-      "bytes": 313,
-      "sha256_lf": "787a1025066a2357c90d7f7e282178cd74520242d824ece7bc097293615e16f7"
+      "bytes": 391,
+      "sha256_lf": "2741e0f4b97d7bfd4461b60037bfd4befcf5fe9348ff420985f8b45840f68734"
     },
     "energy_ops_dual_notes.md": {
-      "bytes": 578,
-      "sha256_lf": "ff7053c8a0f8016369c706b96bff76d04f8cdf71e32c6f3de067da0d296fafd4"
+      "bytes": 1035,
+      "sha256_lf": "0941ad2a75861f6c3d9a835e78ffa8adaea35423f238036f80d511db6e2c6a99"
+    },
+    "energy_ops_limit_contamination.csv": {
+      "bytes": 482,
+      "sha256_lf": "03bed8a4fdf0317b29000c0f9af4fbc73e024012360f7cf909022a19afb3bfd5"
     },
     "experimental_design_freeze.md": {
-      "bytes": 2168,
-      "sha256_lf": "af53e57d68aa640bb89244ca0ac6a56a9947e6a2ff40cb46806cd689e27ea514"
+      "bytes": 977,
+      "sha256_lf": "e17b957ce94f7df24f31aa8eca947edf09a5d095781c80b6cfa0b2fc77b2505d"
+    },
+    "hos_single_duty_policy.md": {
+      "bytes": 1228,
+      "sha256_lf": "2e6721b7cc095244f5983fdf19e65deba3164927b4183386a42697a8d90fcdbb"
+    },
+    "infra_ladder/infra_ladder_summary.csv": {
+      "bytes": 869,
+      "sha256_lf": "6d3a81b23da2d58f9c8f39a80194cbc8fe8f24daf7c157086bb9707423a21ba9"
+    },
+    "infra_ladder/run_fingerprint.json": {
+      "bytes": 395,
+      "sha256_lf": "68363bce9080b59b99bd9412534e3f6187c8032415207e6fbebbfd88a098be5d"
     },
     "physics_plausibility.csv": {
-      "bytes": 2079,
-      "sha256_lf": "fe95a78508e3c74d234bbadb895ee1342364b4f54b845600f725929c701dc92f"
+      "bytes": 2260,
+      "sha256_lf": "74bc0a53ce2bcee7104b8e8c3b13bdf63865c31e8b50d78725d5fffd34e202b0"
     },
     "physics_plausibility_notes.md": {
       "bytes": 619,
-      "sha256_lf": "31f56a03c3a1626a309c43228fdfb640d29b9539df86558330a1d9f2117acd6c"
+      "sha256_lf": "0bed9b6e13431a54ae2ee3e2bba93e0a3b801bb07216f2cc7c69e290b74feee8"
     }
   },
-  "generated_at": "2026-11-24T23:16:11",
-  "git_sha": "219c15cfb631d9e12876f862894418a2c1a6c3c4",
+  "generated_at": "2026-11-25T10:42:04",
+  "git_sha": "c8d9769ba84469dc65ea434a636949a077aad053",
   "manuscript": "paper/manuscript.tex",
   "release_name": "path-a-feasibility-freeze",
   "venue_target": "Transportation Research Interdisciplinary Perspectives"

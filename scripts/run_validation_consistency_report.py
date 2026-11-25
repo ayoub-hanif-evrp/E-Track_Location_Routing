@@ -105,25 +105,40 @@ def main() -> None:
         for (vk, bud), g in abl.groupby(["vehicle_key", "budget"]):
             multi_e = _mean_bool(g["ops_multi_on_E"])
             fixed_c = _mean_bool(g["ops_fixed_on_C"])
+            multi_c = _mean_bool(g["ops_multi_on_C"]) if "ops_multi_on_C" in g.columns else None
             pref = port[(port.vehicle_key == vk) & (port.budget.astype(str) == str(bud))]
             if pref.empty:
                 continue
+            e_ops = float(pref.iloc[0]["E_ops"])
             checks.append(
                 {
                     "kind": "ablation_vs_portfolio",
                     "vehicle_key": vk,
                     "budget": str(bud),
                     "ablation_multi_E": multi_e,
-                    "portfolio_E": float(pref.iloc[0]["E_ops"]),
+                    "portfolio_E": e_ops,
                     "ablation_fixed_C": fixed_c,
+                    "ablation_multi_C": multi_c,
                     "portfolio_C": float(pref.iloc[0]["C_ops"]),
                 }
             )
-            if multi_e is not None and abs(multi_e - float(pref.iloc[0]["E_ops"])) > 1e-9:
+            if multi_e is not None and abs(multi_e - e_ops) > 1e-9:
                 issues.append(
                     {
                         "level": "warning",
-                        "msg": f"ablation multi_on_E {multi_e} ≠ E_ops {float(pref.iloc[0]['E_ops'])}",
+                        "msg": f"ablation multi_on_E {multi_e} ≠ E_ops {e_ops}",
+                        "row": f"{vk}/{bud}",
+                    }
+                )
+            # Better-evaluated portfolio than screened E (e.g. multi on C sites)
+            if multi_c is not None and multi_c > e_ops + 1e-12:
+                issues.append(
+                    {
+                        "level": "warning",
+                        "msg": (
+                            f"better_evaluated_than_E: ablation multi_on_C={multi_c} > "
+                            f"screened E_ops={e_ops} — do not claim E as best-known B2 coverage"
+                        ),
                         "row": f"{vk}/{bud}",
                     }
                 )
@@ -135,6 +150,86 @@ def main() -> None:
                             "level": "warning",
                             "msg": f"{n_lim} LIMIT_ARTIFACT nesting rows on C — do not claim certified flex loss",
                             "row": f"{vk}/{bud}",
+                        }
+                    )
+
+    # Incorrect solver-status interpretations: energy OPTIMAL + ops false under LIMIT
+    if miss_path.exists():
+        miss = pd.read_csv(miss_path)
+        lim = miss[miss["status"].astype(str).str.upper() == "LIMIT_REACHED"].copy()
+        energy_col = (
+            "energy_feasible_energy_only"
+            if "energy_feasible_energy_only" in lim.columns
+            else "energy_feasible"
+            if "energy_feasible" in lim.columns
+            else None
+        )
+        if energy_col and "operationally_served" in lim.columns:
+            bad = lim[
+                lim[energy_col].astype(bool) & ~lim["operationally_served"].astype(bool)
+            ]
+        else:
+            bad = lim.iloc[0:0]
+        n_bad = int(len(bad))
+        checks.append(
+            {
+                "kind": "limit_vs_energy_ops",
+                "n_limit_energy_true_ops_false": n_bad,
+                "ods": sorted(bad["od_id"].astype(str).unique().tolist())[:12]
+                if n_bad and "od_id" in bad.columns
+                else [],
+            }
+        )
+        if n_bad:
+            issues.append(
+                {
+                    "level": "warning",
+                    "msg": (
+                        f"{n_bad} LIMIT_REACHED cells have energy feasible but ops false — "
+                        "do not interpret as HOS/physical infeasibility without conclusive re-solve"
+                    ),
+                    "row": "missions/LIMIT_REACHED",
+                }
+            )
+
+    # Observed infra ladder vs historical E (if Path A ladder exists)
+    infra = VAL / "path_a" / "infra_ladder" / "infra_ladder_summary.csv"
+    if infra.exists() and not port.empty:
+        il = pd.read_csv(infra)
+        e_b2 = port[(port.vehicle_key == "eactros_600") & (port.budget.astype(str) == "B2")]
+        if not e_b2.empty and not il.empty:
+            e_ops = float(e_b2.iloc[0]["E_ops"])
+            for _, r in il.iterrows():
+                ops_frac = float(r["ops_frac"])
+                checks.append(
+                    {
+                        "kind": "infra_ladder_vs_E",
+                        "infra_config_id": r["infra_config_id"],
+                        "ops_frac": ops_frac,
+                        "historical_E_ops": e_ops,
+                        "n_limit": int(r.get("n_limit_reached") or 0),
+                    }
+                )
+                if ops_frac > e_ops + 1e-12:
+                    issues.append(
+                        {
+                            "level": "warning",
+                            "msg": (
+                                f"observed {r['infra_config_id']} ops={ops_frac} > "
+                                f"historical E={e_ops} — report observed ladder separately"
+                            ),
+                            "row": str(r["infra_config_id"]),
+                        }
+                    )
+                if int(r.get("n_limit_reached") or 0) > 0:
+                    issues.append(
+                        {
+                            "level": "warning",
+                            "msg": (
+                                f"{r['infra_config_id']} still has "
+                                f"{int(r['n_limit_reached'])} LIMIT — unresolved"
+                            ),
+                            "row": str(r["infra_config_id"]),
                         }
                     )
 

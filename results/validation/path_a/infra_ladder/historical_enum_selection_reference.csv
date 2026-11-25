@@ -1,0 +1,6 @@
+table,budget,E_ops,E_sites,C_ops,C_sites,B_ops,note
+historical_enum_selection,B0,0.6428571428571429,,0.6428571428571429,,0.6428571428571429,screened enum_cap<=2 selection; preserve E=11/14 as historical
+historical_enum_selection,B1,0.7857142857142857,y_benguerir_ca,0.7142857142857143,y_larache_rt,0.6428571428571429,screened enum_cap<=2 selection; preserve E=11/14 as historical
+historical_enum_selection,B2,0.7857142857142857,y_benguerir_ca,0.7857142857142857,"y_benguerir_ca,y_larache_rt",0.6428571428571429,screened enum_cap<=2 selection; preserve E=11/14 as historical
+historical_enum_selection,B3,0.7857142857142857,y_benguerir_ca,0.7857142857142857,"y_benguerir_ca,y_larache_rt",0.6428571428571429,screened enum_cap<=2 selection; preserve E=11/14 as historical
+historical_enum_selection,Ball,0.7857142857142857,y_benguerir_ca,0.7857142857142857,"y_benguerir_ca,y_larache_rt",0.5714285714285714,screened enum_cap<=2 selection; preserve E=11/14 as historical

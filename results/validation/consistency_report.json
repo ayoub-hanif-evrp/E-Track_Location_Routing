@@ -1,8 +1,24 @@
 {
-  "n_checks": 61,
-  "n_issues": 0,
+  "n_checks": 65,
+  "n_issues": 3,
   "n_errors": 0,
-  "issues": [],
+  "issues": [
+    {
+      "level": "warning",
+      "msg": "better_evaluated_than_E: ablation multi_on_C=0.8571428571428571 > screened E_ops=0.7857142857142857 \u2014 do not claim E as best-known B2 coverage",
+      "row": "eactros_600/B2"
+    },
+    {
+      "level": "warning",
+      "msg": "24 LIMIT_REACHED cells have energy feasible but ops false \u2014 do not interpret as HOS/physical infeasibility without conclusive re-solve",
+      "row": "missions/LIMIT_REACHED"
+    },
+    {
+      "level": "warning",
+      "msg": "observed I2_benguerir_larache ops=0.8571428571428571 > historical E=0.7857142857142857 \u2014 report observed ladder separately",
+      "row": "I2_benguerir_larache"
+    }
+  ],
   "checks": [
     {
       "kind": "portfolio_row",
@@ -501,7 +517,39 @@
       "ablation_multi_E": 0.7857142857142857,
       "portfolio_E": 0.7857142857142857,
       "ablation_fixed_C": 0.7857142857142857,
+      "ablation_multi_C": 0.8571428571428571,
       "portfolio_C": 0.7857142857142857
+    },
+    {
+      "kind": "limit_vs_energy_ops",
+      "n_limit_energy_true_ops_false": 24,
+      "ods": [
+        "agadir_casa",
+        "casa_agadir",
+        "casa_marrakech",
+        "marrakech_casa"
+      ]
+    },
+    {
+      "kind": "infra_ladder_vs_E",
+      "infra_config_id": "I0_none",
+      "ops_frac": 0.6428571428571429,
+      "historical_E_ops": 0.7857142857142857,
+      "n_limit": 0
+    },
+    {
+      "kind": "infra_ladder_vs_E",
+      "infra_config_id": "I1_benguerir_ca",
+      "ops_frac": 0.7857142857142857,
+      "historical_E_ops": 0.7857142857142857,
+      "n_limit": 0
+    },
+    {
+      "kind": "infra_ladder_vs_E",
+      "infra_config_id": "I2_benguerir_larache",
+      "ops_frac": 0.8571428571428571,
+      "historical_E_ops": 0.7857142857142857,
+      "n_limit": 0
     }
   ]
 }

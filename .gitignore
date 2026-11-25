@@ -37,11 +37,19 @@ data/processed/multiroute/road_nodes.csv
 data/processed/multiroute/road_edges.csv
 # Packed CI graph artifact (host as release asset; see pack_multiroute_graph_artifact.py)
 artifacts/multiroute_graph.zip
+# Large multiroute graph CSVs (CI downloads multiroute-graph-v1 release asset)
+data/processed/multiroute/nodes.csv
+data/processed/multiroute/edges.csv
 results/paper_campaign/_enum_cache_*.pkl
 results/paper_campaign/_enum_progress_*.json
 stage_c_headline_enum.log
 results/baseline_routes.geojson
 reports/pilot_corridor_report.html
+# Local debug / agent scratch
+review.txt
+scripts/_*.py
+**/__pycache__/
+*.pyc
 
 # Keep the small static PNG in git for review
 !reports/pilot_corridor_overview.png

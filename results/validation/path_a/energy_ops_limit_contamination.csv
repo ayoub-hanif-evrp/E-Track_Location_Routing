@@ -1,0 +1,3 @@
+budget,method_id,od_id,installed,status,energy_status,energy_feasible,operationally_served,interpretation
+B1,B_fixed_conventional,casa_agadir,y_settat_ca,LIMIT_REACHED,OPTIMAL,True,False,"energy≠ops due to HOS-on LIMIT_REACHED — unresolved, NOT certified HOS/physical infeasibility"
+B2,B_fixed_conventional,casa_agadir,"y_settat_ac,y_settat_ca",LIMIT_REACHED,OPTIMAL,True,False,"energy≠ops due to HOS-on LIMIT_REACHED — unresolved, NOT certified HOS/physical infeasibility"

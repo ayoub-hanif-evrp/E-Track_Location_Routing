@@ -1,0 +1,4 @@
+infra_config_id,sites,n_sites,route_mode,ops_served,ops_frac,energy_served,energy_frac,n_missions,n_optimal,n_infeasible,n_limit_reached,elapsed_sec,max_seconds,max_expansions,git_sha,note
+I0_none,,0,multi,9,0.6428571428571429,9,0.6428571428571429,14,9,5,0,610.9,600.0,2000000,c8d9769ba84469dc65ea434a636949a077aad053,observed matched multi-route infra ladder; not enum-selected E portfolio
+I1_benguerir_ca,y_benguerir_ca,1,multi,11,0.7857142857142857,11,0.7857142857142857,14,11,3,0,134.0,600.0,2000000,c8d9769ba84469dc65ea434a636949a077aad053,observed matched multi-route infra ladder; not enum-selected E portfolio
+I2_benguerir_larache,"y_benguerir_ca,y_larache_rt",2,multi,12,0.8571428571428571,12,0.8571428571428571,14,12,2,0,277.0,600.0,2000000,c8d9769ba84469dc65ea434a636949a077aad053,observed matched multi-route infra ladder; not enum-selected E portfolio

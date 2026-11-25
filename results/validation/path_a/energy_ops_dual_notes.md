@@ -1,15 +1,37 @@
-# Energy vs ops dual (Path A Gate 0.3)
+# Energy vs ops dual (Path A corrected)
 
-`evaluate_mission_operational(..., include_energy_only=True)` runs a true
-`hos_in_search=False` solve for energy coverage, then a separate HOS-on solve
-for `operationally_served`.
+## Mechanism
 
-Authoritative cells with energy ≠ ops: **2**
+`evaluate_mission_operational(..., include_energy_only=True)` runs:
 
-- B1 B_baseline_none: energy=10/14 ops=9/14
-- B2 B_baseline_none: energy=10/14 ops=9/14
+1. Energy-only: `hos_in_search=False`
+2. Ops: `hos_in_search=True` + schedule audit
 
-Toy unit proof that energy-only can succeed when HOS blocks:
-`tests/unit/test_hos_in_search.py::test_energy_only_can_succeed_when_hos_blocks`.
+## B1/B2 conventional discrepancy
 
-Table: `results/validation/path_a/energy_ops_dual_check.csv`
+Mission inspection (`energy_ops_limit_contamination.csv`) shows the B1/B2
+energy>ops gap is driven by **`casa_agadir` under Settat (`y_settat_ca`)** returning:
+
+- `status = LIMIT_REACHED` (HOS-on search)
+- `energy_status = OPTIMAL` / `energy_feasible = True`
+- `operationally_served = False`
+
+**Interpretation (campaign rows):** unresolved computational limit at the
+original budget — **not** certified HOS/physical infeasibility from those cells.
+
+**Escalate (conclusive):** at 1200 s / 5×10⁶ expansions, Settat `casa_agadir`
+is `OPTIMAL` ops=True for both fixed and multi
+(`results/validation/path_a/limit_escalate/settat_casa_agadir_escalate.csv`).
+The prior energy≠ops gap was LIMIT contamination, not HOS infeasibility.
+
+## B label correction
+
+`B_fixed_conventional` uses fixed routing with conventional Settat-first installs:
+
+| Budget | Sites |
+|--------|-------|
+| B0 | (none) |
+| B1 | `y_settat_ca` |
+| B2 | `y_settat_ca`, `y_settat_ac` |
+
+Never label these rows `B_baseline_none`.

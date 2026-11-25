@@ -1,3 +1,3 @@
-budget,method,ops_served,energy_served,delta_energy_minus_ops,source_csv,note
-B1,B_baseline_none,9,10,1,results/paper_campaign/q2_critical_portfolio.csv,HOS binds: energy-only serve exceeds ops
-B2,B_baseline_none,9,10,1,results/paper_campaign/q2_critical_portfolio.csv,HOS binds: energy-only serve exceeds ops
+budget,od_id,installed,ops_served,energy_served,status,delta_energy_minus_ops,note
+B1,casa_agadir,y_settat_ca,0,1,LIMIT_REACHED,1,"energy≠ops due to HOS-on LIMIT_REACHED — unresolved, NOT certified HOS/physical infeasibility"
+B2,casa_agadir,"y_settat_ac,y_settat_ca",0,1,LIMIT_REACHED,1,"energy≠ops due to HOS-on LIMIT_REACHED — unresolved, NOT certified HOS/physical infeasibility"

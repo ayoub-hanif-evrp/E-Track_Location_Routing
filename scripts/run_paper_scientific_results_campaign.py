@@ -60,7 +60,7 @@ from morocco_etruck.optimization.multiroute_placement_evaluation import (  # noq
 OUT = ROOT / "results/paper_campaign"
 CFG_PAPER = ROOT / "configs/optimization/paper_scientific_portfolio.yaml"
 CFG_HEADLINE = ROOT / "configs/optimization/multiroute_placement_corridor_portfolio.yaml"
-OUT_MD = ROOT / "reports/PAPER_SCIENTIFIC_RESULTS_CAMPAIGN.md"
+OUT_MD = ROOT / "results/paper_campaign/PAPER_SCIENTIFIC_RESULTS_CAMPAIGN.md"
 
 # Full paper frontier (no lean cuts). DEM-complete ODs only; Oujda incomplete excluded.
 PAYLOADS = [5300.0, 10000.0, 15000.0]

@@ -15,13 +15,13 @@
 \author{Ayoub Hanif}
 \address{EMSI / PhD research, Casablanca, Morocco}
 \begin{abstract}
-We assess under which vehicle, infrastructure, and operating conditions battery-electric refrigerated heavy-duty trucks can feasibly serve selected Moroccan motorway freight missions.
-A multi-resource label-setting solver with hours-of-service (HOS) resources enforced inside search is used as a research \emph{instrument}, not as a claimed algorithmic contribution.
-On a frozen 14-mission panel with nine directional service-area candidates, operational coverage for an eActros~600 under cardinality-capped placement rises from $9/14$ with no new chargers to $11/14$ once a southbound Benguerir site is available; adding a second site (Larache) under fixed routing also reaches $11/14$, with no further certified multi-route gain at the B2 winner.
-We do \emph{not} treat an ablation multi-on-C figure of $12/14$ as the B2 headline.
-Research questions address (RQ1)~payload / departure-SOC thresholds, (RQ2)~which directional sites improve coverage versus site budget, and (RQ3)~sensitivity to routing flexibility, energy discretization~$q$, and physical assumptions.
-Validated supporting findings include restored fixed$\subseteq$multi nesting after escalating \texttt{LIMIT\_REACHED} cells, coarse $q{=}5$ false infeasibility relative to $q\in\{2,1\}$, and documented physics reference checks (not field validation).
-Claims are bound to Path~A reconciliation tables, Stage~C CSVs, and \texttt{SCIENTIFIC\_VALIDATION\_REPORT.md}.
+We assess under which vehicle, infrastructure, and operating conditions battery-electric refrigerated heavy-duty trucks can feasibly serve selected Moroccan motorway freight missions within a single duty period.
+A multi-resource label-setting solver with hours-of-service (HOS) resources enforced inside search is used as a research instrument, not as a claimed algorithmic contribution.
+On a frozen 14-mission panel, matched multi-route re-evaluation at $600$~s / $2\times10^{6}$ expansions yields an observed infrastructure ladder of $9/14$ with no new chargers, $11/14$ with a southbound Benguerir site, and $12/14$ with Benguerir plus Larache ($0$ unresolved \texttt{LIMIT\_REACHED}).
+A historical cardinality-capped enum selection that installed only Benguerir remains $11/14$ and is reported separately as an algorithm-selection result---not as the best observed two-site coverage.
+Research questions address operating thresholds, directional site budgets, and sensitivity to routing flexibility, energy discretization, refrigeration assumptions, and physical parameters.
+Cold-chain parameters follow UNECE firm-ripe tomato guidance (setpoint mid-band $9$~$^{\circ}$C), not a generic $+2$~$^{\circ}$C chiller claim.
+Claims are bound to Path~A validation tables with solver statuses; \texttt{LIMIT\_REACHED} is never equated with infeasibility.
 \end{abstract}
 \begin{keyword}
 electric truck \sep charging infrastructure \sep operational feasibility \sep refrigerated freight \sep Morocco \sep hours of service
@@ -34,76 +34,98 @@ Electrifying refrigerated long-haul freight requires answering an operational qu
 under which vehicle, infrastructure, and duty conditions can missions be served within a single duty period?
 Recent TR-C work on e-truck charging and HOS~\cite{VidottePlaza2026TRC,Cheng2026TemperatureAware} motivates studying feasibility boundaries rather than competing on a new generic location--routing formulation.
 This paper reports a scenario-based assessment of Moroccan motorway corridors.
-The solver (MRLS with HOS-in-search, cardinality $\le 2$) is an instrument for that assessment.
+The solver (MRLS with HOS-in-search) is an instrument for that assessment.
 
 \section{Research questions}
 \label{sec:rq}
 \begin{enumerate}
-\item \textbf{RQ1.} Which payload / departure-SOC / operating thresholds separate feasible from infeasible refrigerated eHDT missions?
-\item \textbf{RQ2.} Which directional candidate sites improve operational coverage as the site budget grows from B0 to B1 to B2?
-\item \textbf{RQ3.} How sensitive are conclusions to routing flexibility, energy discretization~$q$, and physical assumptions?
+\item \textbf{RQ1.} Which payload / departure-SOC thresholds separate feasible from infeasible refrigerated eHDT missions?
+\item \textbf{RQ2.} How does operational coverage change for the observed infrastructure configurations none $\rightarrow$ Benguerir $\rightarrow$ Benguerir+Larache?
+\item \textbf{RQ3.} How sensitive are conclusions to routing flexibility, energy discretization~$q$, refrigeration demand, and physical assumptions?
 \end{enumerate}
 
 \section{Methods}
 \label{sec:methods}
-\subsection{Instrument}
+\subsection{Instrument and HOS scope}
 DEM-aware traction, auxiliaries, and an approximate refrigeration (UA--COP) load feed discrete DRIVE tables.
 Directional ADM service-area candidates may be activated as chargers.
-MRLS enforces continuous driving (qualifying break $\ge 45$~min from consecutive CHARGE+WAIT) and Art.~17 daily driving ($\le 9$~h) inside search.
-Overnight Art.~16 daily-rest reset is \emph{not} implemented: missions that would require it are labeled \texttt{MULTI\_DAY\_OUT\_OF\_SCOPE} and excluded from served counts.
-Independent schedule audit must agree with search break logic; energy-only coverage uses a separate \texttt{hos\_in\_search=False} solve so energy and ops can differ when HOS binds.
+MRLS enforces continuous driving (qualifying break $\ge 45$~min from consecutive CHARGE+WAIT at the same rest node) and Art.~17 daily driving ($\le 9$~h) inside search.
+Overnight Art.~16 daily-rest reset is not implemented; missions requiring it are labeled \texttt{MULTI\_DAY\_OUT\_OF\_SCOPE} and excluded from served counts
+(\texttt{results/validation/path\_a/hos\_single\_duty\_policy.md}).
+Independent schedule audit must agree with search break logic.
+Energy-only coverage uses a separate \texttt{hos\_in\_search=False} solve.
 
 \subsection{Case design}
 Fourteen equal-weight ODs~\cite{OpenStreetMapMoroccoMotorway,CopernicusDEMGLO30}; weather caches~\cite{OpenMeteoWeather};
-nine grounded directional ADM sites; primary $q{=}2$~kWh with controlled $q\in\{5,2,1\}$ cells;
-certification protocol $600$~s / $2\times10^{6}$ expansions with status $\in\{\texttt{OPTIMAL},\texttt{INFEASIBLE},\texttt{LIMIT\_REACHED}\}$.
-Experimental design is frozen in \texttt{results/validation/path\_a/experimental\_design\_freeze.md}.
+nine grounded directional ADM sites; primary $q{=}2$~kWh; certification protocol $600$~s / $2\times10^{6}$ expansions with
+status $\in\{\texttt{OPTIMAL},\texttt{INFEASIBLE},\texttt{LIMIT\_REACHED}\}$.
+
+\subsection{Cold-chain assumptions}
+The headline commodity is firm-ripe fresh tomatoes.
+The campaign refrigeration YAML uses setpoint $9$~$^{\circ}$C (UNECE ECE/TRADE/470 band $8$--$10$~$^{\circ}$C)~\cite{UNECETomato2023}.
+A legacy $+2$~$^{\circ}$C approximation file is retained only for sensitivity contrast and is not the commodity claim
+(\texttt{results/validation/path\_a/coldchain/}).
 
 \subsection{Physics plausibility}
 Flat-cruise traction for a representative refrigerated combination is order $1.34$~kWh/km versus a published eActros long-haul band $\sim 1.11$--$1.14$~kWh/km (different duty cycles).
-Refrigeration setpoint, UA, and Wh accounting on DRIVE/CHARGE/WAIT are tabulated in
-\texttt{results/validation/path\_a/physics\_plausibility.csv}.
-We claim order-of-magnitude credibility, not field validation.
+Reference checks are tabulated in \texttt{physics\_plausibility.csv}; we claim order-of-magnitude credibility, not field validation.
 
 \section{Results}
 \label{sec:results}
 
-\subsection{RQ2 --- infrastructure ladder and critical sites}
-Authoritative eActros operational coverage
-(\texttt{results/validation/path\_a/coverage\_reconciliation.csv}):
-B0 $9/14$; B1 fixed $C{=}10/14$ (Larache) and multi $E{=}11/14$ (Benguerir CA);
-B2 fixed $C{=}11/14$ (Benguerir+Larache) and multi $E{=}11/14$ (Benguerir alone).
-Ablation multi-on-C reaches $12/14$ via a \texttt{FLEX\_GAIN} on \texttt{casa\_marrakech}; that cell is \emph{not} the B2 manuscript headline.
-Matched flexibility therefore shows little or zero certified gain at the B2 winner sites --- a legitimate finding, not a failure mode.
-\texttt{LIMIT\_REACHED} is never equated with infeasibility; nesting claims use escalated $2\times10^{6}$ solves~\cite{OpenStreetMapMoroccoMotorway}.
+\subsection{RQ2 --- observed infrastructure ladder}
+Matched multi-route evaluation
+(\texttt{results/validation/path\_a/infra\_ladder/}):
+\begin{itemize}
+\item I0 (no sites): $9/14$ ops, $0$ LIMIT;
+\item I1 (Benguerir CA): $11/14$ ops, $0$ LIMIT;
+\item I2 (Benguerir CA + Larache): $12/14$ ops, $0$ LIMIT.
+\end{itemize}
+The additional I2 mission relative to I1 is \texttt{casa\_tangier} (Larache direction unlocks service).
+Historical screened enum selection $E$ that installs only Benguerir remains $11/14$ and is preserved as an algorithm-selection table---not as best-known two-site coverage.
 
 \subsection{RQ1 --- operating thresholds}
-With Benguerir CA installed, Casa$\rightarrow$Marrakech / Casa$\rightarrow$Agadir remain largely feasible for departure SOC~$\ge 0.6$ across $\{5.3,10,15\}$~t;
-failures concentrate at SOC~$0.5$ with heavier payloads
+With Benguerir CA, southbound Casa$\rightarrow$Marrakech / Casa$\rightarrow$Agadir remain largely feasible for departure SOC~$\ge 0.6$ across tested payloads;
+failures concentrate at SOC~$0.5$ with heavier loads
 (\texttt{results/validation/p6\_sensitivity/}).
-These are model-scenario fractions, not calibrated real-world probabilities.
+These are model-scenario fractions, not calibrated probabilities.
 
-\subsection{RQ3 --- flexibility, discretization, physics}
-Controlled Agadir$\rightarrow$Casablanca (15~t, SOC~$0.8$): $q{=}5$ is \texttt{INFEASIBLE} while $q\in\{2,1\}$ are \texttt{OPTIMAL} near reserve (min SOC $\approx 10.8\%$) --- coarse-grid false infeasibility.
-Directionality (AC vs CA Benguerir access) unlocks selected disputed ODs under matched installs.
-CdA/aux/weather sensitivities re-bake DRIVE tables before re-evaluation; physics reference checks are documented rather than claimed as OEM calibration.
+\subsection{Energy versus operational coverage}
+On conventional fixed-route Settat installs (B1/B2), mission records show \texttt{casa\_agadir} returning \texttt{LIMIT\_REACHED} under HOS-on search while the energy-only solve is \texttt{OPTIMAL}.
+That gap is unresolved computation---not certified HOS or physical infeasibility
+(\texttt{energy\_ops\_limit\_contamination.csv}).
+Conventional $B$ rows use fixed routing with Settat-first sites; they are not a ``no-site baseline'' except at B0.
+
+\subsection{RQ3 --- flexibility, discretization, refrigeration, physics}
+Matched ablation multi-on-C equals the observed I2 ladder ($12/14$).
+Controlled Agadir$\rightarrow$Casablanca (15~t, SOC~$0.8$): $q{=}5$ is \texttt{INFEASIBLE} while $q\in\{2,1\}$ are \texttt{OPTIMAL} near reserve --- coarse-grid false infeasibility.
+Refrigeration-on versus off and UA/setpoint band variants re-bake DRIVE tables before evaluation.
+On Benguerir-served Casa$\rightarrow$Marrakech / Casa$\rightarrow$Agadir (15~t, SOC~$0.8$), ops feasibility is unchanged across on/off and UA$\times 1.25$;
+min SOC shifts only by $\sim 10^{-3}$ (larger near-reserve Agadir cell), so refrigerated freight is distinguishable in energy reserve but not always in binary coverage
+(\texttt{coldchain/coldchain\_variants.csv}).
+CdA/aux/weather/charger-power sensitivities re-bake DRIVE tables and change min SOC
+(e.g.\ CdA$\times 1.1$ lowers Casa$\rightarrow$Marrakech min SOC from $0.284$ to $0.271$).
+Charger power is varied in prepare ($250$ vs $350$~kW); on the near-reserve Agadir cell, $250$~kW yields a slightly lower min SOC than $350$~kW ($0.121$ vs $0.122$), confirming the override is physical rather than a label-only stub
+(\texttt{results/validation/p6\_extras/southbound\_extras.csv}).
 
 \section{Discussion}
 \label{sec:disc}
-Infeasible-after-infrastructure and ``flexibility adds little'' are reportable outcomes for corridor planning:
-they bound where charging investment and operating policies matter most.
-Plaza et al.\ and temperature-aware TR-C work~\cite{VidottePlaza2026TRC,Cheng2026TemperatureAware} remain motivation for \emph{not} competing on algorithm novelty here.
-Energy-only coverage can exceed HOS-ops when daily or continuous resources bind; dual evaluation keeps those metrics uncontaminated.
+Reporting a better-evaluated two-site configuration ($12/14$) alongside a screened one-site selection ($11/14$) is required for honesty; zero further gain would also have been a legitimate finding.
+Plaza et al.\ and temperature-aware TR-C work~\cite{VidottePlaza2026TRC,Cheng2026TemperatureAware} remain motivation for not competing on algorithm novelty.
+Consistency checks flag better-evaluated portfolios and \texttt{LIMIT}-contaminated energy/ops gaps
+(\texttt{results/validation/consistency\_report.json}).
 
 \section{Limitations}
 \label{sec:limits}
-Single duty day (no Art.~16 overnight reset); cardinality cap~$2$ with 45~s screening; uncalibrated physics parameters; equal OD weights; B1 Settat cell may remain unresolved \texttt{LIMIT\_REACHED} and is footnoted as best-among-resolved.
-CI graph tests require the packed multiroute artifact (\texttt{GRAPH\_ARTIFACT\_URL}).
+Single duty day (no Art.~16 overnight reset); cardinality-capped historical enum is not global $2^{9}$ optimality;
+uncalibrated physics parameters; equal OD weights;
+any remaining \texttt{LIMIT\_REACHED} cells stay unresolved.
+CI graph tests require the packed multiroute artifact (\texttt{multiroute-graph-v1}).
 
 \section{Conclusion}
 \label{sec:conclusion}
-Under the frozen Moroccan panel and single-duty HOS screen, refrigerated eActros missions reach $11/14$ operational coverage once critical directional sites (notably Benguerir CA) are available; further B2 multi-route gain is not certified.
-Threshold, infrastructure, and sensitivity results answer RQ1--RQ3 without claiming a new LRP solver or global optimality over $2^{9}$ subsets.
+Under the frozen Moroccan panel and single-duty HOS screen, refrigerated eActros operational coverage rises from $9/14$ to $11/14$ with Benguerir and to $12/14$ with Benguerir+Larache under matched multi-route evaluation.
+Threshold, infrastructure, and sensitivity results answer RQ1--RQ3 without claiming a new LRP solver or global optimization superiority.
 
 \bibliographystyle{elsarticle-num}
 \bibliography{references}

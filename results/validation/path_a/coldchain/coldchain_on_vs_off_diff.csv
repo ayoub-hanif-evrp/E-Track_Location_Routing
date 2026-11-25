@@ -1,0 +1,3 @@
+od_id,payload_kg,soc_frac,ops_on,ops_off,status_on,status_off,min_soc_on,min_soc_off,differs
+casa_agadir,15000.0,0.8,True,True,OPTIMAL,OPTIMAL,0.1223068542912842,0.12346242567119353,True
+casa_marrakech,15000.0,0.8,True,True,OPTIMAL,OPTIMAL,0.2844546768611581,0.28495728588826413,True
