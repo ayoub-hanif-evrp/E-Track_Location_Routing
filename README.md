@@ -1,6 +1,7 @@
 ﻿# E-Track_Location_Routing
 
-**Paper campaign (authoritative numerics):** `results/paper_campaign/` + `reports/PAPER_SCIENTIFIC_RESULTS_CAMPAIGN.md` + `paper/manuscript.tex`.
+**Path A paper (feasibility / infrastructure assessment):** `paper/manuscript.tex` (TRIP-oriented) + `results/validation/path_a/` + `paper/claims_to_results_crosswalk.csv`.  
+**Instrument numerics:** `results/paper_campaign/` (solver as instrument — not algorithm novelty).
 
 ## One-command path: clone → tests → regenerate paper tables
 
@@ -10,7 +11,12 @@ pip install -e ".[dev]"
 python scripts/pack_multiroute_graph_artifact.py   # local pack → artifacts/multiroute_graph.zip
 pytest -q -m "not integration"
 
-# === Canonical reproduction (do NOT run all_fast after this) ===
+# === Path A Gate 0–1 consistency (fast) ===
+python scripts/path_a/build_coverage_reconciliation.py
+python scripts/path_a/verify_energy_ops_dual.py
+python scripts/path_a/build_physics_plausibility.py
+
+# === Canonical Stage C reproduction (do NOT run all_fast after this) ===
 python scripts/run_stage_c_hos_national.py --phase headline_enum   # enum_cap≤2; screen 45s; winners 600s
 python scripts/run_stage_c_hos_national.py --phase post_portfolio  # ablation, q1, blind, cert, manifest
 python scripts/run_validation_consistency_report.py
@@ -38,7 +44,7 @@ CI falls back to `.../releases/download/multiroute-graph-v1/multiroute_graph.zip
 Campaign outputs are mirrored under `results/paper_campaign/{enum,post,frozen}/` so frozen rescore cannot silently replace enum tables.
 
 ---
-**Provisional title:** Joint Charging Infrastructure Placement and Energy-Feasible Routing for Electric Refrigerated Heavy-Duty Trucks on Moroccan Motorway Corridors
+**Title (Path A):** Operational Feasibility and Charging Infrastructure Requirements for Battery-Electric Refrigerated Freight: A Scenario-Based Assessment of Moroccan Motorway Corridors
 
 PhD research codebase (Casablanca, Morocco). **Task 01** builds a reproducible real-data foundation for the Casablancaâ€“Agadir motorway corridor. It does **not** solve the joint locationâ€“routing optimization problem.
 

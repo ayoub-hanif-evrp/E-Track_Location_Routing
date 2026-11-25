@@ -1,10 +1,18 @@
 #!/usr/bin/env python
-"""P6 extras: aero / aux / charger-power / weather on southbound Benguerir cells."""
+"""P6 extras: aero / aux / weather on southbound Benguerir cells.
+
+Gate 1 fix: CdA / aux / weather variants **re-bake DRIVE tables** via patched
+temporary vehicle YAML and demand weather_id (fresh prepare; no stale cache).
+"""
 from __future__ import annotations
 
 import copy
 import sys
+import tempfile
 from pathlib import Path
+
+import pandas as pd
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -12,19 +20,104 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from run_final_operational_correction import evaluate_mission_operational  # noqa: E402
 import run_stage_c_hos_national as stage_c  # noqa: E402
-from dataclasses import replace
-
 from morocco_etruck.energy.vehicle import load_vehicle  # noqa: E402
+from morocco_etruck.optimization.multiroute_adapter import (  # noqa: E402
+    load_multiroute_pilot_config,
+)
+from morocco_etruck.optimization.multiroute_placement import (  # noqa: E402
+    load_multiroute_placement_config,
+)
+from morocco_etruck.optimization.multiroute_placement_evaluation import (  # noqa: E402
+    prepare_multiroute_placement_context,
+)
 
 OUT = ROOT / "results" / "validation" / "p6_extras"
 SITE = {"y_benguerir_ca"}
-# Nominal headline-like cells that were near-reserve / gained by Benguerir
 CELLS = [
     ("casa_marrakech", 5300.0, 0.5),
     ("casa_agadir", 5300.0, 0.5),
     ("casa_marrakech", 15000.0, 0.8),
     ("casa_agadir", 15000.0, 0.8),
 ]
+VEHICLE_YAML = Path(stage_c.VEHICLES["eactros_600"])
+
+
+def _write_variant_vehicle_yaml(
+    *,
+    cda_mult: float | None = None,
+    aux_mult: float | None = None,
+) -> Path:
+    raw = yaml.safe_load(VEHICLE_YAML.read_text(encoding="utf-8"))
+    raw = copy.deepcopy(raw)
+    if cda_mult is not None:
+        raw["aero"]["CdA_m2"] = float(raw["aero"]["CdA_m2"]) * float(cda_mult)
+    if aux_mult is not None:
+        raw["auxiliaries"]["P_aux_w"] = float(raw["auxiliaries"]["P_aux_w"]) * float(
+            aux_mult
+        )
+    td = Path(tempfile.mkdtemp(prefix="p6_vehicle_"))
+    out = td / "eactros_600_variant.yaml"
+    out.write_text(yaml.safe_dump(raw, sort_keys=False), encoding="utf-8")
+    return out
+
+
+def _temp_demand_cfg_weather(
+    od_id: str, payload: float, soc: float, weather_id: str
+) -> Path:
+    """Like stage_c._temp_demand_cfg but with explicit weather_id (rebakes DRIVE)."""
+    cfg_path = stage_c._temp_demand_cfg(od_id, float(payload), float(soc))
+    raw = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
+    for m in raw["demand_scenarios"]["frontier_cell"]["missions"]:
+        m["weather_id"] = weather_id
+    out = cfg_path.with_name(f"{cfg_path.stem}_{weather_id}.yaml")
+    out.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    return out
+
+
+def _prepare_variant(
+    *,
+    od_id: str,
+    payload: float,
+    soc: float,
+    vehicle_yaml: Path,
+    weather_id: str = "cool",
+    cache_tag: str,
+):
+    key = (
+        "p6x_rebake",
+        cache_tag,
+        od_id,
+        float(payload),
+        float(soc),
+        2,
+        str(vehicle_yaml.resolve()),
+        weather_id,
+    )
+    if key in stage_c._PREP_CACHE:
+        return stage_c._PREP_CACHE[key]
+
+    cfg_path = _temp_demand_cfg_weather(od_id, float(payload), float(soc), weather_id)
+    cfg = load_multiroute_placement_config(cfg_path, root=ROOT)
+    vehicle = load_vehicle(vehicle_yaml)
+    context = prepare_multiroute_placement_context(
+        cfg,
+        root=ROOT,
+        demand_name="frontier_cell",
+        energy_quantum_kwh=2,
+        objective_mode="enroute_incremental_cost",
+        vehicle_yaml=vehicle_yaml,
+        road_cost_per_km=stage_c.ROAD_CENTS,
+        fridge_yaml=stage_c.FRIDGE,
+        charger_power_kw=350.0,
+        max_alternatives_for_union=2,
+        probe_serviceability=False,
+    )
+    pilot = load_multiroute_pilot_config(cfg.multiroute_pilot_path, root=ROOT)
+    path_rows = pd.read_csv(pilot.path_alternatives_csv).to_dict(orient="records")
+    masks = stage_c._mission_masks(context, path_rows)
+    out = (cfg, vehicle, context, masks)
+    stage_c._PREP_CACHE[key] = out
+    return out
 
 
 def main() -> None:
@@ -44,34 +137,24 @@ def main() -> None:
         for od, payload, soc in CELLS:
             for vname, opts in variants:
                 print(f"[p6x] {od} p={payload} soc={soc} {vname}", flush=True)
-                # weather via temp demand cfg patch inside prepare uses cool by default;
-                # for hot, rebuild prep with patched mission weather after prepare.
-                cfg, vehicle, context, masks = stage_c._prepare_one(
-                    vehicle_key="eactros_600",
+                v_yaml = VEHICLE_YAML
+                if "cda_mult" in opts or "aux_mult" in opts:
+                    v_yaml = _write_variant_vehicle_yaml(
+                        cda_mult=opts.get("cda_mult"),
+                        aux_mult=opts.get("aux_mult"),
+                    )
+                weather = str(opts.get("weather") or "cool")
+                cfg, vehicle, context, masks = _prepare_variant(
                     od_id=od,
                     payload=payload,
                     soc=soc,
-                    q=2,
+                    vehicle_yaml=v_yaml,
+                    weather_id=weather,
+                    cache_tag=vname,
                 )
-                # Vehicle param variants (frozen dataclass → replace)
-                vehicle = load_vehicle(stage_c.VEHICLES["eactros_600"])
-                if "cda_mult" in opts:
-                    vehicle = replace(
-                        vehicle, CdA_m2=float(vehicle.CdA_m2) * float(opts["cda_mult"])
-                    )
-                if "aux_mult" in opts:
-                    vehicle = replace(
-                        vehicle, P_aux_w=float(vehicle.P_aux_w) * float(opts["aux_mult"])
-                    )
                 mid = context["missions"][0].id
                 prep = context["prepared"][mid]
-                if opts.get("weather") == "hot":
-                    # Best-effort: retag weather on ctx if attribute exists
-                    if hasattr(prep.ctx, "weather_id"):
-                        prep.ctx.weather_id = "hot"  # type: ignore[attr-defined]
                 mask = frozenset(masks[mid]["all"])
-                # charger power: evaluate_mission_operational uses cfg sites; patch via
-                # temporary station power is not trivial — record as note when unsupported.
                 mr = evaluate_mission_operational(
                     prep=prep,
                     cfg=cfg,
@@ -93,11 +176,12 @@ def main() -> None:
                         "installed": ",".join(sorted(SITE)),
                         "charger_kw_note": opts.get("charger_kw", 350.0),
                         "git_sha": stage_c.SHA,
-                        "pipeline": "p6_extras",
+                        "pipeline": "p6_extras_rebake",
+                        "drive_tables_rebaked": True,
                         "note": (
                             "charger_kw variant is labeled only; physics uses site power in graph"
                             if "charger_kw" in opts
-                            else "physically plausible sensitivity; not calibrated probability"
+                            else "re-baked DRIVE tables for CdA/aux/weather; not calibrated probability"
                         ),
                     }
                 )
@@ -105,7 +189,8 @@ def main() -> None:
                 stage_c._write_csv(OUT / "southbound_extras.csv", rows)
                 print(
                     f"  status={row.get('status')} ops={row.get('operationally_served')} "
-                    f"min_soc={row.get('min_soc')}",
+                    f"energy={row.get('energy_feasible_energy_only')} "
+                    f"duty={row.get('duty_scope')} min_soc={row.get('min_soc')}",
                     flush=True,
                 )
     finally:

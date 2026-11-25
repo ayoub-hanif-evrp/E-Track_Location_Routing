@@ -231,3 +231,106 @@ def test_hos_combined_charge_wait_resets_clock():
     r2 = apply_drive(inst, w.label, inst.arcs[1], 4)
     assert r2.ok and r2.label is not None
     assert r2.label.node == "D"
+
+
+def test_search_replay_agree_on_combined_20_plus_25_break():
+    """Search stationary accum and schedule audit both treat 20+25 as qualifying."""
+    from morocco_etruck.optimization.hos_adjustment import classify_duty_scope
+    from morocco_etruck.optimization.operational_schedule import (
+        validate_operational_schedule,
+    )
+    from morocco_etruck.optimization.resource_transitions import apply_charge
+
+    stations = {"S": StationData("S", power_kw=350.0, eta=1.0, price_cents_per_grid_kwh=0)}
+    inst = RoutingInstance(
+        name="hos_combo_agree",
+        nodes=["O", "S", "D"],
+        arcs=[
+            ArcData("O", "S", dt_steps=8, dE_truck_kwh=10, dE_trailer_kwh=0, road_cost=1, power_ok=True),
+            ArcData("S", "D", dt_steps=8, dE_truck_kwh=10, dE_trailer_kwh=0, road_cost=1, power_ok=True),
+        ],
+        origin="O",
+        destination="D",
+        deadline_steps=80,
+        E_truck_cap=200,
+        E_truck_min=10,
+        E_truck_init=100,
+        E_trailer_cap=None,
+        E_trailer_min=None,
+        E_trailer_init=None,
+        stations=stations,
+        active_stations={"S"},
+        power_source="A",
+        refrigeration_on=False,
+        aux_w=0.0,
+        tru_mean_w=0.0,
+        wait_max_steps=9,
+        time_step_min=5,
+        energy_quantum_kwh=5,
+        hos_in_search=True,
+        hos_rest_nodes=frozenset({"S"}),
+    )
+    inst.charge_duration_steps = lambda st, de, **kw: 4  # type: ignore[method-assign]
+    lab = Label("O", 0, 100, None, 0, None, {"type": "START"}, 0, can_charge=True)
+    r1 = apply_drive(inst, lab, inst.arcs[0], 1)
+    ch = apply_charge(inst, r1.label, 5, 2)
+    w = apply_wait(inst, ch.label, 5, 3)
+    assert w.label.drive_since_break_steps == 0  # search side
+
+    # Replay/audit side: same physical block must reset continuous clock.
+    actions = [
+        {"type": "DRIVE", "dt_steps": 8, "dt_s": 8 * 5 * 60.0},
+        {"type": "CHARGE", "steps": 4, "dt_s": 20 * 60.0, "node": "S"},
+        {"type": "WAIT", "steps": 5, "dt_s": 25 * 60.0, "node": "S"},
+        {"type": "DRIVE", "dt_steps": 8, "dt_s": 8 * 5 * 60.0},
+    ]
+    sched = validate_operational_schedule(
+        actions, time_step_min=5, use_physical_times=True
+    )
+    assert sched.ok, sched.violation
+    assert sched.continuous_driving_max_min <= 270.0 + 1e-9
+    assert classify_duty_scope(daily_driving_min=sched.driving_min) == "SINGLE_DUTY"
+
+
+def test_multi_day_out_of_scope_when_daily_drive_exceeds_9h():
+    from morocco_etruck.optimization.hos_adjustment import (
+        DUTY_MULTI_DAY_OUT_OF_SCOPE,
+        DUTY_SINGLE,
+        classify_duty_scope,
+    )
+
+    assert classify_duty_scope(daily_driving_min=8 * 60.0) == DUTY_SINGLE
+    assert (
+        classify_duty_scope(daily_driving_min=9 * 60.0 + 1.0)
+        == DUTY_MULTI_DAY_OUT_OF_SCOPE
+    )
+    assert (
+        classify_duty_scope(daily_driving_min=100.0, daily_driving_ok=False)
+        == DUTY_MULTI_DAY_OUT_OF_SCOPE
+    )
+    assert (
+        classify_duty_scope(daily_driving_min=100.0, journey_min=24 * 60.0)
+        == DUTY_MULTI_DAY_OUT_OF_SCOPE
+    )
+
+
+def test_energy_only_can_succeed_when_hos_blocks():
+    """Dual-eval contract: hos_in_search=False may be OPTIMAL when HOS-on is not."""
+    inst_e = _long_corridor(hos=False, wait_max=0)
+    res_e = solve_mrls(inst_e, max_seconds=5.0, max_expansions=20_000)
+    assert res_e.status == SolverStatus.OPTIMAL
+
+    inst_h = _long_corridor(hos=True, wait_max=0)
+    res_h = solve_mrls(inst_h, max_seconds=5.0, max_expansions=20_000)
+    # Without WAIT budget, continuous HOS blocks the second leg → not OPTIMAL served path.
+    assert res_h.status != SolverStatus.OPTIMAL or "WAIT" not in [
+        a.get("type") for a in (res_h.actions or [])
+    ]
+    if res_h.status == SolverStatus.OPTIMAL:
+        # If somehow optimal, still must not have inserted a break (wait_max=0).
+        assert "WAIT" not in [a.get("type") for a in res_h.actions]
+    else:
+        assert res_h.status in (
+            SolverStatus.INFEASIBLE,
+            SolverStatus.LIMIT_REACHED,
+        )

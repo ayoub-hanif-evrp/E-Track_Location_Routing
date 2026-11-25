@@ -1,0 +1,3 @@
+budget,method,ops_served,energy_served,delta_energy_minus_ops,source_csv,note
+B1,B_baseline_none,9,10,1,results/paper_campaign/q2_critical_portfolio.csv,HOS binds: energy-only serve exceeds ops
+B2,B_baseline_none,9,10,1,results/paper_campaign/q2_critical_portfolio.csv,HOS binds: energy-only serve exceeds ops

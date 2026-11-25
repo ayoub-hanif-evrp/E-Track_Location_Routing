@@ -32,7 +32,17 @@ def _sha256(path: Path) -> str:
 
 
 def refresh_crosswalk() -> None:
+    """Refresh crosswalk. Prefer frozen Path A CSV when present (do not clobber PA*)."""
     sha = _git_sha()
+    path_a_xwalk = PAPER / "claims_to_results_crosswalk.csv"
+    # If Path A claims already authored, only stamp git_sha and keep rows.
+    if path_a_xwalk.is_file():
+        existing = pd.read_csv(path_a_xwalk)
+        if "claim_id" in existing.columns and existing["claim_id"].astype(str).str.startswith("PA").any():
+            existing["git_sha"] = sha
+            existing.to_csv(path_a_xwalk, index=False, lineterminator="\n")
+            print(f"Preserved Path A crosswalk ({len(existing)} rows) → {path_a_xwalk}", flush=True)
+            return
     port = OUT / "q2_critical_portfolio.csv"
     claims = []
     if port.exists():
@@ -127,6 +137,39 @@ def refresh_crosswalk() -> None:
             "stage_c",
             "also solver_larger_instance_table.csv; blind_greedy_vs_enum.csv",
         ),
+        # Path A feasibility paper claims (TRIP-oriented; instrument ≠ algorithm novelty)
+        (
+            "PA01",
+            "Abstract; RQ2 Results",
+            "Authoritative eActros ladder B0=9/14; B1 C=10/14 E=11/14; B2 C=E=11/14 — not 12/14 headline",
+            "results/validation/path_a/coverage_reconciliation.csv",
+            "validated",
+            "authoritative_for_manuscript=True; 12/14 is ablation multi_on_C only",
+        ),
+        (
+            "PA06",
+            "Methods",
+            "HOS search↔replay CHARGE+WAIT; MULTI_DAY_OUT_OF_SCOPE; no Art.16 overnight",
+            "tests/unit/test_hos_in_search.py",
+            "validated",
+            "single-duty Path A scope",
+        ),
+        (
+            "PA07",
+            "Methods; Results",
+            "Energy-only dual (hos_in_search=False) can exceed ops when HOS binds",
+            "results/validation/path_a/energy_ops_dual_check.csv",
+            "validated",
+            "true energy-only solve separate from HOS-ops",
+        ),
+        (
+            "PA08",
+            "Methods / Appendix",
+            "Physics plausibility reference table (traction + TRU Wh)",
+            "results/validation/path_a/physics_plausibility.csv",
+            "reference_check",
+            "not field validation",
+        ),
     ]:
         claims.append(
             {
@@ -140,7 +183,7 @@ def refresh_crosswalk() -> None:
             }
         )
     out = PAPER / "claims_to_results_crosswalk.csv"
-    pd.DataFrame(claims).to_csv(out, index=False)
+    pd.DataFrame(claims).to_csv(out, index=False, lineterminator="\n")
     print(f"Wrote {out}", flush=True)
 
 
@@ -165,14 +208,20 @@ def write_release() -> None:
         "reproduce": [
             "pip install -e \".[dev]\"",
             "pytest -q -m \"not integration\"",
+            "python scripts/path_a/build_coverage_reconciliation.py",
+            "python scripts/path_a/verify_energy_ops_dual.py",
+            "python scripts/path_a/build_physics_plausibility.py",
             "python scripts/run_stage_c_hos_national.py --phase headline_enum",
             "python scripts/run_stage_c_hos_national.py --phase post_portfolio",
             "python scripts/run_validation_consistency_report.py",
         ],
         "contribution_statement": (
-            "Moroccan refrigerated eHDT + DEM + directional ADM + operational joint "
-            "siting under HOS-in-search — not a new generic LRP."
+            "Path A: operational feasibility and charging-infrastructure requirements "
+            "for refrigerated eHDT on Moroccan motorway corridors. MRLS/HOS-in-search "
+            "is the research instrument — not a new generic LRP algorithm."
         ),
+        "venue_target": "Transportation Research Interdisciplinary Perspectives",
+        "path_a_artifacts": "results/validation/path_a/",
     }
     text = json.dumps(payload, indent=2, sort_keys=True)
     man = REL / "RELEASE_MANIFEST.json"
@@ -189,14 +238,20 @@ def write_release() -> None:
 - Git SHA: `{sha}`
 - Pipeline: HOS-in-search Stage C artifacts under `results/paper_campaign/`
 - Claims crosswalk: `paper/claims_to_results_crosswalk.csv`
-- Manuscript: `paper/manuscript.tex` (claims ⊆ Stage C tables)
+- Manuscript: `paper/manuscript.tex` (Path A TRIP feasibility; claims ⊆ crosswalk)
+- Path A freeze: `results/validation/path_a/RELEASE_NOTES.md`
 
 ## Reproduce
 
 ```bash
 pip install -e ".[dev]"
 pytest -q -m "not integration"
-python scripts/run_stage_c_hos_national.py --phase all_fast
+python scripts/path_a/build_coverage_reconciliation.py
+python scripts/path_a/verify_energy_ops_dual.py
+python scripts/path_a/build_physics_plausibility.py
+python scripts/run_stage_c_hos_national.py --phase headline_enum
+python scripts/run_stage_c_hos_national.py --phase post_portfolio
+python scripts/run_validation_consistency_report.py
 ```
 
 ## Contribution (scoped)

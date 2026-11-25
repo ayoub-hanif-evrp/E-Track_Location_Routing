@@ -1,9 +1,13 @@
 {
-  "contribution_statement": "Moroccan refrigerated eHDT + DEM + directional ADM + operational joint siting under HOS-in-search \u2014 not a new generic LRP.",
+  "contribution_statement": "Path A: operational feasibility and charging-infrastructure requirements for refrigerated eHDT on Moroccan motorway corridors. MRLS/HOS-in-search is the research instrument \u2014 not a new generic LRP algorithm.",
   "files": {
     "blind_greedy_vs_enum.csv": {
       "bytes": 470,
       "sha256": "e4930f39ff0c4e29d9aa390b560f9853bb5e346331c5482703a842132c0d0f5a"
+    },
+    "campaign_manifest.json": {
+      "bytes": 3458,
+      "sha256": "4225e5b4e7813f5f8bc2a9f5c4e8bc4432f572e6dff9dcd08fe1cb0468098b6c"
     },
     "hos_mini_panel_gate.csv": {
       "bytes": 525,
@@ -18,8 +22,12 @@
       "sha256": "e16d1e40e20e4b4b0ad72ed1c313d21cc1fc9df35e3dffa5b43cc9140f8145b0"
     },
     "placement_flexibility_ablation.csv": {
-      "bytes": 4930,
-      "sha256": "97c4caf4e22d66aa3ab03b2b991cd814bd3c72850460379e01322baab0c1f021"
+      "bytes": 4835,
+      "sha256": "f7a15c75c887fcc39116556aa11c3531cb7ad8063fbe8ca2dc7d86ea2912db45"
+    },
+    "placement_flexibility_ablation_missions.csv": {
+      "bytes": 293657,
+      "sha256": "b7cf687aa0ac1ecc7cf7c9bcc1365354c134f6d5afbb30d04f798b4c626221a6"
     },
     "q1_boundary_refinement.csv": {
       "bytes": 2978,
@@ -30,8 +38,8 @@
       "sha256": "8292cc2141cb63733f23232481118b484e1a0a4085c46fb40e45316a7504794a"
     },
     "q2_critical_portfolio.csv": {
-      "bytes": 3625,
-      "sha256": "f46ddec9c25803fdac7b131668fe53ac5a100e80c72a715e698e80e0bf0d21c6"
+      "bytes": 4508,
+      "sha256": "9df2963d07d81a40c31731788916923568354048336c032471b9d1ee70d61eeb"
     },
     "q_resolution_flip_inventory.csv": {
       "bytes": 3057,
@@ -54,13 +62,20 @@
       "sha256": "66d5fc9f6b3976c357ef5e3a70f96f1560a352751e44c319b4777fad190f1c26"
     }
   },
-  "generated_at": "2026-11-21T21:04:55",
-  "git_sha": "6ac846a434255c0c327488f09f983ae760a81535",
+  "generated_at": "2026-11-24T23:16:11",
+  "git_sha": "219c15cfb631d9e12876f862894418a2c1a6c3c4",
+  "path_a_artifacts": "results/validation/path_a/",
   "pipeline": "hos_in_search_stage_c",
-  "release_name": "stage-c-hos-6ac846a43425",
+  "release_name": "stage-c-hos-219c15cfb631",
   "reproduce": [
     "pip install -e \".[dev]\"",
     "pytest -q -m \"not integration\"",
-    "python scripts/run_stage_c_hos_national.py --phase all_fast"
-  ]
+    "python scripts/path_a/build_coverage_reconciliation.py",
+    "python scripts/path_a/verify_energy_ops_dual.py",
+    "python scripts/path_a/build_physics_plausibility.py",
+    "python scripts/run_stage_c_hos_national.py --phase headline_enum",
+    "python scripts/run_stage_c_hos_national.py --phase post_portfolio",
+    "python scripts/run_validation_consistency_report.py"
+  ],
+  "venue_target": "Transportation Research Interdisciplinary Perspectives"
 }

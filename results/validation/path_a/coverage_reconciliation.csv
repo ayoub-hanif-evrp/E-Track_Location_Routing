@@ -1,0 +1,20 @@
+vehicle_key,budget,method,route_mode,sites,ops_served,ops_frac,energy_served,energy_frac,n_missions,n_limit_reached,n_infeasible,n_optimal,source_csv,authoritative_for_manuscript,note
+eactros_600,B0,B_baseline_none,multi,,9,0.6428571428571429,9.0,0.6428571428571429,14,0,,,results/paper_campaign/q2_critical_portfolio.csv,True,frozen headline portfolio
+eactros_600,B0,C_fixed_route_opt,fixed,nan,9,0.6428571428571429,9.0,0.6428571428571429,14,0,,,results/paper_campaign/q2_critical_portfolio.csv,True,frozen headline portfolio
+eactros_600,B0,E_joint_multi_enum,multi,nan,9,0.6428571428571429,9.0,0.6428571428571429,14,0,,,results/paper_campaign/q2_critical_portfolio.csv,True,frozen headline portfolio; card_cap<=2 screen45 final600
+eactros_600,B1,B_baseline_none,multi,,9,0.6428571428571429,10.0,0.7142857142857143,14,0,,,results/paper_campaign/q2_critical_portfolio.csv,True,frozen headline portfolio
+eactros_600,B1,C_fixed_route_opt,fixed,y_larache_rt,10,0.7142857142857143,10.0,0.7142857142857143,14,0,,,results/paper_campaign/q2_critical_portfolio.csv,True,frozen headline portfolio
+eactros_600,B1,E_joint_multi_enum,multi,y_benguerir_ca,11,0.7857142857142857,11.0,0.7857142857142857,14,0,,,results/paper_campaign/q2_critical_portfolio.csv,True,frozen headline portfolio; card_cap<=2 screen45 final600
+eactros_600,B2,B_baseline_none,multi,,9,0.6428571428571429,10.0,0.7142857142857143,14,0,,,results/paper_campaign/q2_critical_portfolio.csv,True,frozen headline portfolio
+eactros_600,B2,C_fixed_route_opt,fixed,"y_benguerir_ca,y_larache_rt",11,0.7857142857142857,11.0,0.7857142857142857,14,0,,,results/paper_campaign/q2_critical_portfolio.csv,True,frozen headline portfolio
+eactros_600,B2,E_joint_multi_enum,multi,y_benguerir_ca,11,0.7857142857142857,11.0,0.7857142857142857,14,0,,,results/paper_campaign/q2_critical_portfolio.csv,True,frozen headline portfolio; card_cap<=2 screen45 final600
+eactros_600,B3,B_baseline_none,multi,,9,0.6428571428571429,10.0,0.7142857142857143,14,0,,,results/paper_campaign/q2_critical_portfolio.csv,False,frozen headline portfolio
+eactros_600,B3,C_fixed_route_opt,fixed,"y_benguerir_ca,y_larache_rt",11,0.7857142857142857,11.0,0.7857142857142857,14,0,,,results/paper_campaign/q2_critical_portfolio.csv,False,frozen headline portfolio
+eactros_600,B3,E_joint_multi_enum,multi,y_benguerir_ca,11,0.7857142857142857,11.0,0.7857142857142857,14,0,,,results/paper_campaign/q2_critical_portfolio.csv,False,frozen headline portfolio; card_cap<=2 screen45 final600
+eactros_600,Ball,B_baseline_none,multi,,8,0.5714285714285714,11.0,0.7857142857142857,14,0,,,results/paper_campaign/q2_critical_portfolio.csv,False,frozen headline portfolio
+eactros_600,Ball,C_fixed_route_opt,fixed,"y_benguerir_ca,y_larache_rt",11,0.7857142857142857,11.0,0.7857142857142857,14,0,,,results/paper_campaign/q2_critical_portfolio.csv,False,frozen headline portfolio
+eactros_600,Ball,E_joint_multi_enum,multi,y_benguerir_ca,11,0.7857142857142857,11.0,0.7857142857142857,14,0,,,results/paper_campaign/q2_critical_portfolio.csv,False,frozen headline portfolio; card_cap<=2 screen45 final600
+eactros_600,B2,ablation_fixed_on_C,fixed,"y_benguerir_ca,y_larache_rt",11,0.7857142857142857,,,14,0,3.0,11.0,results/paper_campaign/placement_flexibility_ablation.csv,False,matched ablation corner; 0 LIMIT at 2e6
+eactros_600,B2,ablation_multi_on_C,multi,"y_benguerir_ca,y_larache_rt",12,0.8571428571428571,,,14,0,2.0,12.0,results/paper_campaign/placement_flexibility_ablation.csv,False,12/14 appears ONLY as multi-on-C (casa_marrakech FLEX_GAIN); NOT interchangeable with headline E (Benguerir alone=11/14) or headline C fixed (11/14)
+eactros_600,B2,ablation_fixed_on_E,fixed,y_benguerir_ca,10,0.7142857142857143,,,14,0,4.0,10.0,results/paper_campaign/placement_flexibility_ablation.csv,False,matched ablation corner; 0 LIMIT at 2e6
+eactros_600,B2,ablation_multi_on_E,multi,y_benguerir_ca,11,0.7857142857142857,,,14,0,3.0,11.0,results/paper_campaign/placement_flexibility_ablation.csv,True,matched ablation corner; 0 LIMIT at 2e6

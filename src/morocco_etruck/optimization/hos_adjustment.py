@@ -35,6 +35,32 @@ from morocco_etruck.optimization.operational_schedule import (
 DAILY_DRIVING_MAX_MIN = 9.0 * 60.0  # art. 17
 MIN_SPLIT_BREAK_MIN = 15.0  # art. 19
 
+# Path A single-duty scope labels (no Art.16 overnight daily-rest reset).
+DUTY_SINGLE = "SINGLE_DUTY"
+DUTY_MULTI_DAY_OUT_OF_SCOPE = "MULTI_DAY_OUT_OF_SCOPE"
+
+
+def classify_duty_scope(
+    *,
+    daily_driving_min: float | None,
+    daily_driving_ok: bool | None = None,
+    journey_min: float | None = None,
+    daily_rest_horizon_min: float = 24.0 * 60.0,
+) -> str:
+    """Classify itinerary as single-duty vs multi-day out of scope.
+
+    Art.17 daily driving > 9 h, or journey duration approaching a 24 h daily-rest
+    horizon, means overnight Art.16 rest would be required. Path A does not
+    implement that reset — such cases are excluded from ``served`` counts.
+    """
+    if daily_driving_ok is False:
+        return DUTY_MULTI_DAY_OUT_OF_SCOPE
+    if daily_driving_min is not None and float(daily_driving_min) > DAILY_DRIVING_MAX_MIN + 1e-9:
+        return DUTY_MULTI_DAY_OUT_OF_SCOPE
+    if journey_min is not None and float(journey_min) + 1e-9 >= daily_rest_horizon_min:
+        return DUTY_MULTI_DAY_OUT_OF_SCOPE
+    return DUTY_SINGLE
+
 
 @dataclass
 class HosPlanResult:

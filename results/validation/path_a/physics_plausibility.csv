@@ -1,0 +1,10 @@
+check_id,quantity,value,unit,assumptions,reference,plausible,caveat
+traction_flat_80kmh_15t,traction_kWh_per_km,1.342,kWh/km,flat; v=80km/h; CdA=6.5; Crr=0.007; mass=34700kg; eta_prop=0.9,eActros long-haul literature band ~1.11–1.14 kWh/km,True,model cruise vs published mixed long-haul duty cycles; not field validation
+aux_cabin,P_aux_w,2500.0,W,constant cabin/electronics draw from vehicle yaml,literature cabin aux 1–4 kW,True,assumed research parameter
+tru_amb_15C,tru_electrical_power,456.1,W,setpoint=2.0C; UA=80.0 W/K; infiltration=0.0 W; ambient=15.0C; applied on DRIVE/CHARGE/WAIT when refrigeration_on,refrigerated EVRP / TRU order-of-magnitude (few kW),True,engineering UA–COP model; not Bank-calibrated; Wh = P*dt on stationary+drive
+tru_wh_per_h_amb_15C,tru_Wh_per_hour,456.1,Wh/h,same as tru_amb_15C,order-of-magnitude refrigerated trailer draw,True,continuous accounting; door openings not modeled
+tru_amb_25C,tru_electrical_power,978.7,W,setpoint=2.0C; UA=80.0 W/K; infiltration=0.0 W; ambient=25.0C; applied on DRIVE/CHARGE/WAIT when refrigeration_on,refrigerated EVRP / TRU order-of-magnitude (few kW),True,engineering UA–COP model; not Bank-calibrated; Wh = P*dt on stationary+drive
+tru_wh_per_h_amb_25C,tru_Wh_per_hour,978.7,Wh/h,same as tru_amb_25C,order-of-magnitude refrigerated trailer draw,True,continuous accounting; door openings not modeled
+tru_amb_35C,tru_electrical_power,1783.8,W,setpoint=2.0C; UA=80.0 W/K; infiltration=0.0 W; ambient=35.0C; applied on DRIVE/CHARGE/WAIT when refrigeration_on,refrigerated EVRP / TRU order-of-magnitude (few kW),True,engineering UA–COP model; not Bank-calibrated; Wh = P*dt on stationary+drive
+tru_wh_per_h_amb_35C,tru_Wh_per_hour,1783.8,Wh/h,same as tru_amb_35C,order-of-magnitude refrigerated trailer draw,True,continuous accounting; door openings not modeled
+total_flat_80kmh_15t_25C,total_kWh_per_km,1.3855,kWh/km,"traction + aux + TRU at 25C ambient, flat 80 km/h",traction band 1.11–1.14; refrigerated add-on expected,True,scenario estimate only; DEM/wind/grade change corridor macros

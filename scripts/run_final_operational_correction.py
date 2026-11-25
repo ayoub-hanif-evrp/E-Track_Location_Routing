@@ -42,6 +42,8 @@ from morocco_etruck.energy.vehicle import load_vehicle  # noqa: E402
 from morocco_etruck.optimization import multiroute_placement_evaluation as mpe  # noqa: E402
 from morocco_etruck.optimization.arc_preprocessing import simulate_drive_from_soc  # noqa: E402
 from morocco_etruck.optimization.hos_adjustment import (  # noqa: E402
+    DUTY_MULTI_DAY_OUT_OF_SCOPE,
+    classify_duty_scope,
     inject_wait_into_solver_actions,
     propose_chronological_hos_plan,
 )
@@ -219,6 +221,7 @@ def evaluate_mission_operational(
         "hos_ok": False,
         "daily_driving_ok": False,
         "daily_driving_min": None,
+        "duty_scope": "SINGLE_DUTY",
         "operationally_served": False,
         "pad_location": None,
         "pad_duration_min": 0.0,
@@ -363,8 +366,22 @@ def evaluate_mission_operational(
     else:
         row["speed_policy_ok"] = False
 
+    journey_min = None
+    if extras_use is not None:
+        journey_min = (
+            float(extras_use.drive_duration_s or 0.0)
+            + float(extras_use.charge_duration_s or 0.0)
+            + float(extras_use.wait_duration_s or 0.0)
+        ) / 60.0
+    row["duty_scope"] = classify_duty_scope(
+        daily_driving_min=row.get("daily_driving_min"),
+        daily_driving_ok=row.get("daily_driving_ok"),
+        journey_min=journey_min,
+    )
+
     # Ops = HOS itinerary physically valid + continuous/daily schedule; no post-hoc pad.
     # energy_feasible is the independent energy-only baseline (not tied to ops).
+    # Multi-day (Art.16 overnight) missions are out of scope — never counted as served.
     row["operationally_served"] = bool(
         row["schedule_valid"]
         and row.get("speed_policy_ok", False)
@@ -373,6 +390,7 @@ def evaluate_mission_operational(
         and row["audit_ok"]
         and bool(row.get("daily_driving_ok"))
         and not bool(row.get("hos_adjusted"))
+        and row.get("duty_scope") != DUTY_MULTI_DAY_OUT_OF_SCOPE
     )
     return row
 

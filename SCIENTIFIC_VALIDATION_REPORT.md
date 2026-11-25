@@ -1,13 +1,26 @@
 # Scientific Validation Report
 
+**Path A positioning:** Operational feasibility / charging-infrastructure assessment (TRIP-oriented); MRLS is an *instrument*, not an algorithm contribution.  
 **Baseline commit:** `453d391ab3dd1d18d9c1710f20c74059f6af03aa`  
-**Working tree:** validation edits after baseline (see git status)  
+**Working tree:** Path A Gate 0–5 edits after baseline (see git status)  
 **Baseline archive:** `results/validation/baseline_453d391/`  
-**Recommendation:** `CONDITIONAL` → near-READY (publish graph release + note Settat B1 LIMIT)
+**Path A artifacts:** `results/validation/path_a/`  
+**Recommendation:** `CONDITIONAL` → near-READY (graph release live; Settat B1 LIMIT footnoted; claims ⊆ Path A crosswalk)
 
 ## Executive summary
 
-Headline coverage numbers (eActros B0 9/14, B1 C=10/14 E=11/14, B2 11/14) remain the best-known figures under cardinality cap 2. They are **not** globally optimal over \(2^9\) until B1 singles are fully escalated (`p3_b1_certify`). The published fixed⊆multi flexibility loss on C was a **LIMIT artifact** at 500k expansions; at 2e6 expansions nesting is restored. Blind 10/14 vs E 11/14 for the same Benguerir site was an **evaluator/LIMIT mismatch** — fair eval matches E after escalate.
+Authoritative eActros ops ladder (Gate 0 reconciliation): **B0 9/14**, **B1 C=10/14 E=11/14**, **B2 C=E=11/14**. The **12/14** figure is ablation `multi_on_C` only (FLEX_GAIN on `casa_marrakech`) — **not** the B2 manuscript headline. Numbers remain best-known under cardinality cap 2, not globally optimal over \(2^9\). Fixed⊆multi flexibility loss on C was a **LIMIT artifact** at 500k; nesting restored at 2e6. Blind 10/14 vs E 11/14 was evaluator/LIMIT mismatch — fair eval matches E after escalate.
+
+## Path A Gate 0–1 status
+
+| Gate | Artifact | Status |
+|------|----------|--------|
+| 0.1 Coverage 11 vs 12 | `path_a/coverage_reconciliation.csv` + notes | **done** — one authoritative number per (vehicle,budget,method) |
+| 0.2 HOS search↔replay + single duty | `classify_duty_scope` / `MULTI_DAY_OUT_OF_SCOPE`; tests in `test_hos_in_search.py` | **done** |
+| 0.3 Energy≠ops dual | `path_a/energy_ops_dual_check.csv`; dual solve in `evaluate_mission_operational` | **done** |
+| 1 Physics plausibility | `path_a/physics_plausibility.csv` (~1.34 kWh/km flat cruise; TRU Wh table) | **done** (reference-check, not field validation) |
+| 1 Re-prep sensitivity | `scripts/run_remaining_p6_extras.py` re-bakes DRIVE tables | **wired** |
+| 2 Design freeze | `path_a/experimental_design_freeze.md` | **frozen** |
 
 ---
 
@@ -132,14 +145,15 @@ SOC≥0.6 served for all tested payloads. Not a real-world probability.
 CSV: `results/validation/p6_sensitivity/southbound_sensitivity.csv`.
 
 ### P6 extras (aero/aux/weather labels)
-`results/validation/p6_extras/southbound_extras.csv` (28 cells, 0 LIMIT).
-**Caveat:** CdA/aux/`weather_hot` variants were applied after DRIVE-table prep, so physics tables were not re-baked — treat SOC×payload P6 as authoritative; extras are a protocol stub pending re-prep wiring.
+`scripts/run_remaining_p6_extras.py` now **re-bakes DRIVE tables** via patched vehicle YAML / demand `weather_id` before evaluate.
+Prior CSV rows without `pipeline=p6_extras_rebake` are protocol stubs; re-run extras when refreshing sensitivity appendix.
+Treat SOC×payload P6 grid as authoritative for RQ1 thresholds.
 
 ## Priority 7 — HOS-on vs energy-only (done)
 
-Benguerir CA panel: energy-only coverage = ops HOS-on coverage = **0.786**; `energy_true_ops_false=0`.
-HOS is enforced but does not change this install’s headline coverage — report as constraint enforcement, not coverage shift.
-CSV: `results/validation/p7_hos_on_off/`. Overnight daily-rest reset still not implemented.
+Benguerir CA panel: energy-only coverage = ops HOS-on coverage = **0.786**; `energy_true_ops_false=0` on that install.
+Dual separation still holds elsewhere: Gate 0.3 shows authoritative baseline cells with energy ≠ ops when HOS binds (`path_a/energy_ops_dual_check.csv`).
+CSV: `results/validation/p7_hos_on_off/`. Overnight daily-rest reset still not implemented (`MULTI_DAY_OUT_OF_SCOPE`).
 
 ---
 
@@ -155,8 +169,12 @@ CSV: `results/validation/p7_hos_on_off/`. Overnight daily-rest reset still not i
 
 1. Clean checkout at recorded SHA (or note dirty tree).  
 2. `pip install -e ".[dev]"` + graph artifact if needed.  
-3. Canonical commands above.  
-4. Validation extras:  
+3. Path A fast gates:  
+   - `python scripts/path_a/build_coverage_reconciliation.py`  
+   - `python scripts/path_a/verify_energy_ops_dual.py`  
+   - `python scripts/path_a/build_physics_plausibility.py`  
+4. Canonical Stage C commands in README.  
+5. Validation extras:  
    - `python scripts/run_priority1_nesting_diagnosis.py`  
    - `python scripts/run_priority2_fair_site_eval.py`  
    - `python scripts/run_priority5_qgrid_controlled.py`
@@ -164,5 +182,5 @@ CSV: `results/validation/p7_hos_on_off/`. Overnight daily-rest reset still not i
 ## Recommendation rationale (`CONDITIONAL`)
 
 **Cleared:** P1 full ablation at 2e6; P2 fair eval; P3 B1 singles (Benguerir unique among resolved; Settat LIMIT unresolved); P4 dirs+repro docs; P5 q-grid; P6 SOC×payload; P7 HOS-on=energy coverage on Benguerir; manuscript rebuild.  
-**Still open for READY:** (1) publish `multiroute-graph-v1` release / set `GRAPH_ARTIFACT_URL`; (2) resolve Settat `casa_agadir` LIMIT or accept non-unique cert label; (3) re-prep-aware aero/aux extras if needed.  
-Manuscript rebuilt around validated claims A+B.
+**Still open for READY:** (1) confirm CI graph download from `multiroute-graph-v1`; (2) resolve Settat `casa_agadir` LIMIT or keep best-among-resolved footnote; (3) optional full re-run of rebaked P6 extras for appendix tables.  
+Manuscript retargeted to TRIP Path A feasibility claims (RQ1–RQ3); algorithm novelty withdrawn.
