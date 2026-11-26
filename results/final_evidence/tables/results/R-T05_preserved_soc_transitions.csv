@@ -1,0 +1,4 @@
+od_id,payload_kg,installed,infeasible_soc,feasible_soc,source
+casa_marrakech,10000.0,y_benguerir_ca,0.5,0.52,final_evidence_fine_soc
+casa_agadir,15000.0,y_benguerir_ca,0.52,0.55,final_evidence_fine_soc
+casa_agadir,5300.0,y_benguerir_ca,0.45,0.5,final_evidence_fine_soc

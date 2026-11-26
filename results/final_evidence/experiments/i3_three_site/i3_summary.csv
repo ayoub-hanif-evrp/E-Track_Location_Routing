@@ -1,0 +1,5 @@
+vehicle_key,soc_scenario,n_missions,ops_served,n_optimal,n_infeasible,n_limit,infra_config_id
+eactros_600,common_soc_80,14,14,14,0,0,I3_benguerir_ca_larache_benguerir_ac
+eactros_600,stressed_mixed,14,13,13,1,0,I3_benguerir_ca_larache_benguerir_ac
+volvo_475,common_soc_80,14,10,10,4,0,I3_benguerir_ca_larache_benguerir_ac
+volvo_475,stressed_mixed,14,8,8,6,0,I3_benguerir_ca_larache_benguerir_ac

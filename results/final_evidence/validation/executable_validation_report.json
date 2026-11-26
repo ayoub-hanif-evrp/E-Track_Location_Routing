@@ -1,0 +1,151 @@
+{
+  "all_passed": true,
+  "checks": [
+    {
+      "check_id": "primary_unique_scenario_keys",
+      "passed": true,
+      "detail": {
+        "n": 168,
+        "nuniq": 168
+      }
+    },
+    {
+      "check_id": "eactros_stressed_ladder_9_11_12",
+      "passed": true,
+      "detail": {
+        "I0_none": 9,
+        "I1_benguerir_ca": 11,
+        "I2_benguerir_larache": 12
+      }
+    },
+    {
+      "check_id": "primary_summary_matches_missions",
+      "passed": true,
+      "detail": {
+        "n_groups": 12
+      }
+    },
+    {
+      "check_id": "robustness_45_complete",
+      "passed": true,
+      "detail": {
+        "n": 45
+      }
+    },
+    {
+      "check_id": "fine_soc_15_complete",
+      "passed": true,
+      "detail": {
+        "n": 15
+      }
+    },
+    {
+      "check_id": "fixed_vs_flex_24_complete",
+      "passed": true,
+      "detail": {
+        "n": 24
+      }
+    },
+    {
+      "check_id": "historical_15t_qgrid_reproduced",
+      "passed": true,
+      "detail": [
+        {
+          "q_kwh": 5,
+          "route_mode": "multi",
+          "status": "INFEASIBLE",
+          "operationally_served": false
+        },
+        {
+          "q_kwh": 5,
+          "route_mode": "fixed",
+          "status": "INFEASIBLE",
+          "operationally_served": false
+        },
+        {
+          "q_kwh": 2,
+          "route_mode": "multi",
+          "status": "OPTIMAL",
+          "operationally_served": true
+        },
+        {
+          "q_kwh": 2,
+          "route_mode": "fixed",
+          "status": "OPTIMAL",
+          "operationally_served": true
+        },
+        {
+          "q_kwh": 1,
+          "route_mode": "multi",
+          "status": "OPTIMAL",
+          "operationally_served": true
+        },
+        {
+          "q_kwh": 1,
+          "route_mode": "fixed",
+          "status": "OPTIMAL",
+          "operationally_served": true
+        }
+      ]
+    },
+    {
+      "check_id": "elevation_ordered_length_error_lt_1km",
+      "passed": true,
+      "detail": {
+        "max_abs_err_km": 0.8313856143179582,
+        "min_coverage": 0.9999999999999964
+      }
+    },
+    {
+      "check_id": "casa_agadir_elevation_not_double_counted",
+      "passed": true,
+      "detail": {
+        "path_length_km": 445.616138356988
+      }
+    },
+    {
+      "check_id": "dem_vs_flat_has_fixed_route_family",
+      "passed": true,
+      "detail": {
+        "fixed_short": 5,
+        "reoptimized_multi": 4
+      }
+    },
+    {
+      "check_id": "preserved_soc_transitions_present",
+      "passed": true,
+      "detail": {
+        "n": 3
+      }
+    },
+    {
+      "check_id": "volvo_primary_usable_475",
+      "passed": true,
+      "detail": [
+        {
+          "vehicle_key": "volvo_475",
+          "config_path": "configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml",
+          "usable_kwh": 475.0,
+          "nominal_kwh": NaN,
+          "role": "primary_comparison"
+        }
+      ]
+    },
+    {
+      "check_id": "status_vocab_has_distinct_limit",
+      "passed": true,
+      "detail": {
+        "statuses": [
+          "INFEASIBLE",
+          "OPTIMAL"
+        ],
+        "n_limit": 0
+      }
+    },
+    {
+      "check_id": "required_artifacts_present",
+      "passed": true,
+      "detail": []
+    }
+  ]
+}

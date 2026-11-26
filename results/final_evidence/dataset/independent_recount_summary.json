@@ -70,5 +70,13 @@
       ],
       "n_isolates": 0
     }
+  },
+  "elevation_reconstruction": {
+    "method": "ordered_decision_arc_along_path_alternative",
+    "n_od_methods": 36,
+    "mean_abs_length_error_m_shortest": 399.32129125027376,
+    "min_dem_coverage_frac_shortest": 0.9999999999999964,
+    "n_invalid_profiles": 1,
+    "n_missing_profiles_on_decision_arcs": 1
   }
 }

@@ -24,7 +24,7 @@ Zero unresolved `LIMIT_REACHED` on the matched multi-route ladder at 600 s / 2e6
 
 | Axis | Levels |
 |------|--------|
-| Vehicles | `eactros_600`, Volvo FH Electric (`volvo_fh_electric_4x2_540kwh_usable460` / registry `volvo_475`) |
+| Vehicles | `eactros_600`, Volvo FH Electric (`volvo_fh_electric_4x2_540kwh (usable 475 kWh; registry key volvo_475)` / registry `volvo_475`) |
 | Departure SOC | **Stressed** (existing mixed: 50% selected southbound, 80% elsewhere); **Common-SOC** (80% all 14) |
 | Infrastructure | I0, I1 (`y_benguerir_ca`), I2 (`y_benguerir_ca`+`y_larache_rt`) |
 | Missions | 14 headline ODs |

@@ -1,7 +1,8 @@
-od_id,payload_kg,installed,min_tested_feasible_soc,max_tested_infeasible_soc,n_evaluated,note
-casa_agadir,5300.0,y_benguerir_ca,0.5,,5,bracket only; no interpolated threshold
-casa_agadir,10000.0,y_benguerir_ca,0.5,,5,bracket only; no interpolated threshold
-casa_agadir,15000.0,y_benguerir_ca,0.6,0.5,5,bracket only; no interpolated threshold
-casa_marrakech,5300.0,y_benguerir_ca,0.5,,5,bracket only; no interpolated threshold
-casa_marrakech,10000.0,y_benguerir_ca,0.6,0.5,5,bracket only; no interpolated threshold
-casa_marrakech,15000.0,y_benguerir_ca,0.6,0.5,5,bracket only; no interpolated threshold
+od_id,payload_kg,installed,min_tested_feasible_soc,max_tested_infeasible_soc,observed_transition,n_evaluated,sources,note
+casa_agadir,5300.0,y_benguerir_ca,0.5,0.45,0.45_INF_to_0.50_OPS,6,"final_evidence_fine_soc,p6_southbound_sensitivity",bracket only; no interpolated threshold
+casa_agadir,10000.0,y_benguerir_ca,0.5,,,5,p6_southbound_sensitivity,bracket only; no interpolated threshold
+casa_agadir,15000.0,y_benguerir_ca,0.55,0.52,0.52_INF_to_0.55_OPS,8,"final_evidence_fine_soc,p6_southbound_sensitivity",bracket only; no interpolated threshold
+casa_marrakech,5300.0,y_benguerir_ca,0.5,,,5,p6_southbound_sensitivity,bracket only; no interpolated threshold
+casa_marrakech,10000.0,,0.6,0.55,0.55_INF_to_0.60_OPS,3,final_evidence_fine_soc,bracket only; no interpolated threshold
+casa_marrakech,10000.0,y_benguerir_ca,0.52,0.5,0.50_INF_to_0.52_OPS,8,"final_evidence_fine_soc,p6_southbound_sensitivity",bracket only; no interpolated threshold
+casa_marrakech,15000.0,y_benguerir_ca,0.6,0.5,0.50_INF_to_0.60_OPS,5,p6_southbound_sensitivity,bracket only; no interpolated threshold

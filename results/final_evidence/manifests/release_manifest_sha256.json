@@ -1,0 +1,1138 @@
+{
+  "baseline_commit_expected": "8b0cbf716cc342550299895d4da58889b8239d37",
+  "campaign_status": "COMPLETE",
+  "n_artifacts": 226,
+  "validation_all_passed": true,
+  "artifacts": [
+    {
+      "path": "results/final_evidence/dataset/data_dictionary.csv",
+      "bytes": 1802,
+      "sha256": "04fbe170a722b1c5f13f470d498f2cce3ec0f9d415436171e4d011916d4afe18"
+    },
+    {
+      "path": "results/final_evidence/dataset/dataset_quality_and_construction_report.md",
+      "bytes": 4554,
+      "sha256": "9de09f025dff6744a685960adec0a41ce488c4e4de2e7b71388564bd6330440d"
+    },
+    {
+      "path": "results/final_evidence/dataset/dem_arc_meta_summary.csv",
+      "bytes": 21892,
+      "sha256": "4e5eb51e4e393b1a3bd6f11713eab4108efbc81f546178c4d3025e53b9ea5230"
+    },
+    {
+      "path": "results/final_evidence/dataset/dem_decision_arc_coverage_audit.csv",
+      "bytes": 28893,
+      "sha256": "e4fd48913583201ae3f23f52588f847af076552f44ef67b9c3cdb3f11cbf3bb0"
+    },
+    {
+      "path": "results/final_evidence/dataset/dem_invalid_profile_investigation.csv",
+      "bytes": 139,
+      "sha256": "b0db59cbc5842fa3bc2c12faef66598439f53aeb7fa02b9814a9f615ebfed485"
+    },
+    {
+      "path": "results/final_evidence/dataset/dem_invalid_profile_notes.md",
+      "bytes": 921,
+      "sha256": "dca7ca6532b796e925d6ed20b2c9b0edbfb3c983ac70472103be087dadb77a82"
+    },
+    {
+      "path": "results/final_evidence/dataset/elevation_by_od_method.csv",
+      "bytes": 16146,
+      "sha256": "f63575e19f176a061c1ab302b3a76e7867d25cd7ac0da4304a1a1199fd89ddfa"
+    },
+    {
+      "path": "results/final_evidence/dataset/highway_class_directed_km.csv",
+      "bytes": 492,
+      "sha256": "5daa5352c5b7f433253129146ff4e8df079ae41eb3490e7d9a5f881cee1b244c"
+    },
+    {
+      "path": "results/final_evidence/dataset/independent_recount_summary.json",
+      "bytes": 2279,
+      "sha256": "94ab16f4e262a8e846704b9f97766b649d75cc4b739978a3cc49ffce21c66f0d"
+    },
+    {
+      "path": "results/final_evidence/dataset/infeasible_mission_topology_focus.csv",
+      "bytes": 2140,
+      "sha256": "1ee3f80db2679921b8aaf71062c487410ef177ad3d6f9c2e11360302198a63cb"
+    },
+    {
+      "path": "results/final_evidence/dataset/infeasible_topology_notes.md",
+      "bytes": 1426,
+      "sha256": "157b55c80ccc757287e06f39a550212fde675cc02494a6861e38351790de7cf7"
+    },
+    {
+      "path": "results/final_evidence/dataset/od_candidate_accessibility_direction_blind_counterfactual.csv",
+      "bytes": 1053,
+      "sha256": "2dcd85c65d0521acb3d3f0ce82ed8f8eeed14e0029d8e3230bbf9c11921bb6b5"
+    },
+    {
+      "path": "results/final_evidence/dataset/od_candidate_accessibility_long.csv",
+      "bytes": 14759,
+      "sha256": "6f2f58c9e47ef1a362834149e97e960efbc46093b75e32f8881f7b5f32865594"
+    },
+    {
+      "path": "results/final_evidence/dataset/od_candidate_accessibility_meta.json",
+      "bytes": 6301,
+      "sha256": "a643006f2fc38da8e6ba0f6c60cfaabc6e9631091cbcfb1376a67b5dbf7721e4"
+    },
+    {
+      "path": "results/final_evidence/dataset/od_station_keys_on_union.csv",
+      "bytes": 1167,
+      "sha256": "58d88adfe23ae151c7fdf2688b8532fd8b0c2121f0e403c390aa461ba121fe0e"
+    },
+    {
+      "path": "results/final_evidence/dataset/path_diversity_audit_copy.csv",
+      "bytes": 2994,
+      "sha256": "f3f13752cf69b491c622035563d707e0630bea914eb3f84b5cb301eec82d9b7d"
+    },
+    {
+      "path": "results/final_evidence/experiments/dem_vs_flat/dem_vs_flat_interpretation.md",
+      "bytes": 2283,
+      "sha256": "664cab1f230c905f4e8effffdd24d4eb71b217d98f4c014fc8de815758c82ecb"
+    },
+    {
+      "path": "results/final_evidence/experiments/dem_vs_flat/dem_vs_flat_missions.csv",
+      "bytes": 90413,
+      "sha256": "e78ed7d674b905de9c30a6040558a64cf9d3768eeb7057e7fbb60dab9c98bce3"
+    },
+    {
+      "path": "results/final_evidence/experiments/dem_vs_flat/dem_vs_flat_missions_reoptimized_legacy.csv",
+      "bytes": 42702,
+      "sha256": "e89607e0407bc3548426473329ea286b7bdf9c470db091e2f21350452a0b63b9"
+    },
+    {
+      "path": "results/final_evidence/experiments/fixed_vs_flex/fixed_vs_flex_missions.csv",
+      "bytes": 4866,
+      "sha256": "a5c381d656bab18143db8b34c4b27298f7238058a1da5e2752aa0520d1fb34d1"
+    },
+    {
+      "path": "results/final_evidence/experiments/i3_three_site/i3_missions.csv",
+      "bytes": 280552,
+      "sha256": "98de31c9831c38ebc0633bcc4c7a47813c10b90c1183608058d25c8579837cc1"
+    },
+    {
+      "path": "results/final_evidence/experiments/i3_three_site/i3_notes.md",
+      "bytes": 616,
+      "sha256": "a3f9089ea94ab50125de9598d5b91f66a3f23938969e4e2ff93809fc18075ed5"
+    },
+    {
+      "path": "results/final_evidence/experiments/i3_three_site/i3_summary.csv",
+      "bytes": 399,
+      "sha256": "6cd05258ad0ac2df0d29be8508dc61162622a8cfd3acdfa80d1e2ece8494b8f7"
+    },
+    {
+      "path": "results/final_evidence/experiments/i3_three_site/run_fingerprint.json",
+      "bytes": 203,
+      "sha256": "540ff819b856fc03a28f585439f9dd5f6483bd9261f1da990b91dbd4f50b68d5"
+    },
+    {
+      "path": "results/final_evidence/experiments/infeasible_diagnosis/infeasible_remedy_missions.csv",
+      "bytes": 32122,
+      "sha256": "1c04920b27197d0842ec0bad28718294336d15d2fd84f40f29662510dd7b8414"
+    },
+    {
+      "path": "results/final_evidence/experiments/infeasible_diagnosis/run_fingerprint.json",
+      "bytes": 352,
+      "sha256": "e7e1df297a1f304023d8a20f3a03766fac321459139a21594d4bf70cbdcb3375"
+    },
+    {
+      "path": "results/final_evidence/experiments/payload_soc/fine_soc_missions.csv",
+      "bytes": 45891,
+      "sha256": "171cfdd0432661ef6e22b184070fa9756f80cd8b4433e8c4759104c3a13def83"
+    },
+    {
+      "path": "results/final_evidence/experiments/primary_comparison/primary_missions.csv",
+      "bytes": 728070,
+      "sha256": "637cbd6bddb7d9d30c119d1409f42f197c2cd0eebd1b03416d62fc4b13fa577f"
+    },
+    {
+      "path": "results/final_evidence/experiments/primary_comparison/primary_summary.csv",
+      "bytes": 1230,
+      "sha256": "5668b209a79815c9f2ca2fd33b4e50f35540793d079e72fa1a12f33c8d3b9062"
+    },
+    {
+      "path": "results/final_evidence/experiments/primary_comparison/run_fingerprint.json",
+      "bytes": 607,
+      "sha256": "96c9c8adc0a798c8544a811520ee13129d80af6dbca1c117544326fe0b80b213"
+    },
+    {
+      "path": "results/final_evidence/experiments/q_grid/q_grid_agadir_casa_benguerir_ac.csv",
+      "bytes": 11250,
+      "sha256": "bd665c9bd2decb98c0038c2cf7d9318bf578faeb40c552fefcf4cfa0a295b732"
+    },
+    {
+      "path": "results/final_evidence/experiments/q_grid/q_grid_historical_15t.csv",
+      "bytes": 22960,
+      "sha256": "ccdaa7c950a40ab45675504741df4309eac8d245b2903f7e0a74b79b6dd5c940"
+    },
+    {
+      "path": "results/final_evidence/experiments/q_grid/q_grid_missions.csv",
+      "bytes": 50055,
+      "sha256": "74b1b0cb4342bbc98dddda74255cc4021011444e0d4955504b1c23ec2164f448"
+    },
+    {
+      "path": "results/final_evidence/experiments/refrigeration/path_a_historical_coldchain_notes.md",
+      "bytes": 376,
+      "sha256": "44866d266ac0b4a69962747ebc2e243e564d89e6fc38a44f4cff7f32f040e7ef"
+    },
+    {
+      "path": "results/final_evidence/experiments/refrigeration/path_a_historical_coldchain_on_vs_off_diff.csv",
+      "bytes": 287,
+      "sha256": "a5fd8b476cae58b0d1452d983553757b6697c120d8d84902aff9e6e2ec3ca4e4"
+    },
+    {
+      "path": "results/final_evidence/experiments/refrigeration/path_a_historical_coldchain_parameter_sources.csv",
+      "bytes": 1069,
+      "sha256": "9f908d49e50a06c47910197a701467cecba00a9ddabf3a908f107aafe74c1666"
+    },
+    {
+      "path": "results/final_evidence/experiments/refrigeration/path_a_historical_coldchain_variants.csv",
+      "bytes": 40214,
+      "sha256": "cebc586ca47712a56ac8601cadf5f5eea78b2e33f982d04b2906e1e0f411d5c6"
+    },
+    {
+      "path": "results/final_evidence/experiments/refrigeration/path_a_historical_run_fingerprint.json",
+      "bytes": 220,
+      "sha256": "ffcfe437b70f0f793ecbd42217b72afc44bc05f76b42a19bd464d203ca5195ee"
+    },
+    {
+      "path": "results/final_evidence/experiments/robustness/headline_robustness_missions.csv",
+      "bytes": 308136,
+      "sha256": "5a1cda711691c5c966bb18f91dea34258e389a05d852697ea1a17e3ce0a7d024"
+    },
+    {
+      "path": "results/final_evidence/experiments/robustness/run_fingerprint.json",
+      "bytes": 206,
+      "sha256": "a816a624ed184ad6715bfb6f1c5027f54bee898d91d0a92049117433dafebf75"
+    },
+    {
+      "path": "results/final_evidence/experiments/scenario_inventory_primary.csv",
+      "bytes": 29463,
+      "sha256": "1c1d2ee9c170d48565e3ce9500c8d373d0c82cfe493af64652486d8b296b97de"
+    },
+    {
+      "path": "results/final_evidence/experiments/settat_vs_benguerir/casa_agadir_settat_vs_benguerir.csv",
+      "bytes": 540,
+      "sha256": "d48b8e09412ef32e95945fecb75a05900ce4a10055e4328eac915fa8a44eb172"
+    },
+    {
+      "path": "results/final_evidence/experiments/settat_vs_benguerir/run_fingerprint.json",
+      "bytes": 294,
+      "sha256": "280e4ef51037cdf45943c3d097b111e6201100bf2636a0a97df1a0050becbd59"
+    },
+    {
+      "path": "results/final_evidence/experiments/settat_vs_benguerir/settat_benguerir_notes.md",
+      "bytes": 1386,
+      "sha256": "d82d5f9959f281535d1f6a5e66cb2077a9a585642828feb3ba77b1cd42d81447"
+    },
+    {
+      "path": "results/final_evidence/experiments/settat_vs_benguerir/settat_casa_agadir_escalate.csv",
+      "bytes": 7604,
+      "sha256": "6b5e835ed3ddcb8a2ec573b1278e8e2a72dd771eaee08b009553df43a06cdf63"
+    },
+    {
+      "path": "results/final_evidence/experiments/settat_vs_benguerir/settat_casa_agadir_escalate_path_a_reference.csv",
+      "bytes": 14599,
+      "sha256": "55a4a0b49780910e5579e43bcc72690626c790639095332a861b07513d5ad6dc"
+    },
+    {
+      "path": "results/final_evidence/experiments/settat_vs_benguerir/singleton_ledger.csv",
+      "bytes": 285,
+      "sha256": "41774adcffc8d39e0bb14e56c0ae09dc650b8ecdc82b8c53d10fb9900b3eafbd"
+    },
+    {
+      "path": "results/final_evidence/experiments/settat_vs_benguerir/singleton_missions.csv",
+      "bytes": 197373,
+      "sha256": "f2c731a1bbee75924c5cba1aede24597c494a7087313836796a3915c2db45a4a"
+    },
+    {
+      "path": "results/final_evidence/experiments/volvo_ops_diagnosis/mechanism_notes.md",
+      "bytes": 641,
+      "sha256": "2f4dda9da9015f6420decc5ba8ae12797219e13a5aeada7d8f8440d6ba2401f4"
+    },
+    {
+      "path": "results/final_evidence/experiments/volvo_ops_diagnosis/primary_focus_rows.csv",
+      "bytes": 2067,
+      "sha256": "fc5f72576870f3ad99ded1ca49d75a3d107c92547c1666d0a0918eaf2aae5c67"
+    },
+    {
+      "path": "results/final_evidence/experiments/volvo_ops_diagnosis/volvo_marrakech_agadir_diagnostics.csv",
+      "bytes": 5668,
+      "sha256": "336cb1b3a24aa94289f358ef0c93791e9e68878af408ead76d758a96cf7dd07e"
+    },
+    {
+      "path": "results/final_evidence/experiments/volvo_targeted_infra/volvo_targeted_infra_missions.csv",
+      "bytes": 54498,
+      "sha256": "296befbafa889c106f9fa5935c4b34cfaa28c42a740b416cf0d1ba403ea46adb"
+    },
+    {
+      "path": "results/final_evidence/experiments/volvo_targeted_infra/volvo_targeted_infra_ops_matrix.csv",
+      "bytes": 558,
+      "sha256": "bfd84c946923446fb196598180d718ccda168501bad588e937aadca7c83bec7d"
+    },
+    {
+      "path": "results/final_evidence/experiments/volvo_targeted_infra/volvo_targeted_infra_summary.csv",
+      "bytes": 218,
+      "sha256": "0cb10068e20e692f7d5c4912186fecfe0096e018852883756414ccac029badd1"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure1_description.md",
+      "bytes": 179,
+      "sha256": "0346fd5b4d34292488659445dc08b37cbc5ebbfc62df4bebf7b261f164046861"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure1_study_area.pdf",
+      "bytes": 4798098,
+      "sha256": "2bba4524201a626844a61245132d7cd8e53751bcfee810362439312ad32174cb"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure1_study_area.png",
+      "bytes": 644518,
+      "sha256": "468004c9e14351b6e060b1330a2cd1d9ced20dd0ebaa68be2e98ff3de2a479ec"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure1_study_area.svg",
+      "bytes": 4449709,
+      "sha256": "4ee9f91a698d27da04be4c43fbd015421ececeb099df4c8a6c5716e876383e05"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure2_description.md",
+      "bytes": 174,
+      "sha256": "ba7c221b8687de677893a3429848adba3e115ca218994a0dd102b0ab6b52cad0"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure2_graph_reduction.pdf",
+      "bytes": 7389574,
+      "sha256": "3b11886d859d04cac108c11daf329c85107624e089afe1eb3706f94ffa3aff02"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure2_graph_reduction.png",
+      "bytes": 522963,
+      "sha256": "210e639fc21701b17e69caf161f670fd638b345d9fab4b6f3c7654e0a5a37b3a"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure2_graph_reduction.svg",
+      "bytes": 58924,
+      "sha256": "3b6c1a33b8db16d9ba4cb65b705cbda9214413c8b3208d073e93325e47fc330d"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure3_description.md",
+      "bytes": 124,
+      "sha256": "fe1d7d4bb338b2a4060854a0efed97f4a6049d60f902297ea44e608d5c7fdb71"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure3_od_route_alternatives.pdf",
+      "bytes": 72623,
+      "sha256": "afc270ccf552088ce9005064331d905a0f82319ebc52eb046338b869eedd6650"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure3_od_route_alternatives.png",
+      "bytes": 442742,
+      "sha256": "2db325cf5460642f00bdd2c9558bd24e15082abadfc677e218a21ffbc4ff8693"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure3_od_route_alternatives.svg",
+      "bytes": 283788,
+      "sha256": "5e64b50c2a724d182599700a1c8943b248fec9a7c3ac58726c41e60720e87b7d"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure4_description.md",
+      "bytes": 175,
+      "sha256": "08872248153d5273b0fa558d3902f74b87187daef51afb89eab178b254e47d40"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure4_directional_candidates.pdf",
+      "bytes": 756775,
+      "sha256": "7e91606771f8cd577cf8ba052288fad1501623c78b51f053a438b23aa779c739"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure4_directional_candidates.png",
+      "bytes": 404354,
+      "sha256": "60ee1f90f1be125109ffaf943f926d9832d649a4f1c1ed5e0e63eb1bf86a8e13"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure4_directional_candidates.svg",
+      "bytes": 9272847,
+      "sha256": "46ead7d6e7310cd7874e1215cd8a10b43365415ece755b518e1da5386ddef072"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure5_description.md",
+      "bytes": 206,
+      "sha256": "08ef3f741ef26346f6b7527e02fa28dbe3dee70e4097c9eed6378474b464b103"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure5_elevation_profiles.pdf",
+      "bytes": 70252,
+      "sha256": "f2dfa9a3e38419f375c42543d4215279759a50d0c3f01c8496dcb0fd159e93a7"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure5_elevation_profiles.png",
+      "bytes": 939528,
+      "sha256": "d8e3bb840aa5e48b1f888271369d483c878fec9eccaa2237cc29b3ca70946c0a"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure5_elevation_profiles.svg",
+      "bytes": 239317,
+      "sha256": "c18eb6b91e1d3bd1a1e9699f4ed3b273957292de97c7a2d91f5edaa05cba668d"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure5b_gradient_distribution.pdf",
+      "bytes": 13983,
+      "sha256": "a532b894a32d3061c5129e56c6986265f6a351831bce1b2c244bad481a39e23f"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure5b_gradient_distribution.png",
+      "bytes": 92193,
+      "sha256": "fd6ca794e6b2fcd93e9d0c0ee7eea35330beb45cb7d68a7bb77e936384019d9e"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure6_dataset_descriptive_stats.pdf",
+      "bytes": 23441,
+      "sha256": "fe1d7fedec405aeffb6d5c40e56dd30197801d12f491e4d25d1251c20f40dc34"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure6_dataset_descriptive_stats.png",
+      "bytes": 525859,
+      "sha256": "ce6221c289a67d000827f292686e77cf5f08ff1eb825e4d491e5bca0ae1e3288"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure6_dataset_descriptive_stats.svg",
+      "bytes": 127039,
+      "sha256": "43d8e3a7c66975b4684a255a2b74a77dca3d88a04ff46d9244262be8f817fdf5"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure6_description.md",
+      "bytes": 512,
+      "sha256": "4dd484ae07b2fbbc604801ba012cf4bab3a0bfa18563d6d99b02672e26ccf7f7"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig1_candidates.csv",
+      "bytes": 10225,
+      "sha256": "7cecd1680301784238623a54810213dfb6ae3e2a37701d355f59b7104853a7b7"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig1_cities.csv",
+      "bytes": 317,
+      "sha256": "6550fff58609908d84370819546b7bbb3b46dfd45ccb1fa3f2a0de54c482cabe"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig2_panel_counts.csv",
+      "bytes": 159,
+      "sha256": "0116e5127bfd5b785a51bdddcb4b95bd7bed5b39603e016801e9ca68f731ad0e"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig3_od_routes.csv",
+      "bytes": 2327,
+      "sha256": "416640bb11558aee4d25d3777a36ad3401760eea9963028c360e5a49aa910051"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig4_benguerir_access_inset.csv",
+      "bytes": 523,
+      "sha256": "0259be6e04bfc8dde307277a01f3beeca30a9c3d1d2865406d4e1e53d16478d8"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig4_candidates.csv",
+      "bytes": 8242,
+      "sha256": "55a5d4263a2934d16ce4734471a8bf1622dd25ac2b561c12dbd08b58aa08e2ca"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_agadir_casa_edge_penalty_profile.csv",
+      "bytes": 174953,
+      "sha256": "1f2d4deb68ed677f3d73669fc6326a8b9c5bd8c5c3333fb337581b1210ab8f4e"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_agadir_casa_profile.csv",
+      "bytes": 211812,
+      "sha256": "56414bbb5422d4f4393c0b0686bb5de4a6493e7bfa0ef5214863ed81632f4049"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_agadir_casa_shortest_profile.csv",
+      "bytes": 160247,
+      "sha256": "aef3878c4be892565cc4ada064f067601c3cc176077db282eac878043c4e7522"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_casa_agadir_edge_penalty_profile.csv",
+      "bytes": 182371,
+      "sha256": "2f6647823790d866fd61f26b8a38545e41d3709295dd527c35f60c7f5386dc63"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_casa_agadir_profile.csv",
+      "bytes": 220090,
+      "sha256": "39a5a9d3ede91cea6c2a1488128010bbb9fa6d5a7ad590cb34519bfbdebed4a2"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_casa_agadir_shortest_profile.csv",
+      "bytes": 166509,
+      "sha256": "931937a01ba2ed17508a29ab47b5f8cfa38011df7dae7884a463c616fb518af3"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_casa_marrakech_edge_penalty_profile.csv",
+      "bytes": 97344,
+      "sha256": "50d4a4dd13c7a06d08a74009dfcdcd478af9674bcd1773a8af43e7e4c12f84af"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_casa_marrakech_profile.csv",
+      "bytes": 117463,
+      "sha256": "1794e1a9d7bccd7f3d698b8856bba2de1a090df124932188e96d801a0328f632"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_casa_marrakech_shortest_profile.csv",
+      "bytes": 88956,
+      "sha256": "4e5b244a5cc6c4794e3bacec7561d8a02b3b24c5e51c74a0f74817d13a56138f"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_grade_distribution.csv",
+      "bytes": 202,
+      "sha256": "deaac5669aacccdfc066b4c9c5585ef9d771acefc8cf4c901f770e85c9c12ef4"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_panel_summary.csv",
+      "bytes": 861,
+      "sha256": "fae7e5b002fef86ef679b8c958e558428116ff13fed7ed5cf62ef94fa90dabe3"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_rabat_fes_edge_penalty_profile.csv",
+      "bytes": 87604,
+      "sha256": "ff9718d6cfc3693195414c90666c9bbcf8887f0c352b21ad90174e76c5608cb5"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_rabat_fes_profile.csv",
+      "bytes": 102252,
+      "sha256": "bc69aabfdfef52d0b067406da6c28595268f8ae4fa3356660f5f9871646f97bb"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_rabat_fes_shortest_profile.csv",
+      "bytes": 77363,
+      "sha256": "d900923be17d8abddc09dbedad38b6792db460c393cfa866d145737340aefb24"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig6a_highway_km.csv",
+      "bytes": 401,
+      "sha256": "ef7b5b3997c8ba4778706875c6b91b0ec33378ee64a022efee4ff0f40d3e4d18"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig6b_od_km.csv",
+      "bytes": 688,
+      "sha256": "5c2130fbc1ff84db617372c233ee86ab05db01749e87594d9267b2d9e85fd2d9"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig6c_diversity.csv",
+      "bytes": 952,
+      "sha256": "421b42909a9fc31d9e4665cdc5c3387148ec2f3e2d8e3fed53fd1061b4a0b0e3"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig6d_grade_summary.csv",
+      "bytes": 176,
+      "sha256": "166c65f5f01281cf62c9dbfcb60fa3ae2d569f8f3ea859ac6bf86ca107ec8892"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig6e_candidate_match.csv",
+      "bytes": 39,
+      "sha256": "5674e16642b7d6d7feba95244d831168edc5463d2319d0076e754affe191fe1f"
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig6f_candidate_access.csv",
+      "bytes": 75,
+      "sha256": "f134b52457cdb134e882f627291a852d66031ca6a035a9442fb5ddfccebcd59b"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure10_description.md",
+      "bytes": 193,
+      "sha256": "85c8d8cf16ee762f632c9791f7ebe52b3a90e13c49cdfa706ff30028ed6e042a"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure10_q_grid_reliability.pdf",
+      "bytes": 25861,
+      "sha256": "460d1d6be6e018c39bbafad5390e2a1b9f7fcf88b348605d9b5d2ddc84e240e1"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure10_q_grid_reliability.png",
+      "bytes": 393996,
+      "sha256": "2a3b6ed9f002cee2d14f90d99cf27e3297ccf40079d899d0670b3bb9e4340398"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure10_q_grid_reliability.svg",
+      "bytes": 92286,
+      "sha256": "5f90d78c4b55ce94d86177029f46fad27822b56d5db0f3fbfdabe6ba148445c7"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure11_description.md",
+      "bytes": 88,
+      "sha256": "b3cb51147c01b0c7428eded3fb3af9b0d6f63ff7c68289e5239ce173b8f5cc96"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure11_infeasible_remedies.pdf",
+      "bytes": 16381,
+      "sha256": "e876abfb4ae22fdec6596635228e6b6b454085a54bd0e72655b768ce1c93e847"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure11_infeasible_remedies.png",
+      "bytes": 271705,
+      "sha256": "5b9ee2e1b4300a55ed8cbb59c2f7c90d8606aaf69bfc6d8876f632f388134bf6"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure11_infeasible_remedies.svg",
+      "bytes": 63985,
+      "sha256": "c4a41d85b2c0a29252f4a9dcb64a9fe33c962a8020e889171e2d866f72148df5"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure1_infrastructure_coverage.pdf",
+      "bytes": 21022,
+      "sha256": "672c8e0e124a5dceaf63d5afaa53e76201242a20ed463bad9fecaeeae2aad0f8"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure1_infrastructure_coverage.png",
+      "bytes": 211840,
+      "sha256": "8ae2d771a02f53b955aef126a0408a822d11fc2af36fb406c8b5423c064ba648"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure1_infrastructure_coverage.svg",
+      "bytes": 66744,
+      "sha256": "beb7dd1ec0f51dc0dccdf8ce0241ed5568af45b5c32d252ccfadd6537df95e71"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure2_description.md",
+      "bytes": 210,
+      "sha256": "363f4da73b65607bb5d6d8b0aa8d0b2f60cb77f38ccfe0545d1e755dd939277a"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure2_geographic_feasibility.pdf",
+      "bytes": 67771,
+      "sha256": "27cc061ec6133fac0a6a28c1f3951d8077bff29177250ff79806183a25c0cd8c"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure2_geographic_feasibility.png",
+      "bytes": 526795,
+      "sha256": "fa126aa7bfc6601b42eece8e516495193e3bd8fac4ad7f9e516c83076b62ad26"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure2_geographic_feasibility.svg",
+      "bytes": 216916,
+      "sha256": "d5c728b2380638233af640e0e6cc4d6b7fa3a806a7d359a39c4a6a87b424d608"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure3_feasibility_matrix.pdf",
+      "bytes": 19317,
+      "sha256": "acf5b16750e1562349ca81ed49b0e7b2891cd3bb71035ebe48cb87acb9dea4bf"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure3_feasibility_matrix.png",
+      "bytes": 328613,
+      "sha256": "be403db4483dca0d35bba03d5dab5948ad4f35e190aef058874f67d50366ec12"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure3_feasibility_matrix.svg",
+      "bytes": 83307,
+      "sha256": "36e75cce865d7efaf4f927547441b8d00648f4d7cacb8a37648268b5e9e90714"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure4_description.md",
+      "bytes": 83,
+      "sha256": "5588df467c588251a8e39a5b3fa3ba0189219557579748f24164fa1288413b66"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure4_payload_soc_frontiers.pdf",
+      "bytes": 27566,
+      "sha256": "ef00324b166a187a5034cd502b3887a29671c5ea135291bfb7b7d98bb2be633e"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure4_payload_soc_frontiers.png",
+      "bytes": 148068,
+      "sha256": "8ca70e53c1eef73a01b72cdfc84c62505e34f9b38061d245e9bd01e83bfac126"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure4_payload_soc_frontiers.svg",
+      "bytes": 60179,
+      "sha256": "c0f3f3081c39690675e43f4b7a1b588206ccff408a43b503b3e77f379fb56d13"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure5_casa_agadir_operational_profile.pdf",
+      "bytes": 32067,
+      "sha256": "3129a4cea99a9617592859ac49ec4717545a62b0b5db4bccc11a67a349a836a4"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure5_casa_agadir_operational_profile.png",
+      "bytes": 618342,
+      "sha256": "ec4a2ab628bee78ca3f17e8c9d0ce404fad5fb806287685152a15b79c8acf1b3"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure5_casa_agadir_operational_profile.svg",
+      "bytes": 119705,
+      "sha256": "ffd8546d54070b05f6957f29609763ac09c93acab09d458720852284bb6a41ca"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure5_casa_marrakech_operational_profile.pdf",
+      "bytes": 32143,
+      "sha256": "07462f3a6f7af1a688ced7cc758427492f60d6a1b809dda5bfcc14bed9ef9f3b"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure5_casa_marrakech_operational_profile.png",
+      "bytes": 608417,
+      "sha256": "94ae9eb749a8fc1a8d8a43f77f19ef6a84e3a4b475dff4c10d430c670bd1f508"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure5_casa_marrakech_operational_profile.svg",
+      "bytes": 122963,
+      "sha256": "454b5e4716adcccc8ef1541e04814ebe1d2b5cb73d89ccb1d3f11cce25e56c21"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure5_description.md",
+      "bytes": 247,
+      "sha256": "6cb1a47bbbdb966b2f3a8bcdf75fd6e5a3ca77c9586668ae91ce44c9a941622b"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure5_operational_route_profiles.pdf",
+      "bytes": 19202,
+      "sha256": "222237c466b54ecafc83636af4a64e9d9568d1bc0a5e63bba4b2f5f366f0c9ba"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure5_operational_route_profiles.png",
+      "bytes": 333049,
+      "sha256": "0f5dceafcdde39d17e23c4a5b81229a55484b8cf3f1bf1a092e273a9b7acb42e"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure5_operational_route_profiles.svg",
+      "bytes": 61471,
+      "sha256": "674ac492018fd691828b8f9fe6462ee0871b303ef2edb3f8e8a7e42d85181430"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure6_description.md",
+      "bytes": 87,
+      "sha256": "fb744929b86b9812d11bb7b0c5b905ed225a015e0aed82dc2c191dc16e4c1fac"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure6_energy_decomposition.pdf",
+      "bytes": 17978,
+      "sha256": "39603140b39a02b12865d269a6bde628afad4a5c8b1c68737484fb1287021839"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure6_energy_decomposition.png",
+      "bytes": 190240,
+      "sha256": "9dfa5cc07600be1405b0dce0fd41c70dcbfaf5927895e5f7fcc74872fe18619d"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure6_energy_decomposition.svg",
+      "bytes": 55671,
+      "sha256": "b05b99f9ce98bb18f5cb5acc5fc3963563a0c3c0a1c8330aea733cc3ef1a81dc"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure7_description.md",
+      "bytes": 86,
+      "sha256": "3017312dcf71c91dae0de9a14fd2a1b3fcec815dff4385ec27c7ad3646b73f09"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure7_settat_vs_benguerir.pdf",
+      "bytes": 21494,
+      "sha256": "74a5c07890b64ac5ec0254c51ad4be3abd94da06944e15dfd74cadee7ffecdb0"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure7_settat_vs_benguerir.png",
+      "bytes": 219931,
+      "sha256": "e6d65c93cbbeed30c55e52641c376168035c63b10e70b12cc020c2a078f3b49c"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure7_settat_vs_benguerir.svg",
+      "bytes": 60588,
+      "sha256": "2cd9c6518019266397334808e9f8f7afc0439a49de471e10451f3d6f754759e9"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure8_description.md",
+      "bytes": 67,
+      "sha256": "42613386cc6e264cee326b27c922a5fb7aad5947fd54ac8a3cbae88d5125b387"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure8_sensitivity_adverse.pdf",
+      "bytes": 19209,
+      "sha256": "b508deb22036ccf5f922d59d85e2151d647910a586b6d8418ffe30a41d60ff2a"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure8_sensitivity_adverse.png",
+      "bytes": 217264,
+      "sha256": "cb1a05196710cccebfae1a876354b0b94a1a5f3aa51d93d20e89640809444a07"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure8_sensitivity_adverse.svg",
+      "bytes": 53694,
+      "sha256": "a761aa1b457d7c33306febc8c67edc2a2314494e4b19d38273aa8dbb886cce96"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure9_description.md",
+      "bytes": 60,
+      "sha256": "65dc5c5b59108093078fae97c83573d969a970234e9ff06075683e9fa7abb263"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure9_refrigeration_terrain.pdf",
+      "bytes": 19543,
+      "sha256": "1e623aa106468d545e49b08e390dee564dc5563c06c1c069797e4446d70bce48"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure9_refrigeration_terrain.png",
+      "bytes": 223809,
+      "sha256": "0ca9a5273e9f0c6fc7ec01fe0fd52dd23dcd346ff3af9dbf03f4bedfef9d01c1"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure9_refrigeration_terrain.svg",
+      "bytes": 61996,
+      "sha256": "11669e384e407ec65c9bb1c60ed671a6baf0c77fb0070a82669b8db904652a65"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig10_q_grid.csv",
+      "bytes": 4509,
+      "sha256": "c82721e96318d8e138a2d61d9a6a42441c9bdcc55b30f1f00fdcf23d8f0978c1"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig11_remedies.csv",
+      "bytes": 2208,
+      "sha256": "d3b00b894c731f51654cdc5db7b54265bc7111116d9fe6a425e7d60124ab876b"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig1_primary_summary.csv",
+      "bytes": 1230,
+      "sha256": "5668b209a79815c9f2ca2fd33b4e50f35540793d079e72fa1a12f33c8d3b9062"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig2_feasibility_by_infra.csv",
+      "bytes": 3191,
+      "sha256": "c6983a24f1ae4e44a0ff98524e378231080fe593a6d2aa863167e4a8ab7289b4"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig3_feasibility_matrix.csv",
+      "bytes": 1358,
+      "sha256": "5c91ac000ba58d0521f56b5e179a182bc0b79766e8f26c8402c2a07f92a57bab"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig4_payload_soc.csv",
+      "bytes": 5379,
+      "sha256": "989c31da64a947ac69826889890a986890ac0ef8601cbf666678b5d0cef334fd"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig5_casa_agadir_elevation.csv",
+      "bytes": 166509,
+      "sha256": "931937a01ba2ed17508a29ab47b5f8cfa38011df7dae7884a463c616fb518af3"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig5_casa_agadir_soc.csv",
+      "bytes": 691,
+      "sha256": "4970b33d14fb5f786cc0fa8ae7cdf7aa09ac5856fe102cb3be7a5e2d0011494a"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig5_casa_marrakech_elevation.csv",
+      "bytes": 88956,
+      "sha256": "4e5b244a5cc6c4794e3bacec7561d8a02b3b24c5e51c74a0f74817d13a56138f"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig5_casa_marrakech_soc.csv",
+      "bytes": 517,
+      "sha256": "a571caede7949fd4bb77153d65363f778511b747105dddced68a9a120b11c6ed"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig6_energy_decomposition.csv",
+      "bytes": 1011,
+      "sha256": "cca7e06fcea1b72b7a287cd9afb7158290e896ad492a6045ff7cff6e0167dcf9"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig7_settat_benguerir.csv",
+      "bytes": 432,
+      "sha256": "4b99a4e80d66ade0d38aa58a02d50dbeacfb484e6031c294525ecdb8c9755f3b"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig8_sensitivity_deltas.csv",
+      "bytes": 2436,
+      "sha256": "942a7059d1de43b4a6cfb957679a63df28486c670f513c4a0bfab2578bbf5670"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig9_dem_flat.csv",
+      "bytes": 828,
+      "sha256": "4371500935ac99ec06fd50b4f0b07c77ba7e87555c58ade53c373ba7fa887f93"
+    },
+    {
+      "path": "results/final_evidence/figures/supplementary/S-Figure_direction_blind_access.pdf",
+      "bytes": 17750,
+      "sha256": "caa454d48153cba297f10435a13656ab8ecc06eeba0e202e9e05a827e4c9a72d"
+    },
+    {
+      "path": "results/final_evidence/figures/supplementary/S-Figure_direction_blind_access.png",
+      "bytes": 288920,
+      "sha256": "0494c288497563784a7e730f2117b538d8f0046a82ca75a4a6ee753d76e3fc0c"
+    },
+    {
+      "path": "results/final_evidence/figures/supplementary/S-Figure_direction_blind_access.svg",
+      "bytes": 92261,
+      "sha256": "957ec167f87f5a1d81837fdd1a01690802b76779191103a848d2932c4baa86d1"
+    },
+    {
+      "path": "results/final_evidence/manifests/CAMPAIGN_PROGRESS.md",
+      "bytes": 660,
+      "sha256": "248be4fc06a321cb4e424433577680ad05d7918446e45ed7267b6ec514b45f1c"
+    },
+    {
+      "path": "results/final_evidence/manifests/experimental_design_freeze.md",
+      "bytes": 4070,
+      "sha256": "c9d1b6961f843785172f5ee99c71d0904b968462b95f71c4df44b2813e08c9c4"
+    },
+    {
+      "path": "results/final_evidence/manifests/figure_table_catalog.csv",
+      "bytes": 4730,
+      "sha256": "ccb1cdb079f4e1469755034bc49a8fe70f8f966062062301303a94e2d6a0c5ed"
+    },
+    {
+      "path": "results/final_evidence/manifests/primary_comparison_fingerprint.json",
+      "bytes": 607,
+      "sha256": "96c9c8adc0a798c8544a811520ee13129d80af6dbca1c117544326fe0b80b213"
+    },
+    {
+      "path": "results/final_evidence/manifests/release_manifest.json",
+      "bytes": 22829,
+      "sha256": "546e0707db460b355e557cf3ef82b1264b6e40ecd96a50dd5b44282888053910"
+    },
+    {
+      "path": "results/final_evidence/manifests/release_manifest_sha256.json",
+      "bytes": 48466,
+      "sha256": "cb2e6d2bb32c3b25b05fa5b90e6df4e8fbd3f44567c3f1a1998084708f21947e"
+    },
+    {
+      "path": "results/final_evidence/manifests/REPRODUCIBILITY.md",
+      "bytes": 1813,
+      "sha256": "2aa3cbe4669b9f5443297ffbf7c68245383d8b8637d6d60f547dda83a2fa0e74"
+    },
+    {
+      "path": "results/final_evidence/manifests/scenario_inventory_meta.json",
+      "bytes": 352,
+      "sha256": "e7921557bd59df0594f6c5c15da3327186f716901edc4260d8b2db655bd52d80"
+    },
+    {
+      "path": "results/final_evidence/manifests/scenario_inventory_primary.csv",
+      "bytes": 29463,
+      "sha256": "1c1d2ee9c170d48565e3ce9500c8d373d0c82cfe493af64652486d8b296b97de"
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T01_data_sources_provenance.csv",
+      "bytes": 6374,
+      "sha256": "8bce43131d1bc6057a75daae753fe09e3795c0b93552bd929eb9c53dd1026f6b"
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T02_network_counts_verification.csv",
+      "bytes": 335,
+      "sha256": "1364cf44e15b083c963784d5811c247f445e2175959cc640578a1500a09491bd"
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T02_road_network_and_decision_graph_stats.csv",
+      "bytes": 863,
+      "sha256": "f31e3b31bca234cd2044187bb7734d0ceb8968d20c092df443a527f340e16fe2"
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T03_od_inventory.csv",
+      "bytes": 7104,
+      "sha256": "90e2f90faa66dbe622043093d74a520714eba47f972ac8c124205a291e61b83a"
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T03_od_inventory_headline14.csv",
+      "bytes": 5313,
+      "sha256": "242aabaef50fdbae0281855f5c9c053b46bd7cb144ad192a305443aa39843fac"
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T04_candidate_inventory.csv",
+      "bytes": 12239,
+      "sha256": "1948d30b2558ed4308a48023644037b39bbbc4ff20d60e5182ec7befb849fa69"
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T05_elevation_by_mission.csv",
+      "bytes": 4502,
+      "sha256": "e14dc5c9d552a305d3b07cd93322b1efa67b56897a287ba5a688053e92b1126a"
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T06_quality_checks.csv",
+      "bytes": 1285,
+      "sha256": "06957b9b824a1394f1409232276e38ba6168d2b2f1728a8d52058fe63a6a52c7"
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T07_vehicle_battery_refrig_charging_params.csv",
+      "bytes": 25383,
+      "sha256": "b426d4146d83d3e07a3822159ccfd92010a94affadc580310404eced9fef1302"
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T07_vehicle_config_paths.csv",
+      "bytes": 467,
+      "sha256": "e7e1536efb4355a877d21b3458a775d811a5e4708e6e68925ebf2a2a58eaaf53"
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T07_vehicle_params_compact.csv",
+      "bytes": 512,
+      "sha256": "2eab9b0de971b14a556d69526b5eab6aeee13a05506e4fbf164dee1d11a5b543"
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/R-T10_od_candidate_accessibility_matrix.csv",
+      "bytes": 1065,
+      "sha256": "a3a76b9220e161282e79d1572520b1541e5ee808243e894262ef4e5f854e2c1d"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T01_experimental_design.csv",
+      "bytes": 29463,
+      "sha256": "1c1d2ee9c170d48565e3ce9500c8d373d0c82cfe493af64652486d8b296b97de"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T02_i3_coverage_addendum.csv",
+      "bytes": 399,
+      "sha256": "6cd05258ad0ac2df0d29be8508dc61162622a8cfd3acdfa80d1e2ece8494b8f7"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T02_infrastructure_coverage.csv",
+      "bytes": 1230,
+      "sha256": "5668b209a79815c9f2ca2fd33b4e50f35540793d079e72fa1a12f33c8d3b9062"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T02_vehicle_parameter_files.csv",
+      "bytes": 340,
+      "sha256": "cd3cf660e604536640a431fc378d967b93dbc9f065a6c9506f567b902e536b5b"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T02_volvo_targeted_infra_matrix.csv",
+      "bytes": 558,
+      "sha256": "bfd84c946923446fb196598180d718ccda168501bad588e937aadca7c83bec7d"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T03_mission_level_operational_results.csv",
+      "bytes": 35996,
+      "sha256": "85d231f67fdd2697ab7785a16bd61e9b657494fa47ac6596b151cc97839d2c00"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T04_casa_agadir_operational_tradeoff.csv",
+      "bytes": 432,
+      "sha256": "4b99a4e80d66ade0d38aa58a02d50dbeacfb484e6031c294525ecdb8c9755f3b"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T04_casa_agadir_settat_vs_benguerir.csv",
+      "bytes": 534,
+      "sha256": "28e8872c915d174d06f83eb6f7cc6661b2136656650f9e41b8c32e16c1ac5aca"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T04_INDEX.md",
+      "bytes": 477,
+      "sha256": "8fa92a778c8e1cfea7f1002030d37f3e2e35d75cbdcc2d463576c8f953a33339"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T04_settat_benguerir_singleton_ledger.csv",
+      "bytes": 285,
+      "sha256": "41774adcffc8d39e0bb14e56c0ae09dc650b8ecdc82b8c53d10fb9900b3eafbd"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T04_settat_budget_outcomes.csv",
+      "bytes": 293,
+      "sha256": "5eaf8f4181a5c3c1d855a90e962f2abd491684f8567c845a97691f50c4997e58"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T04_settat_coverage_after_escalate.csv",
+      "bytes": 105,
+      "sha256": "e7ff6d064976dd29b0335957fbb9225a28167ee85c317b8f9adfd5d1f06c902a"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T05_payload_soc_brackets.csv",
+      "bytes": 1085,
+      "sha256": "506d2f126a7c50295a0251f191c5d5bccfa2193ada3695179c53812368e10e36"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T05_payload_soc_feasibility.csv",
+      "bytes": 5379,
+      "sha256": "989c31da64a947ac69826889890a986890ac0ef8601cbf666678b5d0cef334fd"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T05_preserved_soc_transitions.csv",
+      "bytes": 273,
+      "sha256": "befb8a73578366843de747879d48e6247d8dbd6b25dce807df71ec1a6807b116"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T06_charging_power_duration.csv",
+      "bytes": 4412,
+      "sha256": "c18c593fc1188f2bfb1d8ba49f6fb941934ebfecf33d587147246b7fb61cd750"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T07_physical_sensitivity.csv",
+      "bytes": 6567,
+      "sha256": "a44f26e3ac2b739d8120473d6192822b8f38ae7e7ca8382a46fa1358231031e3"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T08_refrigeration_from_primary_traces.csv",
+      "bytes": 381,
+      "sha256": "84fc2181cd1910ecb4faaceb978ec1cbc6037e289736a6ebc949316680f4cf98"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T08_refrigeration_headline.csv",
+      "bytes": 61527,
+      "sha256": "4cd9b147ac1c912511b8a1e852f689153125ac83d5c483a19736c8e83340f79e"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T08_refrigeration_notes.md",
+      "bytes": 922,
+      "sha256": "9ee80e228d1b847976b7cbf3fa202c781440f906aec19de5f08a996a6eb3e498"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T09_dem_vs_flat.csv",
+      "bytes": 3074,
+      "sha256": "e50b16922ab6e547a2c1265c5495c5101fe26fb0547c756e80e93ee32acd4a69"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T09_dem_vs_flat_fixed_route.csv",
+      "bytes": 1790,
+      "sha256": "6c13f1aa6c0b9616471b14ed491cd8ce608ae4314e516ea087d243e5645f5c5b"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T09_dem_vs_flat_reoptimized.csv",
+      "bytes": 1602,
+      "sha256": "e46399539b5c054f0071d97e9720fd4e3575b606ec623f3aeb30abe8347f3e37"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T10_fixed_vs_flexible_routing.csv",
+      "bytes": 2089,
+      "sha256": "eb01d99d696e89022b9d3a24509498749fa1068b0ce539b75e8d7b92a1043a90"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T11_energy_grid_resolution.csv",
+      "bytes": 4520,
+      "sha256": "e60aa60356688d8f13d57af7574ae66a3f6d938ab5139622225c4036aec981c9"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T12_infeasible_diagnosis.csv",
+      "bytes": 2222,
+      "sha256": "212a55f541ac6f14609672bc8c5abd7b6f45fd879cb1bcfcab42961a775e73f6"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T12_volvo_marrakech_agadir_ops_mechanism.csv",
+      "bytes": 996,
+      "sha256": "c3e5afda74dbfeabd3c24c1374d4349cc9396445c86c27801cae90f1b257f669"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T13_validation_reproducibility_checks.csv",
+      "bytes": 1617,
+      "sha256": "5c933ebb6647d5c08ad3d1a251b879a61dd86c95f2acfff1e34f09c7a8b9f155"
+    },
+    {
+      "path": "results/final_evidence/validation/AUDIT_CORRECTIONS_STATUS.md",
+      "bytes": 3189,
+      "sha256": "379566464c4371f73339c8da153718228a24eb75e3824690422a70b688b05a56"
+    },
+    {
+      "path": "results/final_evidence/validation/consistency_report.json",
+      "bytes": 309,
+      "sha256": "a3a6c4a0d2f83a762a31c1f8fb82bb0bea85f02844299d71c75e3fcbd017caf5"
+    },
+    {
+      "path": "results/final_evidence/validation/dataset_audit_ok.json",
+      "bytes": 325,
+      "sha256": "84e9addca37c35b4515674bafebc7c466fd50deed7ac7f2ee1278fd0a24de31c"
+    },
+    {
+      "path": "results/final_evidence/validation/executable_validation_report.json",
+      "bytes": 3383,
+      "sha256": "f48e344032e19bd30c47b4404cae9295198689cc1c9a9907e37ed6cc4b6be434"
+    },
+    {
+      "path": "results/final_evidence/validation/FINAL_SCIENTIFIC_RESULTS_REPORT.md",
+      "bytes": 2938,
+      "sha256": "79e54b8e01a1ff831b398432e6d5d3fa6cf8b7606f5f1229f6b43755c2df8d9e"
+    },
+    {
+      "path": "results/final_evidence/validation/INTERIM_SCIENTIFIC_FINDINGS.md",
+      "bytes": 4128,
+      "sha256": "e4895411f4fe4aedd3a205718dcdc773da03ff81f5feb1847948b914a8d6495e"
+    }
+  ]
+}

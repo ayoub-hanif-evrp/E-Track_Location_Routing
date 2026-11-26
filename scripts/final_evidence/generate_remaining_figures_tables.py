@@ -615,37 +615,74 @@ def plot_r_figure9():
 
 def plot_r_figure10():
     q = pd.read_csv(TAB_R / "R-T11_energy_grid_resolution.csv")
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4), constrained_layout=True)
+    if "scenario_family" not in q.columns:
+        q["scenario_family"] = q.get("note", "unspecified")
+    if "payload_kg" not in q.columns:
+        q["payload_kg"] = np.nan
+    if "route_mode" not in q.columns:
+        q["route_mode"] = "multi"
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), constrained_layout=True)
     fig.patch.set_facecolor("white")
-    # feasibility states
-    ax = axes[0]
     state_map = {"OPTIMAL": 2, "LIMIT_REACHED": 1, "INFEASIBLE": 0}
-    notes = q.note.unique()
-    for i, note in enumerate(notes):
-        sub = q[q.note == note].sort_values("q_kwh", ascending=False)
-        ys = [state_map.get(str(s), -1) for s in sub.status]
-        ax.plot(sub.q_kwh, ys, marker="o", label=note[:40], lw=1.5)
+    ax = axes[0]
+    # Panel (a): historical 15t reproduction (authoritative flip) + selected 5.3t families
+    hist = q[q["scenario_family"].astype(str).str.contains("historical_15t", na=False)]
+    light = q[q["scenario_family"].astype(str).str.startswith("headline_5p3t", na=False)]
+    for mode, g in hist.groupby("route_mode"):
+        g = g.sort_values("q_kwh", ascending=False)
+        ax.plot(
+            g.q_kwh,
+            [state_map.get(str(s), -1) for s in g.status],
+            marker="o",
+            lw=2.0,
+            label=f"15t Benguerir AC ({mode})",
+        )
+    # one representative 5.3t series for contrast (not claimed as failed 15t reproduction)
+    rep = light[light.note.astype(str).str.contains("benguerir_ac|near_boundary|headline_infeasible", case=False, na=False)]
+    if not len(rep):
+        rep = light
+    for (fam, note), g in rep.groupby(["scenario_family", "note"]):
+        g = g.sort_values("q_kwh", ascending=False)
+        ax.plot(
+            g.q_kwh,
+            [state_map.get(str(s), -1) for s in g.status],
+            marker="s",
+            ls="--",
+            lw=1.2,
+            label=f"5.3t:{str(note)[:28]}",
+        )
     ax.set_yticks([0, 1, 2])
     ax.set_yticklabels(["INFEASIBLE", "LIMIT", "OPTIMAL"])
     ax.set_xlabel("q (kWh)")
-    ax.set_title("(a) Feasibility vs energy quantum")
+    ax.set_title("(a) Feasibility vs q (15 t historical vs 5.3 t)")
     ax.invert_xaxis()
     ax.legend(fontsize=6, loc="best")
     ax.grid(True, ls=":", lw=0.4)
 
     ax = axes[1]
-    sub = q[q.status == "OPTIMAL"]
+    sub = q[q.status == "OPTIMAL"].copy()
     if len(sub):
-        for note, g in sub.groupby("note"):
-            ax.plot(g.q_kwh, g.min_soc, marker="o", label=note[:40])
+        for (fam, mode), g in sub.groupby(["scenario_family", "route_mode"]):
+            ax.plot(
+                g.q_kwh,
+                g.min_soc,
+                marker="o",
+                label=f"{str(fam)[:22]}|{mode}",
+            )
         ax.set_xlabel("q (kWh)")
         ax.set_ylabel("min SOC")
         ax.invert_xaxis()
-        ax.legend(fontsize=6)
+        ax.legend(fontsize=5.5)
         ax.set_title("(b) Reserve margin vs q (OPTIMAL only)")
         ax.grid(True, ls=":", lw=0.4)
-    fig.suptitle("R-Figure 10 — Numerical resolution and reliability", fontsize=12)
+    fig.suptitle("R-Figure 10 — Energy-grid resolution (families labeled)", fontsize=12)
     q.to_csv(SRC_R / "R-Fig10_q_grid.csv", index=False)
+    (FIG_R / "R-Figure10_description.md").write_text(
+        "R-Figure 10: q-grid feasibility. Historical Agadir→Casa 15 t / 80% / Benguerir AC "
+        "reproduces q=5 INFEASIBLE → q=2/1 OPTIMAL (multi and fixed). "
+        "5.3 t series are a separate scenario family.\n",
+        encoding="utf-8",
+    )
     _save(fig, FIG_R / "R-Figure10_q_grid_reliability")
 
 

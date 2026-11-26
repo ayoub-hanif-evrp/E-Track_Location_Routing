@@ -1,0 +1,2 @@
+arc_id,od_id,quality,length_m,source,profile_exists,z_min,z_max,max_abs_grade
+fe603377792cc7cb,casa_oujda,invalid,,copdem_glo30,False,,,

@@ -1,0 +1,3 @@
+item,outcome,note,stationary_min
+settat_casa_agadir_standard_budget,LIMIT_REACHED,Under 600s/2e6 expansions Settat CA on Casa→Agadir was unresolved (LIMIT).,
+settat_casa_agadir_escalate,OPTIMAL,Escalated budget restores OPTIMAL; coverage tie with Benguerir at 11/14 after escalate.,120.0

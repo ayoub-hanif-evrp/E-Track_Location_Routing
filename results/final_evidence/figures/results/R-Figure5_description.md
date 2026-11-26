@@ -1,1 +1,1 @@
-R-Figure 5: Continuous SOC trajectories with charge markers for representative missions.
+R-Figure 5 multipanel: executed route map, ordered DEM elevation, SOC at action endpoints (with soc_min_along when available; not interpolated continuous samples), and cumulative journey time. Per-OD exports: R-Figure5_<od>_operational_profile.*

@@ -1,0 +1,8 @@
+od_id,V0_none,V_amskroud_ca,V_benguerir_ac,V_benguerir_ac_larache,V_benguerir_ca,V_larache_rt,V_settat_ca,V_settat_larache
+agadir_casa,False,False,False,False,False,False,False,False
+casa_agadir,False,False,False,False,False,False,False,False
+casa_marrakech,False,False,False,False,False,False,True,True
+casa_tangier,False,False,False,False,False,False,False,False
+marrakech_agadir,False,False,False,False,False,False,False,False
+rabat_tangier,False,False,False,True,False,True,False,True
+tangier_casa,False,False,False,False,False,False,False,False

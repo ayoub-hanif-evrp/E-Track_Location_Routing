@@ -1,0 +1,9 @@
+source,infra_config_id,energy_status,status,operationally_served,hos_ok,daily_driving_ok,audit_ok,drive_min_phys,mechanism_hypothesis,diagnostic_label
+primary,I0_none,OPTIMAL,INFEASIBLE,False,False,False,False,,daily_driving_limit,
+primary,I1_benguerir_ca,OPTIMAL,INFEASIBLE,False,False,False,False,,daily_driving_limit,
+primary,I2_benguerir_larache,OPTIMAL,INFEASIBLE,False,False,False,False,,daily_driving_limit,
+diagnostic,I0_none,OPTIMAL,INFEASIBLE,False,False,False,False,,daily_driving_limit,baseline_hos_in_search
+diagnostic,I1_benguerir_ca,OPTIMAL,INFEASIBLE,False,False,False,False,,daily_driving_limit,baseline_hos_in_search
+diagnostic,I2_benguerir_larache,OPTIMAL,INFEASIBLE,False,False,False,False,,daily_driving_limit,baseline_hos_in_search
+diagnostic,I3_plus_benguerir_ac,OPTIMAL,INFEASIBLE,False,False,False,False,,daily_driving_limit,baseline_hos_in_search
+diagnostic,I2_benguerir_larache,OPTIMAL,OPTIMAL,True,True,True,True,205.31473909264346,served,eactros_contrast_I2

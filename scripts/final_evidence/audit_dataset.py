@@ -353,42 +353,61 @@ def recount_networks() -> dict:
         qualities = Counter()
         grades = []
 
-    # Per-OD elevation gain/loss from arc profiles when available
-    elev_dir = ROOT / "data/processed/multiroute/elevation"
+    # Per-OD elevation: path-ordered reconstruction (separate alternatives; no bag-sum)
+    sys.path.insert(0, str(ROOT / "scripts/final_evidence"))
+    from elevation_profiles import (  # noqa: E402
+        audit_decision_arc_dem_coverage,
+        investigate_invalid_profiles,
+        reconstruct_all_od_methods,
+        reconstruct_od_elevation,
+    )
+
+    elev_by_method = reconstruct_all_od_methods(sorted(paths["od_id"].unique()))
+    elev_by_method.to_csv(DS / "elevation_by_od_method.csv", index=False)
+    cov_arcs = audit_decision_arc_dem_coverage()
+    cov_arcs.to_csv(DS / "dem_decision_arc_coverage_audit.csv", index=False)
+    invalid_prof = investigate_invalid_profiles()
+    invalid_prof.to_csv(DS / "dem_invalid_profile_investigation.csv", index=False)
+    # D-T05 authoritative rows = shortest_distance alternative per OD
     od_elev = []
     for od in sorted(paths["od_id"].unique()):
-        gain = loss = 0.0
-        n_prof = 0
-        max_g = 0.0
-        for p in elev_dir.glob("arc_*.json"):
-            try:
-                prof = load_json(p)
-            except Exception:
-                continue
-            if prof.get("od_id") != od and (dem_meta.get("arcs", {}).get(p.stem.replace("arc_", ""), {}) or {}).get("od_id") != od:
-                # filter via dem meta
-                aid = p.stem.replace("arc_", "")
-                meta = dem_meta.get("arcs", {}).get(aid, {})
-                if meta.get("od_id") != od:
-                    continue
-            z = prof.get("elevations_m") or prof.get("z") or prof.get("elevation_m")
-            if not z:
-                continue
-            z = np.asarray(z, dtype=float)
-            dz = np.diff(z)
-            gain += float(dz[dz > 0].sum()) if len(dz) else 0.0
-            loss += float((-dz[dz < 0]).sum()) if len(dz) else 0.0
-            n_prof += 1
-            if "grades" in prof:
-                max_g = max(max_g, float(np.nanmax(np.abs(prof["grades"]))))
+        short = reconstruct_od_elevation(od, method="shortest_distance")
+        alt_rows = elev_by_method[elev_by_method["od_id"] == od]
         od_elev.append(
             {
                 "od_id": od,
-                "n_profiles_used": n_prof,
-                "cum_gain_m": gain,
-                "cum_loss_m": loss,
+                "route_method": "shortest_distance",
+                "n_arcs_on_route": len(short.arc_ids),
+                "n_missing_profiles": len(short.missing_arc_ids),
+                "n_invalid_profiles": len(short.invalid_arc_ids),
+                "dem_coverage_frac": short.dem_coverage_frac,
+                "path_length_m": short.path_length_m,
+                "stitched_length_m": short.stitched_length_m,
+                "length_error_m": short.length_error_m,
+                "cum_gain_m": short.cum_gain_m,
+                "cum_loss_m": short.cum_loss_m,
+                "max_abs_grade": short.max_abs_grade,
+                "continuity_ok": short.continuity_ok,
+                "n_route_alternatives_profiled": int(len(alt_rows)),
                 "in_headline": od in HEADLINE_ODS,
+                "notes": ";".join(short.notes),
             }
+        )
+    # Coverage flag: required OD-local arcs vs available profiles
+    if len(cov_arcs):
+        miss = int((~cov_arcs["profile_exists"]).sum())
+        flag(
+            "dem_missing_profiles_on_decision_arcs",
+            "warn" if miss else "pass",
+            miss,
+            f"missing={miss} of {len(cov_arcs)} OD-local decision arcs",
+        )
+    if len(invalid_prof):
+        flag(
+            "dem_invalid_profile_investigation",
+            "warn",
+            int(len(invalid_prof)),
+            invalid_prof.to_dict(orient="records"),
         )
 
     # Weather coverage

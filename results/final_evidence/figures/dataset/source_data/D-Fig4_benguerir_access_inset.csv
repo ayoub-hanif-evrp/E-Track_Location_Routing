@@ -1,4 +1,5 @@
-od_id,amskroud_ca,benguerir_ac,benguerir_ca,settat_ac,settat_ca
-agadir_casa,False,True,False,True,False
-casa_agadir,True,False,True,False,True
-marrakech_agadir,True,False,False,False,False
+site,carriageway,node_role,osm_node_id,lon,lat,access
+ADS BENGUERIR de Agadir --> Casablanca,AC (Agadir→Casa),entrance,6684995611,-7.9694599,32.2696554,entrance_and_exit
+ADS BENGUERIR de Agadir --> Casablanca,AC (Agadir→Casa),exit,1244706595,-7.9685775,32.2751901,entrance_and_exit
+ADS BENGUERIR de Casablanca --> Agadir,CA (Casa→Agadir),entrance,6684944253,-7.9687464,32.2754769,entrance_and_exit
+ADS BENGUERIR de Casablanca --> Agadir,CA (Casa→Agadir),exit,1547241544,-7.9686693,32.2755941,entrance_and_exit

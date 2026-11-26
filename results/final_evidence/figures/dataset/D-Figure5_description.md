@@ -1,0 +1,1 @@
+D-Figure 5: Path-ordered DEM elevation for shortest (and diversity) alternatives using OD-local decision-arc contraction. Distance verified against path_alternatives.length_m; junction duplicates dropped.

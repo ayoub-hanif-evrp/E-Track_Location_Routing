@@ -1,0 +1,4 @@
+vehicle_key,config_path,usable_kwh,nominal_kwh,role
+eactros_600,configs/vehicles/eactros_600.yaml,600.0,,primary_comparison
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,475.0,,primary_comparison
+volvo_usable460_sensitivity,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,460.0,,sensitivity_only_not_primary

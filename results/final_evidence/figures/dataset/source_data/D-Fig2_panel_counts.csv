@@ -1,11 +1,5 @@
-panel,counts
-(a) Motorway network,"58,002 nodes
-58,157 edges"
-(b) Expanded network,"391,653 nodes
-397,255 edges
-+trunk/primary"
-(c) Route-union paths,"18 OD × 2 alts
-=36 path records"
-(d) Decision graph,"198 nodes
-293 arcs
-search space"
+panel,nodes,edges,od_pairs,path_records,arcs
+a_motorway,58002.0,58157.0,,,
+b_expanded,391653.0,397255.0,,,
+c_paths,,,18.0,36.0,
+d_decision,198.0,,,,293.0

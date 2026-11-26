@@ -1,1 +1,1 @@
-R-Figure 2: Geographic feasibility under eActros stressed I0/I1/I2.
+R-Figure 2: Feasible missions plot executed DRIVE arcs from solution traces; infeasible missions use an explicitly labeled shortest-path reference. Arrows show direction; orange markers show visited chargers.
