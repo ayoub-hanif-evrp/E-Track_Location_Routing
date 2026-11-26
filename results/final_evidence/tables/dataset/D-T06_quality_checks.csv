@@ -1,0 +1,17 @@
+check_id,severity,n,detail
+motorway_duplicate_node_ids,pass,0,duplicate OSM node ids
+motorway_invalid_coords,pass,0,non-finite lon/lat
+motorway_coords_outside_morocco_bbox,pass,0,outside loose MA bbox
+expanded_duplicate_node_ids,pass,0,duplicate OSM node ids
+expanded_invalid_coords,pass,0,non-finite lon/lat
+expanded_coords_outside_morocco_bbox,pass,0,outside loose MA bbox
+motorway_duplicate_edges,pass,0,"duplicate u,v,key"
+motorway_nonpositive_length,pass,0,length_m <= 0
+motorway_hgv_tag_unknown_fraction,warn,58157,counts={'unknown': 58157}; unknown HGV must NOT be treated as confirmed legal access
+expanded_duplicate_edges,pass,0,"duplicate u,v,key"
+expanded_nonpositive_length,pass,0,length_m <= 0
+expanded_hgv_tag_unknown_fraction,warn,397255,counts={'unknown': 397255}; unknown HGV must NOT be treated as confirmed legal access
+dem_unrealistic_grade_gt_20pct,pass,0,arcs with |grade|>0.20
+dem_non_valid_quality,warn,1,"{'valid': 176, 'invalid': 1}"
+weather_cache_files_present,pass,18,files under C:\Users\AYOUB\OneDrive - EMSI\Bureau\PHD_WORK\E-Track_Location_Routing\data\raw\weather
+candidate_matched_entrance_and_exit,info,11,"match={'matched_osm': 12, 'unmatched': 7}; access={'entrance_and_exit': 11, 'unresolved': 7, 'opposite_carriageway_only': 1}"

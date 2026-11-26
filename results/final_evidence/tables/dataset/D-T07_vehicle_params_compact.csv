@@ -1,0 +1,4 @@
+vehicle_key,installed_kwh,usable_kwh,battery_provenance,ccs_max_charge_kw,CdA_m2,Crr,P_aux_w,soc_min,cruise_kmh,config_path
+eactros_600,621.0,600.0,manufacturer,400.0,6.5,0.007,2500.0,0.1,80.0,configs/vehicles/eactros_600.yaml
+volvo_475,540.0,475.0,manufacturer_conflict_ma,350.0,6.5,0.007,2500.0,0.1,80.0,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml
+volvo_460_usable,540.0,460.0,manufacturer_conflict_global,350.0,6.5,0.007,2500.0,0.1,80.0,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml

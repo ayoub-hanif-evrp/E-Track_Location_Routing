@@ -1,0 +1,4 @@
+site,budget,status,ops,charge_min,wait_min,stationary_min,min_soc,objective,note
+y_benguerir_ca,600s_2e6,OPTIMAL,True,65.0,0.0,65.0,0.1181532642450932,51682.0,verified under final protocol
+y_settat_ca,600s_2e6,LIMIT_REACHED,False,,,,,,LIMIT_REACHED unresolved at standard budget — not infeasible
+y_settat_ca,1200s_5e6_escalate,OPTIMAL,True,75.0,45.0,120.0,0.1175225704088431,51722.0,escalate OPTIMAL; stationary 75+45=120 min

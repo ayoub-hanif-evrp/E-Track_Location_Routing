@@ -1,0 +1,184 @@
+vehicle_key,config_path,parameter,value,units_or_note,observation_type
+eactros_600,configs/vehicles/eactros_600.yaml,vehicle_id,eactros_600_tractor_4x2,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,model_reference,983403,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,name,Mercedes-Benz eActros 600 tractor 4x2,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,battery.installed_kwh,621.0,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,battery.usable_kwh,600.0,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,battery.provenance,manufacturer,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,battery.source,"Mercedes-Benz eActros 600 product information / technical data (installed ~621 kWh, usable ~600 kWh)",,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,drive.continuous_power_kw,400.0,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,drive.peak_power_kw,600.0,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,drive.peak_regen_power_kw,600.0,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,drive.continuous_power_provenance,manufacturer,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,drive.peak_power_provenance,manufacturer,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,drive.peak_regen_provenance,assumed,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,mass.unladen_tractor_kg,11700.0,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,mass.provenance_tractor,manufacturer,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,mass.note_tractor,≈11.7 t unladen tractor (product sheet order of magnitude),,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,mass.unladen_trailer_kg,8000.0,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,mass.provenance_trailer,assumed,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,mass.technically_permissible_combination_kg,44000.0,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,mass.provenance_gcm_limit,manufacturer,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,aero.CdA_m2,6.5,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,aero.CdA_provenance,assumed,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,aero.CdA_sensitivity,"[5.5, 7.5]",list,assumed_or_manufacturer_see_yaml_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,aero.Crr,0.007,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,aero.Crr_provenance,literature,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,aero.Crr_sensitivity,"[0.005, 0.01]",list,assumed_or_manufacturer_see_yaml_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,aero.note,CdA and Crr are research parameters for long-haul tractor–trailer; not manufacturer-measured for this pack,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,efficiency.eta_prop,0.9,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,efficiency.eta_prop_provenance,assumed,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,efficiency.eta_prop_sensitivity,"[0.85, 0.93]",list,assumed_or_manufacturer_see_yaml_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,efficiency.eta_regen,0.7,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,efficiency.eta_regen_provenance,assumed,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,efficiency.eta_regen_sensitivity,"[0.55, 0.8]",list,assumed_or_manufacturer_see_yaml_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,auxiliaries.P_aux_w,2500.0,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,auxiliaries.provenance,assumed,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,auxiliaries.note,Constant cabin/HVAC/electronics draw; research parameter (documented range 1–4 kW),,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,auxiliaries.P_aux_sensitivity_w,"[1000.0, 4000.0]",list,assumed_or_manufacturer_see_yaml_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,soc.soc_initial,1.0,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,soc.soc_min,0.1,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,soc.soc_max,1.0,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,soc.soc_min_note,Assumed operating floor (10%); not a manufacturer warranty limit,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,charging.ccs_max_charge_kw,400.0,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,charging.ccs_max_charge_provenance,manufacturer_public_web,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,charging.ccs_max_charge_source,https://www.mercedes-benz-trucks.com/int/en/trucks/eactros.html,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,charging.note,"Vehicle-side CCS acceptance cap 400 kW. Nameplate = min(charger_kw, 400). Default MRLS/replay applies conservative_ccs_taper_factor(SOC) research envelope (not an OEM-measured eActros curve). MCS megawatt charging is unused.
+",,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,charging.taper_note,"Research envelope: full power ≤60% SOC; linear derate 60→80% and 80→95%; 20% above 95%.
+",,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,refrigeration.power_source_default,A,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,refrigeration.note,Config A (tractor battery → TRU) is a declared research assumption,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,speed_policy.cruise_kmh,80.0,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,speed_policy.cruise_mps,22.22222222222222,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,speed_policy.note,Constant cruise; OSM maxspeed is NOT used as travel speed; a=0 under cruise,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,gravity_m_s2,9.80665,,see_yaml_nested_provenance
+eactros_600,configs/vehicles/eactros_600.yaml,air_density_default_kg_m3,1.225,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,vehicle_id,volvo_fh_electric_4x2_540kwh_usable475,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,model_status,prospective_morocco,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,manufacturer,Volvo Trucks,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,model,FH Electric,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,model_generation_note,FH Electric product pages (MA/global); not 2026 Aero Extended Range,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,configuration_axles,4x2_tractor,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,battery_variant,6_packs_up_to_540kwh_installed,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,usable_scenario,usable_ma_475,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,name,Volvo FH Electric 4x2 tractor (540 kWh installed / 475 kWh usable MA page),,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,sources.morocco_page,https://www.volvotrucks.ma/fr-ma/trucks/electric/volvo-fh-electric.html,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,sources.global_page,https://www.volvotrucks.com/en-en/trucks/electric/volvo-fh-electric.html,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,sources.access_date,2026-11-10,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,battery.installed_kwh,540.0,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,battery.usable_kwh,475.0,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,battery.provenance,manufacturer_conflict_ma,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,battery.source,MA FH Electric page: onboard up to 540 kWh; usable up to 475 kWh,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,drive.continuous_power_kw,400.0,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,drive.peak_power_kw,400.0,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,drive.peak_regen_power_kw,400.0,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,drive.continuous_power_provenance,assumed_variant_pick,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,drive.peak_power_provenance,assumed_variant_pick,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,drive.peak_regen_provenance,assumed,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,drive.note,Selected mid-menu 400 kW applied to continuous and peak until OEM split is published,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,mass.unladen_tractor_kg,12000.0,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,mass.provenance_tractor,assumed,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,mass.note_tractor,"Engineering research bound — NOT Volvo OEM curb mass; sensitivity [11000, 13500]",,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,mass.unladen_trailer_kg,8000.0,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,mass.provenance_trailer,assumed,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,mass.technically_permissible_combination_kg,65000.0,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,mass.provenance_gcm_limit,manufacturer,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,mass.note_gcm,MA/global pages: GCW up to 65 t; research missions use 25/40 t under this limit,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,aero.CdA_m2,6.5,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,aero.CdA_provenance,assumed,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,aero.CdA_sensitivity,"[5.5, 7.5]",list,assumed_or_manufacturer_see_yaml_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,aero.Crr,0.007,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,aero.Crr_provenance,literature,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,aero.Crr_sensitivity,"[0.005, 0.01]",list,assumed_or_manufacturer_see_yaml_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,aero.note,Research long-haul tractor–trailer aero; not Volvo coast-down,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,efficiency.eta_prop,0.9,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,efficiency.eta_prop_provenance,assumed,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,efficiency.eta_prop_sensitivity,"[0.85, 0.93]",list,assumed_or_manufacturer_see_yaml_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,efficiency.eta_regen,0.7,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,efficiency.eta_regen_provenance,assumed,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,efficiency.eta_regen_sensitivity,"[0.55, 0.8]",list,assumed_or_manufacturer_see_yaml_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,auxiliaries.P_aux_w,2500.0,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,auxiliaries.provenance,assumed,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,auxiliaries.note,Constant cabin/HVAC/electronics; research parameter,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,auxiliaries.P_aux_sensitivity_w,"[1000.0, 4000.0]",list,assumed_or_manufacturer_see_yaml_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,soc.soc_initial,1.0,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,soc.soc_min,0.1,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,soc.soc_max,1.0,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,soc.soc_min_note,Assumed operating floor (10%); not a manufacturer warranty limit,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,charging.ccs_max_charge_kw,350.0,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,charging.voltage_note,Advertised CCS up to 350 kW below 750 V; ~65 min 20→80% claim,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,charging.provenance,manufacturer_advertised,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,charging.taper_note,"No published OEM SOC curve. Nameplate min(charger, 350 kW); default planning/replay multiplies by conservative_ccs_taper_factor(SOC) research envelope.
+",,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,refrigeration.power_source_default,A,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,refrigeration.epto_advertised,True,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,refrigeration.note,"Config A (tractor battery supplies electric TRU) is a DECLARED RESEARCH ASSUMPTION. ePTO availability on FH Electric does not prove a specific refrigerated trailer pairing.
+",,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,speed_policy.cruise_kmh,80.0,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,speed_policy.cruise_mps,22.22222222222222,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,speed_policy.note,Constant research cruise; OSM maxspeed not used as travel speed,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,gravity_m_s2,9.80665,,see_yaml_nested_provenance
+volvo_475,configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,air_density_default_kg_m3,1.225,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,vehicle_id,volvo_fh_electric_4x2_540kwh_usable460,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,model_status,prospective_morocco,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,manufacturer,Volvo Trucks,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,model,FH Electric,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,model_generation_note,FH Electric product pages (MA/global); not 2026 Aero Extended Range,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,configuration_axles,4x2_tractor,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,battery_variant,6_packs_up_to_540kwh_installed,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,usable_scenario,usable_global_460,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,name,Volvo FH Electric 4x2 tractor (540 kWh installed / 460 kWh usable global page),,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,sources.morocco_page,https://www.volvotrucks.ma/fr-ma/trucks/electric/volvo-fh-electric.html,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,sources.global_page,https://www.volvotrucks.com/en-en/trucks/electric/volvo-fh-electric.html,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,sources.access_date,2026-11-10,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,battery.installed_kwh,540.0,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,battery.usable_kwh,460.0,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,battery.provenance,manufacturer_conflict_global,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,battery.source,Global FH Electric page: onboard up to 540 kWh; usable up to 460 kWh,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,drive.continuous_power_kw,400.0,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,drive.peak_power_kw,400.0,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,drive.peak_regen_power_kw,400.0,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,drive.continuous_power_provenance,assumed_variant_pick,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,drive.peak_power_provenance,assumed_variant_pick,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,drive.peak_regen_provenance,assumed,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,drive.note,Selected mid-menu 400 kW applied to continuous and peak until OEM split is published,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,mass.unladen_tractor_kg,12000.0,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,mass.provenance_tractor,assumed,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,mass.note_tractor,"Engineering research bound — NOT Volvo OEM curb mass; sensitivity [11000, 13500]",,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,mass.unladen_trailer_kg,8000.0,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,mass.provenance_trailer,assumed,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,mass.technically_permissible_combination_kg,65000.0,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,mass.provenance_gcm_limit,manufacturer,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,aero.CdA_m2,6.5,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,aero.CdA_provenance,assumed,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,aero.CdA_sensitivity,"[5.5, 7.5]",list,assumed_or_manufacturer_see_yaml_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,aero.Crr,0.007,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,aero.Crr_provenance,literature,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,aero.Crr_sensitivity,"[0.005, 0.01]",list,assumed_or_manufacturer_see_yaml_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,efficiency.eta_prop,0.9,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,efficiency.eta_prop_provenance,assumed,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,efficiency.eta_prop_sensitivity,"[0.85, 0.93]",list,assumed_or_manufacturer_see_yaml_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,efficiency.eta_regen,0.7,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,efficiency.eta_regen_provenance,assumed,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,efficiency.eta_regen_sensitivity,"[0.55, 0.8]",list,assumed_or_manufacturer_see_yaml_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,auxiliaries.P_aux_w,2500.0,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,auxiliaries.provenance,assumed,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,auxiliaries.P_aux_sensitivity_w,"[1000.0, 4000.0]",list,assumed_or_manufacturer_see_yaml_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,soc.soc_initial,1.0,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,soc.soc_min,0.1,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,soc.soc_max,1.0,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,charging.ccs_max_charge_kw,350.0,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,charging.provenance,manufacturer_advertised,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,charging.taper_note,"No published OEM SOC curve. Nameplate min(charger, 350 kW); default planning/replay multiplies by conservative_ccs_taper_factor(SOC) research envelope.
+",,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,refrigeration.power_source_default,A,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,refrigeration.epto_advertised,True,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,refrigeration.note,Config A declared research assumption; ePTO ≠ proven trailer pairing,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,speed_policy.cruise_kmh,80.0,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,speed_policy.cruise_mps,22.22222222222222,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,gravity_m_s2,9.80665,,see_yaml_nested_provenance
+volvo_460_usable,configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,air_density_default_kg_m3,1.225,,see_yaml_nested_provenance
+cold_chain,configs/energy/pass2_tomato_firm_ripe.yaml,file_root_keys,"UA_note,UA_provenance,UA_sensitivity_w_per_k,UA_w_per_k,cargo_precooled,cargo_precooled_note,citation_inspiration,commodity,commodity_note,cop,disclaimer,infiltration_note,infiltration_w,model_id,pass2_scenario_id,power_source,setpoint_band_c,setpoint_c,setpoint_note,setpoint_source",tomato_firm_ripe_9C_headline,assumed_research_cold_chain
+cold_chain,configs/energy/pass2_tomato_firm_ripe.yaml,setpoint_c,9.0,,assumed_research_cold_chain
+cold_chain,configs/optimization/multiroute_placement_pass2a.yaml,file_root_keys,"annualization,budgets,capex_scenarios,cargo_payload_kg,cents_to_currency,demand_scenarios,disclaimer,multiroute_pilot_config,outputs,price_modes,road_cost_per_km_cents,sites,solver",tomato_firm_ripe_9C_headline,assumed_research_cold_chain

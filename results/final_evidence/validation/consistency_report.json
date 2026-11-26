@@ -1,0 +1,13 @@
+{
+  "baseline_commit": "8b0cbf716cc342550299895d4da58889b8239d37",
+  "eactros_stressed_ops_served": {
+    "I0_none": 9,
+    "I1_benguerir_ca": 11,
+    "I2_benguerir_larache": 12
+  },
+  "I0_expected": 9,
+  "I1_expected": 11,
+  "I2_expected": 12,
+  "ladder_ok": true,
+  "n_primary_missions": 168
+}

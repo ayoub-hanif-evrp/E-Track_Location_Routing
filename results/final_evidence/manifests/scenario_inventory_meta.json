@@ -1,0 +1,19 @@
+{
+  "generated_utc": "2026-11-25T18:22:28.967778+00:00",
+  "n_primary_cells": 168,
+  "n_dt07_rows": 178,
+  "vehicles": [
+    "eactros_600",
+    "volvo_475"
+  ],
+  "soc_scenarios": [
+    "stressed_mixed",
+    "common_soc_80"
+  ],
+  "infra": [
+    "I0_none",
+    "I1_benguerir_ca",
+    "I2_benguerir_larache"
+  ],
+  "n_missions": 14
+}

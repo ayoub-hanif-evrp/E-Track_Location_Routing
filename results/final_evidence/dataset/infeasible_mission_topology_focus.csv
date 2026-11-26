@@ -1,0 +1,16 @@
+od_id,site_id,station_key,direction,label,on_route_union_directional,on_route_union_direction_blind_counterfactual,direction_blind_is_executable,note
+casa_agadir,y_settat_ca,settat_ca,casablanca_to_agadir,Settat (Casablanca→Agadir),True,True,False,
+casa_agadir,y_benguerir_ca,benguerir_ca,casablanca_to_agadir,Benguerir (Casablanca→Agadir),True,True,False,
+casa_agadir,y_amskroud_ca,amskroud_ca,casablanca_to_agadir,Amskroud (Casablanca→Agadir),True,True,False,
+casa_agadir,y_settat_ac,settat_ac,agadir_to_casablanca,Settat (Agadir→Casablanca),False,True,False,direction_blind counterfactual is NOT physically executable opposite-carriageway access
+casa_agadir,y_benguerir_ac,benguerir_ac,agadir_to_casablanca,Benguerir (Agadir→Casablanca),False,True,False,direction_blind counterfactual is NOT physically executable opposite-carriageway access
+marrakech_agadir,y_settat_ca,settat_ca,casablanca_to_agadir,Settat (Casablanca→Agadir),False,False,False,
+marrakech_agadir,y_benguerir_ca,benguerir_ca,casablanca_to_agadir,Benguerir (Casablanca→Agadir),False,False,False,
+marrakech_agadir,y_amskroud_ca,amskroud_ca,casablanca_to_agadir,Amskroud (Casablanca→Agadir),True,True,False,
+marrakech_agadir,y_settat_ac,settat_ac,agadir_to_casablanca,Settat (Agadir→Casablanca),False,False,False,
+marrakech_agadir,y_benguerir_ac,benguerir_ac,agadir_to_casablanca,Benguerir (Agadir→Casablanca),False,False,False,
+agadir_casa,y_settat_ca,settat_ca,casablanca_to_agadir,Settat (Casablanca→Agadir),False,True,False,direction_blind counterfactual is NOT physically executable opposite-carriageway access
+agadir_casa,y_benguerir_ca,benguerir_ca,casablanca_to_agadir,Benguerir (Casablanca→Agadir),False,True,False,direction_blind counterfactual is NOT physically executable opposite-carriageway access
+agadir_casa,y_amskroud_ca,amskroud_ca,casablanca_to_agadir,Amskroud (Casablanca→Agadir),False,False,False,
+agadir_casa,y_settat_ac,settat_ac,agadir_to_casablanca,Settat (Agadir→Casablanca),True,True,False,
+agadir_casa,y_benguerir_ac,benguerir_ac,agadir_to_casablanca,Benguerir (Agadir→Casablanca),True,True,False,

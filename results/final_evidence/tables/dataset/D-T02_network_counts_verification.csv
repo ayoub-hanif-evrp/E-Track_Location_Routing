@@ -1,0 +1,11 @@
+metric,claimed,verified,match
+motorway_nodes,58002,58002,True
+motorway_edges,58157,58157,True
+expanded_nodes,391653,391653,True
+expanded_edges,397255,397255,True
+decision_nodes,198,198,True
+decision_arcs,293,293,True
+od_pairs,18,18,True
+path_records,36,36,True
+service_area_inventory,19,19,True
+headline_missions,14,14,True

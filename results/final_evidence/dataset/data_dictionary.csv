@@ -1,0 +1,27 @@
+column_or_id,dtype,description,observation_type
+od_id,string,Directional origin–destination mission id,constructed
+origin_osm_node,int,OSM node id of OD origin anchor,derived
+dest_osm_node,int,OSM node id of OD destination anchor,derived
+node_id / osm_node_id,int,Graph node identifier,derived_from_osm
+"u,v,edge_key",int,Directed edge endpoints and parallel key,derived_from_osm
+length_m,float,Geodesic edge/path length metres,derived
+highway,string,OSM highway class,observed_osm
+hgv_tag,string,OSM HGV access tag; unknown ≠ permitted,observed_osm_or_missing
+official_name,string,ADM service-area inventory name,observed_admin
+travel_direction,string,ADM listed travel direction,observed_admin
+location_match_status,string,OSM geographic match outcome,derived
+directed_access_status,string,Entrance/exit probe vs opposite-carriageway,derived
+decision_nodes,object,Reduced operational graph vertices,constructed
+arcs,object,Reduced operational graph arcs with length,constructed
+jaccard_distance_vs_shortest,float,Node-set diversity vs shortest path,derived
+diversity_class,string,Qualitative route-diversity label,derived
+z / elevations_m,float[],DEM elevations along arc,derived_from_dem
+max_abs_grade,float,Max |grade| on arc (rise/run),derived
+infra_config_id,string,I0/I1/I2 infrastructure scenario id,experimental
+soc_frac,float,Departure state of charge fraction,assumed_scenario
+payload_kg,float,Cargo mass,assumed_scenario
+status,string,Solver status OPTIMAL/INFEASIBLE/LIMIT_REACHED/…,computed
+operationally_served,bool,Ops-feasible after audits (not LIMIT),computed
+energy_feasible,bool,Energy-only feasibility flag,computed
+duty_scope,string,SINGLE_DUTY or MULTI_DAY_OUT_OF_SCOPE,computed
+min_soc / arrival_soc,float,Physical-replay SOC fractions,computed

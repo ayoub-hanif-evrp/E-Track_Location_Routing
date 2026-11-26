@@ -1,0 +1,13 @@
+vehicle_key,soc_scenario,infra_config_id,n_missions,ops_served,ops_frac,energy_served,n_optimal,n_infeasible,n_limit_reached,n_audit_failed,installed
+eactros_600,stressed_mixed,I0_none,14,9,0.6428571428571429,9,9,5,0,0,
+eactros_600,stressed_mixed,I1_benguerir_ca,14,11,0.7857142857142857,11,11,3,0,0,y_benguerir_ca
+eactros_600,stressed_mixed,I2_benguerir_larache,14,12,0.8571428571428571,12,12,2,0,0,"y_benguerir_ca,y_larache_rt"
+eactros_600,common_soc_80,I0_none,14,11,0.7857142857142857,11,11,3,0,0,
+eactros_600,common_soc_80,I1_benguerir_ca,14,12,0.8571428571428571,12,12,2,0,0,y_benguerir_ca
+eactros_600,common_soc_80,I2_benguerir_larache,14,13,0.9285714285714286,13,13,1,0,0,"y_benguerir_ca,y_larache_rt"
+volvo_475,stressed_mixed,I0_none,14,7,0.5,7,7,7,0,0,
+volvo_475,stressed_mixed,I1_benguerir_ca,14,7,0.5,7,7,7,0,0,y_benguerir_ca
+volvo_475,stressed_mixed,I2_benguerir_larache,14,8,0.5714285714285714,8,8,6,0,0,"y_benguerir_ca,y_larache_rt"
+volvo_475,common_soc_80,I0_none,14,8,0.5714285714285714,9,8,6,0,0,
+volvo_475,common_soc_80,I1_benguerir_ca,14,9,0.6428571428571429,10,9,5,0,0,y_benguerir_ca
+volvo_475,common_soc_80,I2_benguerir_larache,14,10,0.7142857142857143,11,10,4,0,0,"y_benguerir_ca,y_larache_rt"

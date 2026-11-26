@@ -1,0 +1,6 @@
+{
+  "git_sha": "8b0cbf716cc342550299895d4da58889b8239d37",
+  "pipeline": "final_evidence_remaining_p2_p3",
+  "fridge": "configs/energy/pass2_tomato_firm_ripe.yaml",
+  "mode": "sequential_resumable"
+}

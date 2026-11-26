@@ -1,0 +1,9 @@
+network,highway,directed_km
+motorway_only,motorway,3595.5820206490166
+motorway_only,motorway_link,368.66819460532304
+expanded_motorway_trunk_primary,primary,10309.995889628792
+expanded_motorway_trunk_primary,motorway,3595.5820206490166
+expanded_motorway_trunk_primary,trunk,3058.6830084266303
+expanded_motorway_trunk_primary,motorway_link,368.66819460532304
+expanded_motorway_trunk_primary,trunk_link,111.21991361883923
+expanded_motorway_trunk_primary,primary_link,52.35384496587133

@@ -1,0 +1,13 @@
+{
+  "git_sha": "8b0cbf716cc342550299895d4da58889b8239d37",
+  "pipeline": "final_evidence_infeasible_diagnosis",
+  "focus_ods": [
+    "marrakech_agadir",
+    "agadir_casa"
+  ],
+  "q": 2,
+  "max_seconds": 600.0,
+  "max_expansions": 2000000,
+  "note": "Existing candidates / SOC only; no new sites",
+  "generated_at": "2026-11-25T20:42:00"
+}

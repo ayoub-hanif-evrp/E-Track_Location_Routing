@@ -1,0 +1,15 @@
+,eactros_600|stressed_mixed|I0_none,eactros_600|stressed_mixed|I1_benguerir_ca,eactros_600|stressed_mixed|I2_benguerir_larache,eactros_600|common_soc_80|I0_none,eactros_600|common_soc_80|I1_benguerir_ca,eactros_600|common_soc_80|I2_benguerir_larache,volvo_475|stressed_mixed|I0_none,volvo_475|stressed_mixed|I1_benguerir_ca,volvo_475|stressed_mixed|I2_benguerir_larache,volvo_475|common_soc_80|I0_none,volvo_475|common_soc_80|I1_benguerir_ca,volvo_475|common_soc_80|I2_benguerir_larache
+agadir_casa,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0
+agadir_marrakech,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0
+casa_agadir,1.0,3.0,3.0,1.0,3.0,3.0,1.0,1.0,1.0,1.0,3.0,3.0
+casa_marrakech,1.0,3.0,3.0,3.0,3.0,3.0,1.0,1.0,1.0,3.0,3.0,3.0
+casa_rabat,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0
+casa_tangier,1.0,1.0,3.0,1.0,1.0,3.0,1.0,1.0,1.0,1.0,1.0,1.0
+fes_rabat,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0
+marrakech_agadir,1.0,1.0,1.0,3.0,3.0,3.0,1.0,1.0,1.0,1.0,1.0,1.0
+marrakech_casa,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0
+rabat_casa,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0
+rabat_fes,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0
+rabat_tangier,3.0,3.0,3.0,3.0,3.0,3.0,1.0,1.0,3.0,1.0,1.0,3.0
+tangier_casa,3.0,3.0,3.0,3.0,3.0,3.0,1.0,1.0,1.0,1.0,1.0,1.0
+tangier_rabat,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0

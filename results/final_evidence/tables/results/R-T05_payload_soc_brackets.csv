@@ -1,0 +1,7 @@
+od_id,payload_kg,installed,min_tested_feasible_soc,max_tested_infeasible_soc,n_evaluated,note
+casa_agadir,5300.0,y_benguerir_ca,0.5,,5,bracket only; no interpolated threshold
+casa_agadir,10000.0,y_benguerir_ca,0.5,,5,bracket only; no interpolated threshold
+casa_agadir,15000.0,y_benguerir_ca,0.6,0.5,5,bracket only; no interpolated threshold
+casa_marrakech,5300.0,y_benguerir_ca,0.5,,5,bracket only; no interpolated threshold
+casa_marrakech,10000.0,y_benguerir_ca,0.6,0.5,5,bracket only; no interpolated threshold
+casa_marrakech,15000.0,y_benguerir_ca,0.6,0.5,5,bracket only; no interpolated threshold

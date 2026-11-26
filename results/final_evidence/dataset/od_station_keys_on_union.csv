@@ -1,0 +1,15 @@
+od_id,dem_complete,n_station_keys_on_union,station_keys_on_union,git_sha
+casa_marrakech,True,2,"benguerir_ca,settat_ca",8b0cbf716cc342550299895d4da58889b8239d37
+casa_agadir,True,3,"amskroud_ca,benguerir_ca,settat_ca",8b0cbf716cc342550299895d4da58889b8239d37
+marrakech_agadir,True,1,amskroud_ca,8b0cbf716cc342550299895d4da58889b8239d37
+agadir_marrakech,True,0,,8b0cbf716cc342550299895d4da58889b8239d37
+marrakech_casa,True,2,"benguerir_ac,settat_ac",8b0cbf716cc342550299895d4da58889b8239d37
+agadir_casa,True,2,"benguerir_ac,settat_ac",8b0cbf716cc342550299895d4da58889b8239d37
+casa_tangier,True,2,"bouznika_cr,larache_rt",8b0cbf716cc342550299895d4da58889b8239d37
+tangier_casa,True,2,"assilah_tr,bouznika_rc",8b0cbf716cc342550299895d4da58889b8239d37
+tangier_rabat,True,1,assilah_tr,8b0cbf716cc342550299895d4da58889b8239d37
+rabat_tangier,True,1,larache_rt,8b0cbf716cc342550299895d4da58889b8239d37
+rabat_fes,True,0,,8b0cbf716cc342550299895d4da58889b8239d37
+fes_rabat,True,0,,8b0cbf716cc342550299895d4da58889b8239d37
+casa_rabat,True,1,bouznika_cr,8b0cbf716cc342550299895d4da58889b8239d37
+rabat_casa,True,1,bouznika_rc,8b0cbf716cc342550299895d4da58889b8239d37

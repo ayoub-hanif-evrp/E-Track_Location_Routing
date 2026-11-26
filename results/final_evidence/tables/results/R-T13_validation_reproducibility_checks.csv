@@ -1,0 +1,16 @@
+check_id,passed,evidence
+dataset_counts_verified,True,independent_recount_summary.json
+primary_168_cells,True,primary_missions.csv
+eactros_stressed_I0_9_I1_11_I2_12,True,primary_summary
+LIMIT_neq_INFEASIBLE,True,status vocabulary
+settat_escalate_optimal,True,settat_casa_agadir_escalate.csv
+dem_vs_flat,True,R-T09
+q_grid,True,R-T11
+infeasible_diagnosis,True,R-T12
+robustness_45,True,headline_robustness_missions.csv
+fine_soc_15,True,fine_soc_missions.csv
+fixed_vs_flex_24,True,fixed_vs_flex_missions.csv
+figures_d1_d6_r1_r11,True,figures png
+consistency_gate,True,consistency_report.json
+final_report,True,FINAL_SCIENTIFIC_RESULTS_REPORT.md
+release_manifest,True,release_manifest.json

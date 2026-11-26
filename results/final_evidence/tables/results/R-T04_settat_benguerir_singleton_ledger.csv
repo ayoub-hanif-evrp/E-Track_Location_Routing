@@ -1,0 +1,4 @@
+infra_config_id,sites,ops_served,ops_frac,n_missions,n_optimal,n_infeasible,n_limit_reached,elapsed_sec
+S0_none,,9,0.6428571428571429,14,9,5,0,790.4
+S1_settat_ca,y_settat_ca,10,0.7142857142857143,14,10,3,1,996.4
+S1_benguerir_ca,y_benguerir_ca,11,0.7857142857142857,14,11,3,0,118.7

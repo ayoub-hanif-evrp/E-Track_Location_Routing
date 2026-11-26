@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "n_discrepancies": 1,
+  "discrepancies": [
+    {
+      "metric": "expanded_nodes_vs_graph_audit",
+      "claimed": 391653,
+      "verified": 391885,
+      "note": "CSV n_nodes after isolate removal; graph_audit may be pre-prune"
+    }
+  ],
+  "generated_utc": "2026-11-25T18:19:58.996080+00:00"
+}

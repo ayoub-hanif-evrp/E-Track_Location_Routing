@@ -1,0 +1,15 @@
+od_id,y_settat_ca,y_benguerir_ca,y_amskroud_ca,y_settat_ac,y_benguerir_ac,y_bouznika_cr,y_bouznika_rc,y_larache_rt,y_assilah_tr
+casa_marrakech,True,True,False,False,False,False,False,False,False
+casa_agadir,True,True,True,False,False,False,False,False,False
+marrakech_agadir,False,False,True,False,False,False,False,False,False
+agadir_marrakech,False,False,False,False,False,False,False,False,False
+marrakech_casa,False,False,False,True,True,False,False,False,False
+agadir_casa,False,False,False,True,True,False,False,False,False
+casa_tangier,False,False,False,False,False,True,False,True,False
+tangier_casa,False,False,False,False,False,False,True,False,True
+tangier_rabat,False,False,False,False,False,False,False,False,True
+rabat_tangier,False,False,False,False,False,False,False,True,False
+rabat_fes,False,False,False,False,False,False,False,False,False
+fes_rabat,False,False,False,False,False,False,False,False,False
+casa_rabat,False,False,False,False,False,True,False,False,False
+rabat_casa,False,False,False,False,False,False,True,False,False

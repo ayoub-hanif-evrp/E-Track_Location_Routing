@@ -10,7 +10,7 @@ working-time rules (décret 2-10-314 family, as commonly summarized):
 | Continuous driving | ≤ 4.5 h then ≥ 45 min qualifying break | n/a |
 | Qualifying break | Consecutive **CHARGE + WAIT** at the same rest node accumulate | n/a |
 | Daily driving | ≤ 9 h (Art.17) hard resource | **no reset** |
-| Daily rest ≥ 12 h / 24 h (Art.16) | Not implemented | Missions requiring it → `MULTI_DAY_OUT_OF_SCOPE` |
+| Daily rest ≥ 12 h / 24 h (Art.16) | Not implemented; elapsed-duty screen uses **journey ≥ 24 h** (`daily_rest_horizon_min=1440`) consistent with the Art.16 24 h period — not a 12 h journey cutoff | Missions requiring overnight rest → `MULTI_DAY_OUT_OF_SCOPE` |
 
 ## Charging-break eligibility
 

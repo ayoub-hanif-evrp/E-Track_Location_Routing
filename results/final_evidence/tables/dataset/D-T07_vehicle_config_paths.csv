@@ -1,0 +1,4 @@
+config_path,exists,observation_type,note
+configs/vehicles/eactros_600.yaml,True,assumed_research_parameters,Full parameter dump in D-T07 via prepare fingerprint later
+configs/vehicles/volvo_fh_electric_4x2_540kwh_usable460.yaml,True,assumed_research_parameters,Full parameter dump in D-T07 via prepare fingerprint later
+configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml,True,assumed_research_parameters,Full parameter dump in D-T07 via prepare fingerprint later

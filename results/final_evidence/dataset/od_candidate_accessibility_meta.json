@@ -1,0 +1,173 @@
+{
+  "git_sha": "8b0cbf716cc342550299895d4da58889b8239d37",
+  "n_ods": 14,
+  "n_sites": 9,
+  "n_accessible_pairs": 18,
+  "focus_verification": [
+    {
+      "od_id": "casa_agadir",
+      "site_id": "y_settat_ca",
+      "station_key": "settat_ca",
+      "direction": "casablanca_to_agadir",
+      "label": "Settat (Casablanca\u2192Agadir)",
+      "on_route_union_directional": true,
+      "on_route_union_direction_blind_counterfactual": true,
+      "direction_blind_is_executable": false,
+      "note": ""
+    },
+    {
+      "od_id": "casa_agadir",
+      "site_id": "y_benguerir_ca",
+      "station_key": "benguerir_ca",
+      "direction": "casablanca_to_agadir",
+      "label": "Benguerir (Casablanca\u2192Agadir)",
+      "on_route_union_directional": true,
+      "on_route_union_direction_blind_counterfactual": true,
+      "direction_blind_is_executable": false,
+      "note": ""
+    },
+    {
+      "od_id": "casa_agadir",
+      "site_id": "y_amskroud_ca",
+      "station_key": "amskroud_ca",
+      "direction": "casablanca_to_agadir",
+      "label": "Amskroud (Casablanca\u2192Agadir)",
+      "on_route_union_directional": true,
+      "on_route_union_direction_blind_counterfactual": true,
+      "direction_blind_is_executable": false,
+      "note": ""
+    },
+    {
+      "od_id": "casa_agadir",
+      "site_id": "y_settat_ac",
+      "station_key": "settat_ac",
+      "direction": "agadir_to_casablanca",
+      "label": "Settat (Agadir\u2192Casablanca)",
+      "on_route_union_directional": false,
+      "on_route_union_direction_blind_counterfactual": true,
+      "direction_blind_is_executable": false,
+      "note": "direction_blind counterfactual is NOT physically executable opposite-carriageway access"
+    },
+    {
+      "od_id": "casa_agadir",
+      "site_id": "y_benguerir_ac",
+      "station_key": "benguerir_ac",
+      "direction": "agadir_to_casablanca",
+      "label": "Benguerir (Agadir\u2192Casablanca)",
+      "on_route_union_directional": false,
+      "on_route_union_direction_blind_counterfactual": true,
+      "direction_blind_is_executable": false,
+      "note": "direction_blind counterfactual is NOT physically executable opposite-carriageway access"
+    },
+    {
+      "od_id": "marrakech_agadir",
+      "site_id": "y_settat_ca",
+      "station_key": "settat_ca",
+      "direction": "casablanca_to_agadir",
+      "label": "Settat (Casablanca\u2192Agadir)",
+      "on_route_union_directional": false,
+      "on_route_union_direction_blind_counterfactual": false,
+      "direction_blind_is_executable": false,
+      "note": ""
+    },
+    {
+      "od_id": "marrakech_agadir",
+      "site_id": "y_benguerir_ca",
+      "station_key": "benguerir_ca",
+      "direction": "casablanca_to_agadir",
+      "label": "Benguerir (Casablanca\u2192Agadir)",
+      "on_route_union_directional": false,
+      "on_route_union_direction_blind_counterfactual": false,
+      "direction_blind_is_executable": false,
+      "note": ""
+    },
+    {
+      "od_id": "marrakech_agadir",
+      "site_id": "y_amskroud_ca",
+      "station_key": "amskroud_ca",
+      "direction": "casablanca_to_agadir",
+      "label": "Amskroud (Casablanca\u2192Agadir)",
+      "on_route_union_directional": true,
+      "on_route_union_direction_blind_counterfactual": true,
+      "direction_blind_is_executable": false,
+      "note": ""
+    },
+    {
+      "od_id": "marrakech_agadir",
+      "site_id": "y_settat_ac",
+      "station_key": "settat_ac",
+      "direction": "agadir_to_casablanca",
+      "label": "Settat (Agadir\u2192Casablanca)",
+      "on_route_union_directional": false,
+      "on_route_union_direction_blind_counterfactual": false,
+      "direction_blind_is_executable": false,
+      "note": ""
+    },
+    {
+      "od_id": "marrakech_agadir",
+      "site_id": "y_benguerir_ac",
+      "station_key": "benguerir_ac",
+      "direction": "agadir_to_casablanca",
+      "label": "Benguerir (Agadir\u2192Casablanca)",
+      "on_route_union_directional": false,
+      "on_route_union_direction_blind_counterfactual": false,
+      "direction_blind_is_executable": false,
+      "note": ""
+    },
+    {
+      "od_id": "agadir_casa",
+      "site_id": "y_settat_ca",
+      "station_key": "settat_ca",
+      "direction": "casablanca_to_agadir",
+      "label": "Settat (Casablanca\u2192Agadir)",
+      "on_route_union_directional": false,
+      "on_route_union_direction_blind_counterfactual": true,
+      "direction_blind_is_executable": false,
+      "note": "direction_blind counterfactual is NOT physically executable opposite-carriageway access"
+    },
+    {
+      "od_id": "agadir_casa",
+      "site_id": "y_benguerir_ca",
+      "station_key": "benguerir_ca",
+      "direction": "casablanca_to_agadir",
+      "label": "Benguerir (Casablanca\u2192Agadir)",
+      "on_route_union_directional": false,
+      "on_route_union_direction_blind_counterfactual": true,
+      "direction_blind_is_executable": false,
+      "note": "direction_blind counterfactual is NOT physically executable opposite-carriageway access"
+    },
+    {
+      "od_id": "agadir_casa",
+      "site_id": "y_amskroud_ca",
+      "station_key": "amskroud_ca",
+      "direction": "casablanca_to_agadir",
+      "label": "Amskroud (Casablanca\u2192Agadir)",
+      "on_route_union_directional": false,
+      "on_route_union_direction_blind_counterfactual": false,
+      "direction_blind_is_executable": false,
+      "note": ""
+    },
+    {
+      "od_id": "agadir_casa",
+      "site_id": "y_settat_ac",
+      "station_key": "settat_ac",
+      "direction": "agadir_to_casablanca",
+      "label": "Settat (Agadir\u2192Casablanca)",
+      "on_route_union_directional": true,
+      "on_route_union_direction_blind_counterfactual": true,
+      "direction_blind_is_executable": false,
+      "note": ""
+    },
+    {
+      "od_id": "agadir_casa",
+      "site_id": "y_benguerir_ac",
+      "station_key": "benguerir_ac",
+      "direction": "agadir_to_casablanca",
+      "label": "Benguerir (Agadir\u2192Casablanca)",
+      "on_route_union_directional": true,
+      "on_route_union_direction_blind_counterfactual": true,
+      "direction_blind_is_executable": false,
+      "note": ""
+    }
+  ]
+}

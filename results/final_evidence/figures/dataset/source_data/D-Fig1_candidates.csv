@@ -1,0 +1,13 @@
+official_name,lon,lat,travel_direction,location_match_status
+ADS AMSKROUD de Casablanca --> Agadir,-9.360340996904467,30.455248909163384,Casablanca→Agadir,matched_osm
+ADS ASSILAH de Tanger Med --> Rabat,-6.002992622745441,35.46846117698767,Tanger Med→Rabat,matched_osm
+ADS BENGUERIR de Agadir --> Casablanca,-7.968566955532005,32.2723196666498,Agadir→Casablanca,matched_osm
+ADS BENGUERIR de Casablanca --> Agadir,-7.969590332844865,32.27316857788311,Casablanca→Agadir,matched_osm
+ADS BERRCHID de Agadir --> Casablanca,-7.573037454189495,33.22253352302779,Agadir→Casablanca,matched_osm
+ADS BIR JDID de Casablanca --> Safi,-7.979685516000787,33.35275489413993,Casablanca→Safi,matched_osm
+ADS BIR JDID de Safi --> Casablanca,-7.978817342794302,33.35377091013312,Safi→Casablanca,matched_osm
+ADS BOUZNIKA de Casablanca --> Rabat,-7.2334297,33.777518,Casablanca→Rabat,matched_osm
+ADS BOUZNIKA de Rabat --> Casablanca,-7.2327215,33.7795887,Rabat→Casablanca,matched_osm
+ADS LARACHE de Rabat --> Tanger Med,-6.121270540519396,35.16922838145098,Rabat→Tanger Med,matched_osm
+ADS SETTAT  de Agadir --> Casablanca,-7.668411958354491,32.8951852255601,Agadir→Casablanca,matched_osm
+ADS SETTAT  de Casablanca --> Agadir,-7.669104463655934,32.89658460517626,Casablanca→Agadir,matched_osm

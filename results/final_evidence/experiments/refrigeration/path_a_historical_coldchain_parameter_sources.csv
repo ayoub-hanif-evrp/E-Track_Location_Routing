@@ -1,0 +1,6 @@
+parameter,headline_yaml,legacy_approx_yaml,published_guidance,source_url,reconcile_note
+setpoint_c,9.0,2.0,UNECE ECE/TRADE/470 firm-ripe tomatoes ≈ 8–10 °C,https://unece.org/sites/default/files/2023-07/ECE_TRADE_470_E_web.pdf,Campaign FRIDGE=pass2_tomato_firm_ripe.yaml uses 9 °C mid-band. refrigeration_approx.yaml at +2 °C is NOT the tomato headline and must not be cited as commodity setpoint.
+UA_w_per_k,80.0,80.0,order-of-magnitude insulated semi-trailer 50–120 W/K (assumed),configs/energy/pass2_tomato_firm_ripe.yaml UA_sensitivity,research assumption; not Thermo King calibrated
+tru_W_at_15C_amb,187.5,456.1,few kW TRU electrical draw order-of-magnitude,UA–COP engineering model,Wh = P*dt on DRIVE/CHARGE/WAIT when refrigeration_on
+tru_W_at_25C_amb,592.6,978.7,few kW TRU electrical draw order-of-magnitude,UA–COP engineering model,Wh = P*dt on DRIVE/CHARGE/WAIT when refrigeration_on
+tru_W_at_35C_amb,1181.8,1783.8,few kW TRU electrical draw order-of-magnitude,UA–COP engineering model,Wh = P*dt on DRIVE/CHARGE/WAIT when refrigeration_on

@@ -1,0 +1,4 @@
+infra_config_id,od_id,status,operationally_served,energy_feasible,objective,min_soc,arrival_soc,road_km,drive_min_phys,charge_min_phys,wait_min_phys,pad_duration_min,solve_sec,journey_min_phys
+S0_none,casa_agadir,INFEASIBLE,False,False,,,,,,,,0.0,0.0011666999198496,0.0
+S1_settat_ca,casa_agadir,LIMIT_REACHED,False,True,,,,,,,,0.0,600.4514828999527,0.0
+S1_benguerir_ca,casa_agadir,OPTIMAL,True,True,51682.0,0.1181532642450932,0.1181532642450932,445.6161383569876,339.6757415593472,65.0,0.0,0.0,88.56897559994832,404.6757415593472

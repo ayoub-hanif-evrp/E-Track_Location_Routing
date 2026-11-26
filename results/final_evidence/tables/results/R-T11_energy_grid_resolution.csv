@@ -1,0 +1,16 @@
+od_id,soc_frac,q_kwh,installed,status,energy_feasible,operationally_served,min_soc,solve_sec,note
+agadir_casa,0.8,5,,INFEASIBLE,False,False,,0.0007835999131202,headline_infeasible_control
+agadir_casa,0.8,2,,INFEASIBLE,False,False,,0.0004477000329643,headline_infeasible_control
+agadir_casa,0.8,1,,INFEASIBLE,False,False,,0.0004617001395672,headline_infeasible_control
+agadir_casa,1.0,5,,OPTIMAL,True,True,0.1665548353198847,0.3404415999539196,soc100_feasible_control
+agadir_casa,1.0,2,,OPTIMAL,True,True,0.1665548353198847,0.3073374000377953,soc100_feasible_control
+agadir_casa,1.0,1,,OPTIMAL,True,True,0.1665548353198847,0.3391909000929445,soc100_feasible_control
+casa_agadir,0.5,5,y_benguerir_ca,OPTIMAL,True,True,0.1461211888188221,1.63343230006285,near_boundary_with_infra
+casa_agadir,0.5,2,y_benguerir_ca,OPTIMAL,True,True,0.1181532642450932,85.0111722999718,near_boundary_with_infra
+casa_agadir,0.5,1,y_benguerir_ca,OPTIMAL,True,True,0.108153264245093,342.7629287000745,near_boundary_with_infra
+casa_rabat,0.8,5,,OPTIMAL,True,True,0.5868675086860072,0.0532815000042319,clearly_feasible
+casa_rabat,0.8,2,,OPTIMAL,True,True,0.5868675086860072,0.0439228999894112,clearly_feasible
+casa_rabat,0.8,1,,OPTIMAL,True,True,0.5868675086860072,0.0649594999849796,clearly_feasible
+agadir_casa,0.8,5,y_benguerir_ac,OPTIMAL,True,True,0.14153018234830242,28.479490299941972,directional_ac_near_boundary
+agadir_casa,0.8,2,y_benguerir_ac,OPTIMAL,True,True,0.11319684901496901,249.23947590007447,directional_ac_near_boundary
+agadir_casa,0.8,1,y_benguerir_ac,LIMIT_REACHED,True,False,,600.524892100133,directional_ac_near_boundary

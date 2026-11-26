@@ -1,0 +1,4 @@
+network,n_nodes,n_edges,directed_length_km,unique_physical_length_km_approx,edge_length_m_p50,edge_length_m_p95,edge_length_m_max,undirected_components,largest_component_nodes,lon_min,lon_max,lat_min,lat_max,highway_directed_km_json
+motorway_only,58002,58157,3964.25,3964.25,55.946,159.806,2101.776,3.0,40401.0,-9.3990682,-2.0260195,30.4173839,35.856312,"{""motorway"": 3595.5820206490166, ""motorway_link"": 368.66819460532304}"
+expanded_motorway_trunk_primary,391653,397255,17496.503,17496.503,24.632,138.806,6142.616,7.0,390834.0,-9.8006739,-1.7999876,30.1950277,35.900766,"{""primary"": 10309.995889628792, ""motorway"": 3595.5820206490166, ""trunk"": 3058.6830084266303, ""motorway_link"": 368.66819460532304, ""trunk_link"": 111.21991361883923, ""primary_link"": 52.35384496587133}"
+decision_graph,198,293,3738.456,,1386.205,63971.104,209025.609,,,,,,,

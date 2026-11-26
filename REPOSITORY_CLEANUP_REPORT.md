@@ -84,3 +84,11 @@ Graph CI: `multiroute-graph-v1` HTTP 200 (`results/validation/path_a/ci_graph_ch
 - Manuscript cites observed I2=12/14 and historical E=11/14 separately.
 - Executable corrections regenerated: infra ladder, cold-chain, P6 rebake (16 cells), consistency warnings.
 - No READY claim from documentation alone — evidence freeze remains CONDITIONAL pending Settat LIMIT escalate outcome.
+
+
+## Final evidence campaign addendum
+
+Authoritative numerical/figure package lives under `results/final_evidence/`.
+Path A historical evidence remains under `results/validation/path_a/`.
+Do not duplicate evidence into `paper/` during this campaign (manuscript work deferred).
+Campaign status: COMPLETE.

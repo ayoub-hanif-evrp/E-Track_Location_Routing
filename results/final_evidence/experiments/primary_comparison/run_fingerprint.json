@@ -1,0 +1,21 @@
+{
+  "git_sha": "8b0cbf716cc342550299895d4da58889b8239d37",
+  "pipeline": "final_evidence_primary_comparison",
+  "vehicles": [
+    "volvo_475"
+  ],
+  "soc_scenarios": [
+    "common_soc_80"
+  ],
+  "infra": [
+    "I0_none",
+    "I1_benguerir_ca",
+    "I2_benguerir_larache"
+  ],
+  "q": 2,
+  "max_seconds": 600.0,
+  "max_expansions": 2000000,
+  "fridge": "configs/energy/pass2_tomato_firm_ripe.yaml",
+  "generated_at": "2026-11-25T19:40:34",
+  "note": "LIMIT_REACHED never equated to INFEASIBLE; stressed_mixed preserves 50% southbound Casa\u2192Marrakech/Agadir + Marrakech\u2192Agadir"
+}

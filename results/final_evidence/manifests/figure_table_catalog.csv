@@ -1,0 +1,38 @@
+id,title,scientific_purpose,source_dataset_or_result,experiment_ids,generation_script,validation_status,main_or_supplementary
+D-Figure1,Study area map,Study area map,figures/dataset/D-Figure1_study_area,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+D-Figure2,Graph reduction,Graph reduction,figures/dataset/D-Figure2_graph_reduction,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+D-Figure3,OD routes,OD routes,figures/dataset/D-Figure3_od_route_alternatives,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+D-Figure4,Candidates,Candidates,figures/dataset/D-Figure4_directional_candidates,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+D-Figure5,Elevation,Elevation,figures/dataset/D-Figure5_elevation_profiles,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+D-Figure6,Dataset stats,Dataset stats,figures/dataset/D-Figure6_dataset_descriptive_stats,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+R-Figure1,Coverage bars,Coverage bars,figures/results/R-Figure1_infrastructure_coverage,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+R-Figure2,Geo feasibility,Geo feasibility,figures/results/R-Figure2_geographic_feasibility,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+R-Figure3,Feasibility matrix,Feasibility matrix,figures/results/R-Figure3_feasibility_matrix,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+R-Figure4,Payload-SOC,Payload-SOC,figures/results/R-Figure4_payload_soc_frontiers,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+R-Figure5,SOC profiles,SOC profiles,figures/results/R-Figure5_operational_route_profiles,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+R-Figure6,Energy decomp,Energy decomp,figures/results/R-Figure6_energy_decomposition,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+R-Figure7,Settat tradeoff,Settat tradeoff,figures/results/R-Figure7_settat_vs_benguerir,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+R-Figure8,Sensitivity,Sensitivity,figures/results/R-Figure8_sensitivity_adverse,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+R-Figure9,Fridge/terrain,Fridge/terrain,figures/results/R-Figure9_refrigeration_terrain,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+R-Figure10,q-grid,q-grid,figures/results/R-Figure10_q_grid_reliability,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+R-Figure11,Remedies,Remedies,figures/results/R-Figure11_infeasible_remedies,final_evidence,scripts/final_evidence/generate_remaining_figures_tables.py,generated,main
+D-T01,D-T01,D-T01,tables/,final_evidence,scripts/final_evidence/*,generated,main
+D-T02,D-T02,D-T02,tables/,final_evidence,scripts/final_evidence/*,generated,main
+D-T03,D-T03,D-T03,tables/,final_evidence,scripts/final_evidence/*,generated,main
+D-T04,D-T04,D-T04,tables/,final_evidence,scripts/final_evidence/*,generated,main
+D-T05,D-T05,D-T05,tables/,final_evidence,scripts/final_evidence/*,generated,main
+D-T06,D-T06,D-T06,tables/,final_evidence,scripts/final_evidence/*,generated,main
+D-T07,D-T07,D-T07,tables/,final_evidence,scripts/final_evidence/*,generated,main
+R-T01,R-T01,R-T01,tables/,final_evidence,scripts/final_evidence/*,generated,main
+R-T02,R-T02,R-T02,tables/,final_evidence,scripts/final_evidence/*,generated,main
+R-T03,R-T03,R-T03,tables/,final_evidence,scripts/final_evidence/*,generated,main
+R-T04,R-T04,R-T04,tables/,final_evidence,scripts/final_evidence/*,generated,main
+R-T05,R-T05,R-T05,tables/,final_evidence,scripts/final_evidence/*,generated,main
+R-T06,R-T06,R-T06,tables/,final_evidence,scripts/final_evidence/*,generated,main
+R-T07,R-T07,R-T07,tables/,final_evidence,scripts/final_evidence/*,generated,main
+R-T08,R-T08,R-T08,tables/,final_evidence,scripts/final_evidence/*,generated,main
+R-T09,R-T09,R-T09,tables/,final_evidence,scripts/final_evidence/*,generated,main
+R-T10,R-T10,R-T10,tables/,final_evidence,scripts/final_evidence/*,generated,main
+R-T11,R-T11,R-T11,tables/,final_evidence,scripts/final_evidence/*,generated,main
+R-T12,R-T12,R-T12,tables/,final_evidence,scripts/final_evidence/*,generated,main
+R-T13,R-T13,R-T13,tables/,final_evidence,scripts/final_evidence/*,generated,main

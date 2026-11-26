@@ -312,6 +312,24 @@ def test_multi_day_out_of_scope_when_daily_drive_exceeds_9h():
         classify_duty_scope(daily_driving_min=100.0, journey_min=24 * 60.0)
         == DUTY_MULTI_DAY_OUT_OF_SCOPE
     )
+    # Declared Path A policy: Art.16 overnight rest is screened via the 24 h
+    # daily-rest horizon (not a 12 h journey cutoff). Journey < 24 h remains
+    # SINGLE_DUTY when Art.17 daily driving is OK.
+    assert (
+        classify_duty_scope(daily_driving_min=8 * 60.0, journey_min=12 * 60.0)
+        == DUTY_SINGLE
+    )
+    assert (
+        classify_duty_scope(
+            daily_driving_min=8 * 60.0, journey_min=24 * 60.0 - 1e-6
+        )
+        == DUTY_SINGLE
+    )
+    from morocco_etruck.optimization.hos_adjustment import classify_duty_scope as cds
+    import inspect
+
+    default_horizon = inspect.signature(cds).parameters["daily_rest_horizon_min"].default
+    assert abs(float(default_horizon) - 24.0 * 60.0) < 1e-9
 
 
 def test_energy_only_can_succeed_when_hos_blocks():

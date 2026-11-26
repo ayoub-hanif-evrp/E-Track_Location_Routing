@@ -1,0 +1,74 @@
+{
+  "generated_utc": "2026-11-25T18:19:58.988618+00:00",
+  "baseline_commit": "8b0cbf716cc342550299895d4da58889b8239d37",
+  "verified_counts": {
+    "motorway_nodes": 58002,
+    "motorway_edges": 58157,
+    "expanded_nodes": 391653,
+    "expanded_edges": 397255,
+    "decision_nodes": 198,
+    "decision_arcs": 293,
+    "od_pairs": 18,
+    "path_records": 36,
+    "service_area_inventory": 19,
+    "od_terminals_in_decision_graph": 18,
+    "headline_missions": 14,
+    "oujda_ods_excluded": 4
+  },
+  "discrepancies": [
+    {
+      "metric": "expanded_nodes_vs_graph_audit",
+      "claimed": 391653,
+      "verified": 391885,
+      "note": "CSV n_nodes after isolate removal; graph_audit may be pre-prune"
+    }
+  ],
+  "dem_summary": {
+    "n_arcs_with_meta": 177,
+    "quality_counts": {
+      "valid": 176,
+      "invalid": 1
+    },
+    "grade_p50": 0.026902808272590006,
+    "grade_p95": 0.07646327350349266,
+    "grade_max": 0.13991679551544564
+  },
+  "decision_arc_length_m": {
+    "n": 293,
+    "sum_km": 3738.4558887938906,
+    "p50": 1386.2054107397173,
+    "p95": 63971.104497776614,
+    "max": 209025.60872431874
+  },
+  "n_weather_files": 18,
+  "n_matched_accessible_candidates": 11,
+  "n_headline_candidates_retained": 9,
+  "motorway_directed_km": 3964.2502152543393,
+  "expanded_directed_km": 17496.50287189447,
+  "motorway_unique_km_approx": 3964.2502152543398,
+  "expanded_unique_km_approx": 17496.50287189447,
+  "components": {
+    "motorway": {
+      "n_undirected_components": 3,
+      "largest_component_nodes": 40401,
+      "component_size_top5": [
+        40401,
+        16464,
+        1137
+      ],
+      "n_isolates": 0
+    },
+    "expanded": {
+      "n_undirected_components": 7,
+      "largest_component_nodes": 390834,
+      "component_size_top5": [
+        390834,
+        320,
+        275,
+        171,
+        34
+      ],
+      "n_isolates": 0
+    }
+  }
+}

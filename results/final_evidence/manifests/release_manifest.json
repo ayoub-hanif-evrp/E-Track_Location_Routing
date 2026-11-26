@@ -1,0 +1,719 @@
+{
+  "baseline_commit": "8b0cbf716cc342550299895d4da58889b8239d37",
+  "n_artifacts": 178,
+  "campaign_status": "COMPLETE",
+  "artifacts": [
+    {
+      "path": "results/final_evidence/dataset/data_dictionary.csv",
+      "bytes": 1802
+    },
+    {
+      "path": "results/final_evidence/dataset/dataset_quality_and_construction_report.md",
+      "bytes": 4554
+    },
+    {
+      "path": "results/final_evidence/dataset/dem_arc_meta_summary.csv",
+      "bytes": 21892
+    },
+    {
+      "path": "results/final_evidence/dataset/highway_class_directed_km.csv",
+      "bytes": 492
+    },
+    {
+      "path": "results/final_evidence/dataset/independent_recount_summary.json",
+      "bytes": 1955
+    },
+    {
+      "path": "results/final_evidence/dataset/infeasible_mission_topology_focus.csv",
+      "bytes": 2140
+    },
+    {
+      "path": "results/final_evidence/dataset/infeasible_topology_notes.md",
+      "bytes": 1426
+    },
+    {
+      "path": "results/final_evidence/dataset/od_candidate_accessibility_direction_blind_counterfactual.csv",
+      "bytes": 1053
+    },
+    {
+      "path": "results/final_evidence/dataset/od_candidate_accessibility_long.csv",
+      "bytes": 14759
+    },
+    {
+      "path": "results/final_evidence/dataset/od_candidate_accessibility_meta.json",
+      "bytes": 6301
+    },
+    {
+      "path": "results/final_evidence/dataset/od_station_keys_on_union.csv",
+      "bytes": 1167
+    },
+    {
+      "path": "results/final_evidence/dataset/path_diversity_audit_copy.csv",
+      "bytes": 2994
+    },
+    {
+      "path": "results/final_evidence/experiments/dem_vs_flat/dem_vs_flat_missions.csv",
+      "bytes": 42702
+    },
+    {
+      "path": "results/final_evidence/experiments/fixed_vs_flex/fixed_vs_flex_missions.csv",
+      "bytes": 4866
+    },
+    {
+      "path": "results/final_evidence/experiments/infeasible_diagnosis/infeasible_remedy_missions.csv",
+      "bytes": 32122
+    },
+    {
+      "path": "results/final_evidence/experiments/infeasible_diagnosis/run_fingerprint.json",
+      "bytes": 352
+    },
+    {
+      "path": "results/final_evidence/experiments/payload_soc/fine_soc_missions.csv",
+      "bytes": 45891
+    },
+    {
+      "path": "results/final_evidence/experiments/primary_comparison/primary_missions.csv",
+      "bytes": 728070
+    },
+    {
+      "path": "results/final_evidence/experiments/primary_comparison/primary_summary.csv",
+      "bytes": 1230
+    },
+    {
+      "path": "results/final_evidence/experiments/primary_comparison/run_fingerprint.json",
+      "bytes": 607
+    },
+    {
+      "path": "results/final_evidence/experiments/q_grid/q_grid_agadir_casa_benguerir_ac.csv",
+      "bytes": 11250
+    },
+    {
+      "path": "results/final_evidence/experiments/q_grid/q_grid_missions.csv",
+      "bytes": 50055
+    },
+    {
+      "path": "results/final_evidence/experiments/refrigeration/path_a_historical_coldchain_notes.md",
+      "bytes": 376
+    },
+    {
+      "path": "results/final_evidence/experiments/refrigeration/path_a_historical_coldchain_on_vs_off_diff.csv",
+      "bytes": 287
+    },
+    {
+      "path": "results/final_evidence/experiments/refrigeration/path_a_historical_coldchain_parameter_sources.csv",
+      "bytes": 1069
+    },
+    {
+      "path": "results/final_evidence/experiments/refrigeration/path_a_historical_coldchain_variants.csv",
+      "bytes": 40214
+    },
+    {
+      "path": "results/final_evidence/experiments/refrigeration/path_a_historical_run_fingerprint.json",
+      "bytes": 220
+    },
+    {
+      "path": "results/final_evidence/experiments/robustness/headline_robustness_missions.csv",
+      "bytes": 308136
+    },
+    {
+      "path": "results/final_evidence/experiments/robustness/run_fingerprint.json",
+      "bytes": 206
+    },
+    {
+      "path": "results/final_evidence/experiments/scenario_inventory_primary.csv",
+      "bytes": 29463
+    },
+    {
+      "path": "results/final_evidence/experiments/settat_vs_benguerir/casa_agadir_settat_vs_benguerir.csv",
+      "bytes": 540
+    },
+    {
+      "path": "results/final_evidence/experiments/settat_vs_benguerir/run_fingerprint.json",
+      "bytes": 294
+    },
+    {
+      "path": "results/final_evidence/experiments/settat_vs_benguerir/settat_benguerir_notes.md",
+      "bytes": 1386
+    },
+    {
+      "path": "results/final_evidence/experiments/settat_vs_benguerir/settat_casa_agadir_escalate.csv",
+      "bytes": 7604
+    },
+    {
+      "path": "results/final_evidence/experiments/settat_vs_benguerir/settat_casa_agadir_escalate_path_a_reference.csv",
+      "bytes": 14599
+    },
+    {
+      "path": "results/final_evidence/experiments/settat_vs_benguerir/singleton_ledger.csv",
+      "bytes": 285
+    },
+    {
+      "path": "results/final_evidence/experiments/settat_vs_benguerir/singleton_missions.csv",
+      "bytes": 197373
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure1_description.md",
+      "bytes": 269
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure1_study_area.pdf",
+      "bytes": 520695
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure1_study_area.png",
+      "bytes": 575763
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure1_study_area.svg",
+      "bytes": 4449709
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure2_description.md",
+      "bytes": 91
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure2_graph_reduction.pdf",
+      "bytes": 26554
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure2_graph_reduction.png",
+      "bytes": 178789
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure2_graph_reduction.svg",
+      "bytes": 58924
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure3_description.md",
+      "bytes": 124
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure3_od_route_alternatives.pdf",
+      "bytes": 72623
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure3_od_route_alternatives.png",
+      "bytes": 442742
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure3_od_route_alternatives.svg",
+      "bytes": 283788
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure4_description.md",
+      "bytes": 105
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure4_directional_candidates.pdf",
+      "bytes": 23517
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure4_directional_candidates.png",
+      "bytes": 305875
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure4_directional_candidates.svg",
+      "bytes": 81347
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure5_elevation_profiles.pdf",
+      "bytes": 48736
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure5_elevation_profiles.png",
+      "bytes": 725833
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure5_elevation_profiles.svg",
+      "bytes": 162590
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure5b_gradient_distribution.pdf",
+      "bytes": 14481
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure5b_gradient_distribution.png",
+      "bytes": 75611
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure6_dataset_descriptive_stats.pdf",
+      "bytes": 23441
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure6_dataset_descriptive_stats.png",
+      "bytes": 525859
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure6_dataset_descriptive_stats.svg",
+      "bytes": 127039
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/D-Figure6_description.md",
+      "bytes": 512
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig1_candidates.csv",
+      "bytes": 1308
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig1_cities.csv",
+      "bytes": 227
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig2_panel_counts.csv",
+      "bytes": 243
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig3_od_routes.csv",
+      "bytes": 2327
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig4_benguerir_access_inset.csv",
+      "bytes": 193
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig4_candidates.csv",
+      "bytes": 12239
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_agadir_casa_profile.csv",
+      "bytes": 58243
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_casa_agadir_profile.csv",
+      "bytes": 216464
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_casa_marrakech_profile.csv",
+      "bytes": 122575
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_grade_distribution.csv",
+      "bytes": 180
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig5_rabat_fes_profile.csv",
+      "bytes": 21967
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig6a_highway_km.csv",
+      "bytes": 401
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig6b_od_km.csv",
+      "bytes": 688
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig6c_diversity.csv",
+      "bytes": 952
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig6d_grade_summary.csv",
+      "bytes": 176
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig6e_candidate_match.csv",
+      "bytes": 39
+    },
+    {
+      "path": "results/final_evidence/figures/dataset/source_data/D-Fig6f_candidate_access.csv",
+      "bytes": 75
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure10_description.md",
+      "bytes": 75
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure10_q_grid_reliability.pdf",
+      "bytes": 24764
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure10_q_grid_reliability.png",
+      "bytes": 302077
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure10_q_grid_reliability.svg",
+      "bytes": 85529
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure11_description.md",
+      "bytes": 88
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure11_infeasible_remedies.pdf",
+      "bytes": 16381
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure11_infeasible_remedies.png",
+      "bytes": 271705
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure11_infeasible_remedies.svg",
+      "bytes": 63985
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure1_infrastructure_coverage.pdf",
+      "bytes": 21022
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure1_infrastructure_coverage.png",
+      "bytes": 211840
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure1_infrastructure_coverage.svg",
+      "bytes": 66744
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure2_description.md",
+      "bytes": 69
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure2_geographic_feasibility.pdf",
+      "bytes": 59657
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure2_geographic_feasibility.png",
+      "bytes": 387099
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure2_geographic_feasibility.svg",
+      "bytes": 214313
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure3_feasibility_matrix.pdf",
+      "bytes": 19317
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure3_feasibility_matrix.png",
+      "bytes": 328613
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure3_feasibility_matrix.svg",
+      "bytes": 83307
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure4_description.md",
+      "bytes": 83
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure4_payload_soc_frontiers.pdf",
+      "bytes": 23464
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure4_payload_soc_frontiers.png",
+      "bytes": 143901
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure4_payload_soc_frontiers.svg",
+      "bytes": 54913
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure5_description.md",
+      "bytes": 90
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure5_operational_route_profiles.pdf",
+      "bytes": 19202
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure5_operational_route_profiles.png",
+      "bytes": 333049
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure5_operational_route_profiles.svg",
+      "bytes": 61471
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure6_description.md",
+      "bytes": 87
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure6_energy_decomposition.pdf",
+      "bytes": 17978
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure6_energy_decomposition.png",
+      "bytes": 190240
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure6_energy_decomposition.svg",
+      "bytes": 55671
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure7_description.md",
+      "bytes": 86
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure7_settat_vs_benguerir.pdf",
+      "bytes": 21494
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure7_settat_vs_benguerir.png",
+      "bytes": 219931
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure7_settat_vs_benguerir.svg",
+      "bytes": 60588
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure8_description.md",
+      "bytes": 67
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure8_sensitivity_adverse.pdf",
+      "bytes": 19209
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure8_sensitivity_adverse.png",
+      "bytes": 217264
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure8_sensitivity_adverse.svg",
+      "bytes": 53694
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure9_description.md",
+      "bytes": 60
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure9_refrigeration_terrain.pdf",
+      "bytes": 19543
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure9_refrigeration_terrain.png",
+      "bytes": 223809
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure9_refrigeration_terrain.svg",
+      "bytes": 61996
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig10_q_grid.csv",
+      "bytes": 1629
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig11_remedies.csv",
+      "bytes": 2208
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig1_primary_summary.csv",
+      "bytes": 1230
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig2_feasibility_by_infra.csv",
+      "bytes": 1861
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig3_feasibility_matrix.csv",
+      "bytes": 1358
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig4_payload_soc.csv",
+      "bytes": 3884
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig5_casa_agadir_soc.csv",
+      "bytes": 453
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig5_casa_marrakech_soc.csv",
+      "bytes": 336
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig6_energy_decomposition.csv",
+      "bytes": 1011
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig7_settat_benguerir.csv",
+      "bytes": 432
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig8_sensitivity_deltas.csv",
+      "bytes": 2436
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig9_dem_flat.csv",
+      "bytes": 828
+    },
+    {
+      "path": "results/final_evidence/figures/supplementary/S-Figure_direction_blind_access.pdf",
+      "bytes": 17750
+    },
+    {
+      "path": "results/final_evidence/figures/supplementary/S-Figure_direction_blind_access.png",
+      "bytes": 288920
+    },
+    {
+      "path": "results/final_evidence/figures/supplementary/S-Figure_direction_blind_access.svg",
+      "bytes": 92261
+    },
+    {
+      "path": "results/final_evidence/manifests/CAMPAIGN_PROGRESS.md",
+      "bytes": 1771
+    },
+    {
+      "path": "results/final_evidence/manifests/experimental_design_freeze.md",
+      "bytes": 4039
+    },
+    {
+      "path": "results/final_evidence/manifests/figure_table_catalog.csv",
+      "bytes": 4730
+    },
+    {
+      "path": "results/final_evidence/manifests/primary_comparison_fingerprint.json",
+      "bytes": 607
+    },
+    {
+      "path": "results/final_evidence/manifests/release_manifest.json",
+      "bytes": 22795
+    },
+    {
+      "path": "results/final_evidence/manifests/REPRODUCIBILITY.md",
+      "bytes": 1813
+    },
+    {
+      "path": "results/final_evidence/manifests/scenario_inventory_meta.json",
+      "bytes": 352
+    },
+    {
+      "path": "results/final_evidence/manifests/scenario_inventory_primary.csv",
+      "bytes": 29463
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T01_data_sources_provenance.csv",
+      "bytes": 6374
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T02_network_counts_verification.csv",
+      "bytes": 335
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T02_road_network_and_decision_graph_stats.csv",
+      "bytes": 863
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T03_od_inventory.csv",
+      "bytes": 3708
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T03_od_inventory_headline14.csv",
+      "bytes": 2936
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T04_candidate_inventory.csv",
+      "bytes": 12239
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T05_elevation_by_mission.csv",
+      "bytes": 1185
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T06_quality_checks.csv",
+      "bytes": 1285
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T07_vehicle_battery_refrig_charging_params.csv",
+      "bytes": 25383
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T07_vehicle_config_paths.csv",
+      "bytes": 467
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/D-T07_vehicle_params_compact.csv",
+      "bytes": 512
+    },
+    {
+      "path": "results/final_evidence/tables/dataset/R-T10_od_candidate_accessibility_matrix.csv",
+      "bytes": 1065
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T01_experimental_design.csv",
+      "bytes": 29463
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T02_infrastructure_coverage.csv",
+      "bytes": 1230
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T03_mission_level_operational_results.csv",
+      "bytes": 35996
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T04_casa_agadir_operational_tradeoff.csv",
+      "bytes": 432
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T04_casa_agadir_settat_vs_benguerir.csv",
+      "bytes": 534
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T04_settat_benguerir_singleton_ledger.csv",
+      "bytes": 285
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T05_payload_soc_brackets.csv",
+      "bytes": 609
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T05_payload_soc_feasibility.csv",
+      "bytes": 5667
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T06_charging_power_duration.csv",
+      "bytes": 4412
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T07_physical_sensitivity.csv",
+      "bytes": 6567
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T08_refrigeration_from_primary_traces.csv",
+      "bytes": 381
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T08_refrigeration_headline.csv",
+      "bytes": 61527
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T08_refrigeration_notes.md",
+      "bytes": 922
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T09_dem_vs_flat.csv",
+      "bytes": 841
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T10_fixed_vs_flexible_routing.csv",
+      "bytes": 2089
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T11_energy_grid_resolution.csv",
+      "bytes": 1633
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T12_infeasible_diagnosis.csv",
+      "bytes": 2222
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T13_validation_reproducibility_checks.csv",
+      "bytes": 701
+    },
+    {
+      "path": "results/final_evidence/validation/consistency_report.json",
+      "bytes": 309
+    },
+    {
+      "path": "results/final_evidence/validation/dataset_audit_ok.json",
+      "bytes": 325
+    },
+    {
+      "path": "results/final_evidence/validation/FINAL_SCIENTIFIC_RESULTS_REPORT.md",
+      "bytes": 3790
+    },
+    {
+      "path": "results/final_evidence/validation/INTERIM_SCIENTIFIC_FINDINGS.md",
+      "bytes": 4128
+    }
+  ]
+}
