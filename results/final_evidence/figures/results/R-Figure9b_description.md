@@ -1,0 +1,1 @@
+Three-outcome Casa–Marrakech contrast at 50% SOC: flat fixed feasible without charging; DEM fixed infeasible (no zero-energy claim); DEM flexible may restore service via Benguerir charging / route selection. Energy fields are missing when no OPTIMAL trace.

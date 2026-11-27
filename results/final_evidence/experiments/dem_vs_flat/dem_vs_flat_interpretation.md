@@ -2,26 +2,20 @@
 
 ## Comparison families
 
-1. `fixed_short`: identical shortest-path mask; terrain-only effect.
+1. `fixed_short`: identical shortest-path mask; terrain-only effect when both traces exist.
 2. `reoptimized_multi`: multi-route union; routing/charging may change with terrain.
 
-Casa–Marrakech reoptimized distance differences (≈257 vs ≈236 km) are **route-selection**
-effects under energy stress, not DEM geometry changes. Use the fixed-route table for
-terrain-only traction deltas.
+Infeasible solutions without an OPTIMAL action trace use missing energy values
+(not zeros). Feasibility differences are reported separately from energy deltas.
 
-## Casa–Rabat coastal traction under DEM
+## Casa–Marrakech @ 50% SOC (authoritative three-outcome contrast)
 
-comparison_family      od_id  soc_frac installed  ops_dem  ops_flat  road_km_dem  road_km_flat route_id_dem route_id_flat  same_route_geometry  min_soc_dem  min_soc_flat  traction_dem  traction_flat  regen_dem  regen_flat  net_battery_dem  net_battery_flat  charge_kwh_dem  charge_kwh_flat  charge_min_dem  charge_min_flat  delta_traction_kwh  delta_min_soc interpretation
-      fixed_short casa_rabat       0.8               True      True    103.12364     103.12364 960e9d84c341  960e9d84c341                 True     0.586868      0.572441    125.820237     133.112356   1.363714         0.0       127.879495        136.535329             0.0              0.0             0.0              0.0           -7.292119       0.014426   terrain_only
-reoptimized_multi casa_rabat       0.8               True      True    103.12364     103.12364 960e9d84c341  960e9d84c341                 True     0.586868      0.572441    125.820237     133.112356   1.363714         0.0       127.879495        136.535329             0.0              0.0             0.0              0.0           -7.292119       0.014426   terrain_only
+comparison_family          od_id  soc_frac      installed status_dem status_flat  ops_dem  ops_flat feasibility_comparison  energy_comparable  road_km_dem  road_km_flat route_id_dem route_id_flat same_route_geometry  min_soc_dem  min_soc_flat  traction_dem  traction_flat  regen_dem  regen_flat  aux_dem  aux_flat  refrig_dem  refrig_flat  net_battery_dem  net_battery_flat  charge_kwh_dem  charge_kwh_flat  charge_min_dem  charge_min_flat  delta_traction_kwh  delta_min_soc                   interpretation
+      fixed_short casa_marrakech       0.5 y_benguerir_ca INFEASIBLE     OPTIMAL    False      True    feasibility_differs              False          NaN    236.847742               ab4ae4e7d047                None          NaN      0.130572           NaN     211.813982        NaN         0.0      NaN  9.541192         NaN     0.301565              NaN        221.656739             NaN              0.0             NaN              0.0                 NaN            NaN feasibility_only_no_energy_delta
+reoptimized_multi casa_marrakech       0.5 y_benguerir_ca    OPTIMAL     OPTIMAL     True      True          both_feasible               True   257.764907    236.847742 691ba1372de6  ab4ae4e7d047               False     0.114353      0.130572    313.556032     211.813982   5.626367         0.0 9.152561  9.541192     0.30575     0.301565       317.387977        221.656739            86.0              0.0            20.0              0.0           101.74205      -0.016219     confounded_route_and_terrain
 
-If DEM traction is lower than flat on this short coastal OD, the likely physical
-mechanism is **net downhill / regen-eligible grade segments** captured by DEM but
-absent under flat (zero grade). Verify via regen credits and net battery columns;
-if regen and net demand do not reconcile, treat as an accounting issue.
-
-## Casa–Marrakech fixed-route note
-
-At SOC 0.5, DEM makes the shortest path operationally infeasible (energy), so no terrain-only delta exists at that SOC.
-At SOC 0.8 on the identical shortest route (b4ae4e7d047, 236.85 km): DEM traction − flat = +33.7 kWh (terrain-only).
-Reoptimized multi at SOC 0.5 remains confounded (257.8 vs 236.9 km).
+Scientific reading (fixed route):
+- Flat-road fixed route: feasible without charging (when ops_flat True / trace present).
+- DEM-aware fixed route: infeasible (no OPTIMAL trace ⇒ no zero-energy claim).
+- DEM-aware flexible/reoptimized route: may restore feasibility via Benguerir charging
+  and/or route selection — see reoptimized family rows.

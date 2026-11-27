@@ -38,6 +38,7 @@ MIN_SPLIT_BREAK_MIN = 15.0  # art. 19
 # Path A single-duty scope labels (no Art.16 overnight daily-rest reset).
 DUTY_SINGLE = "SINGLE_DUTY"
 DUTY_MULTI_DAY_OUT_OF_SCOPE = "MULTI_DAY_OUT_OF_SCOPE"
+DUTY_NOT_EVALUATED = "NOT_EVALUATED"
 
 
 def classify_duty_scope(
@@ -52,7 +53,12 @@ def classify_duty_scope(
     Art.17 daily driving > 9 h, or journey duration approaching a 24 h daily-rest
     horizon, means overnight Art.16 rest would be required. Path A does not
     implement that reset — such cases are excluded from ``served`` counts.
+
+    ``daily_driving_ok is None`` means HOS was not audited (e.g. ops solver
+    returned no actions). That is *not* evidence of a daily-driving violation.
     """
+    if daily_driving_ok is None and daily_driving_min is None and journey_min is None:
+        return DUTY_NOT_EVALUATED
     if daily_driving_ok is False:
         return DUTY_MULTI_DAY_OUT_OF_SCOPE
     if daily_driving_min is not None and float(daily_driving_min) > DAILY_DRIVING_MAX_MIN + 1e-9:

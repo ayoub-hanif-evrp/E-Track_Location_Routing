@@ -1,0 +1,4 @@
+panel,terrain_mode,route_mode,status,operationally_served,road_km,E_traction_kwh,E_charge_kwh,installed,route_id
+Flat-road fixed route,flat,fixed_short,OPTIMAL,True,236.84774230192264,211.81398204393204,0.0,y_benguerir_ca,ab4ae4e7d047
+DEM-aware fixed route,dem,fixed_short,INFEASIBLE,False,,,,y_benguerir_ca,
+DEM-aware flexible route,dem,reoptimized_multi,OPTIMAL,True,257.7649073606996,313.5560321379372,86.0,y_benguerir_ca,691ba1372de6

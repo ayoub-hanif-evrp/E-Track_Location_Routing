@@ -1,0 +1,17 @@
+vehicle_key,soc_scenario,infra_config_id,ops_served,expected,match
+eactros_600,stressed_mixed,I0_none,9,9,True
+eactros_600,stressed_mixed,I1_benguerir_ca,11,11,True
+eactros_600,stressed_mixed,I2_benguerir_larache,12,12,True
+eactros_600,stressed_mixed,I3_benguerir_ca_larache_benguerir_ac,13,13,True
+eactros_600,common_soc_80,I0_none,11,11,True
+eactros_600,common_soc_80,I1_benguerir_ca,12,12,True
+eactros_600,common_soc_80,I2_benguerir_larache,13,13,True
+eactros_600,common_soc_80,I3_benguerir_ca_larache_benguerir_ac,14,14,True
+volvo_475,stressed_mixed,I0_none,7,7,True
+volvo_475,stressed_mixed,I1_benguerir_ca,7,7,True
+volvo_475,stressed_mixed,I2_benguerir_larache,8,8,True
+volvo_475,stressed_mixed,I3_benguerir_ca_larache_benguerir_ac,8,8,True
+volvo_475,common_soc_80,I0_none,8,8,True
+volvo_475,common_soc_80,I1_benguerir_ca,9,9,True
+volvo_475,common_soc_80,I2_benguerir_larache,10,10,True
+volvo_475,common_soc_80,I3_benguerir_ca_larache_benguerir_ac,10,10,True

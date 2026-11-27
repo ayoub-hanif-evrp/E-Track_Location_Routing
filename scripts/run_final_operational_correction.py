@@ -137,12 +137,23 @@ def evaluate_mission_operational(
     max_seconds: float,
     max_expansions: int,
     include_energy_only: bool = True,
+    mutate_ops_instance=None,
+    capture_energy_trace: bool = False,
 ) -> dict[str, Any]:
     """Operational evaluation: HOS-in-search ops solve (+ optional energy-only baseline).
 
     Set ``include_energy_only=False`` for exhaustive enum cache scoring (ops-only);
     headline B/C/D/E/F rows should keep the default dual solve.
+
+    When the operational solver returns no OPTIMAL actions, HOS audit fields are
+    left as ``None`` / ``NOT_EVALUATED`` — never defaulted to False, which would
+    incorrectly imply a computed daily-driving violation.
+
+    ``mutate_ops_instance`` (optional callable) may adjust the ops instance after
+    cloning (controlled diagnostics: relax HOS limits, expand rest nodes, etc.).
     """
+    from morocco_etruck.optimization.hos_adjustment import DUTY_NOT_EVALUATED
+
     key_of = {s.id: s.station_key for s in cfg.sites}
     active_keys = {key_of[i] for i in installed if i in key_of}
     present = active_keys & set(prep.template.stations)
@@ -151,6 +162,10 @@ def evaluate_mission_operational(
     t0 = time.perf_counter()
     energy_only = False
     energy_status = "SKIPPED"
+    energy_drive_min = None
+    energy_road_km = None
+    energy_trace_json = None
+    energy_n_actions = 0
     if include_energy_only:
         # --- Energy-only baseline (hos_in_search=False) ---
         inst_e = clone_physics_instance_for_subset(
@@ -164,14 +179,14 @@ def evaluate_mission_operational(
         energy_status = res_e.status.value
         if res_e.status.value == "OPTIMAL" and res_e.actions:
             disc_e = replay_solution(inst_e, res_e.actions, expected_cost=res_e.objective)
-            crep_e, _ex_e = continuous_replay_multiroute(
+            crep_e, ex_e = continuous_replay_multiroute(
                 prep.ctx,
                 inst_e,
                 res_e.actions,
                 discrete_cost=res_e.objective,
                 discrete_t=res_e.final_label.t if res_e.final_label else None,
                 discrete_E_truck=res_e.final_label.E_truck if res_e.final_label else None,
-                emit_trace=False,
+                emit_trace=bool(capture_energy_trace),
             )
             audit_e = audit_solved_actions_exact(
                 inst_e,
@@ -180,6 +195,11 @@ def evaluate_mission_operational(
                 simulate_drive_fn=simulate_drive_from_soc,
             )
             energy_only = bool(disc_e.ok and crep_e.ok and audit_e.ok)
+            if capture_energy_trace and ex_e is not None:
+                energy_drive_min = float(ex_e.drive_duration_s or 0.0) / 60.0
+                energy_road_km = float(ex_e.length_m or 0.0) / 1000.0
+                energy_n_actions = len(ex_e.action_trace or [])
+                energy_trace_json = json.dumps(ex_e.action_trace)
 
     # --- HOS-in-search operational solve ---
     inst = clone_physics_instance_for_subset(
@@ -197,6 +217,8 @@ def evaluate_mission_operational(
         inst.hos_rest_nodes = frozenset(inst.stations.keys()) | frozenset(
             inst.active_stations
         )
+    if mutate_ops_instance is not None:
+        mutate_ops_instance(inst)
     t1 = time.perf_counter()
     res = solve_mrls(inst, max_seconds=max_seconds, max_expansions=max_expansions)
     row: dict[str, Any] = {
@@ -210,18 +232,22 @@ def evaluate_mission_operational(
         "energy_status": energy_status,
         "energy_feasible_energy_only": bool(energy_only),
         "energy_feasible": bool(energy_only),
+        "energy_drive_min": energy_drive_min,
+        "energy_road_km": energy_road_km,
+        "energy_n_actions": energy_n_actions,
         "discrete_replay_valid": False,
         "physical_replay_valid": False,
         "audit_ok": False,
         "schedule_valid_raw": False,
         "schedule_valid": False,
         "hos_adjusted": False,
-        "hos_in_search": True,
+        "hos_in_search": bool(getattr(inst, "hos_in_search", True)),
         "hos_search_audit_only": False,
-        "hos_ok": False,
-        "daily_driving_ok": False,
+        # None = not audited (no OPTIMAL ops trace). Never default to False.
+        "hos_ok": None,
+        "daily_driving_ok": None,
         "daily_driving_min": None,
-        "duty_scope": "SINGLE_DUTY",
+        "duty_scope": DUTY_NOT_EVALUATED,
         "operationally_served": False,
         "pad_location": None,
         "pad_duration_min": 0.0,
@@ -236,6 +262,8 @@ def evaluate_mission_operational(
         "detour_note": None,
         "n_trace_actions": 0,
     }
+    if energy_trace_json is not None:
+        row["energy_action_trace_json"] = energy_trace_json
     if res.status.value != "OPTIMAL" or not res.actions:
         return row
 
@@ -388,7 +416,7 @@ def evaluate_mission_operational(
         and crep_use.ok
         and row["discrete_replay_valid"]
         and row["audit_ok"]
-        and bool(row.get("daily_driving_ok"))
+        and row.get("daily_driving_ok") is True
         and not bool(row.get("hos_adjusted"))
         and row.get("duty_scope") != DUTY_MULTI_DAY_OUT_OF_SCOPE
     )

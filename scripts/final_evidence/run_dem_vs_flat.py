@@ -103,27 +103,50 @@ def _prepare(od: str, payload: float, soc: float, terrain: str):
 
 
 def _trace_metrics(mr: dict) -> dict:
+    """Extract energy metrics from an OPTIMAL action trace only.
+
+    Infeasible / empty traces must not yield zeros that look like measured energy.
+    """
+    status = str(mr.get("status") or "")
     tr = mr.get("action_trace_json")
+    has_trace = bool(tr) and not (isinstance(tr, float)) and status == "OPTIMAL"
+    if not has_trace:
+        return {
+            "solution_status": status or "UNKNOWN",
+            "energy_accounting_status": "no_optimal_trace",
+            "E_traction_kwh": None,
+            "E_aux_kwh": None,
+            "E_refrig_kwh": None,
+            "E_regen_credit_kwh": None,
+            "E_charge_kwh": None,
+            "E_net_battery_kwh": None,
+            "drive_arc_ids": "",
+            "route_id": "",
+            "n_drive_arcs": 0,
+            "charge_min_from_trace": None,
+            "wait_break_min_from_trace": None,
+        }
+    actions = json.loads(tr) if isinstance(tr, str) else tr
     et = ea = er = eg = ech = 0.0
     arcs = []
     charge_min = wait_min = 0.0
-    if tr and not (isinstance(tr, float)):
-        actions = json.loads(tr) if isinstance(tr, str) else tr
-        for a in actions:
-            et += float(a.get("E_traction_kwh") or 0)
-            ea += float(a.get("E_aux_kwh") or 0)
-            er += float(a.get("E_refrig_kwh") or 0)
-            eg += float(a.get("E_regen_credit_kwh") or 0)
-            typ = a.get("action_type") or a.get("type")
-            if typ == "DRIVE" and a.get("arc_id"):
-                arcs.append(str(a["arc_id"]))
-            if typ == "CHARGE":
-                ech += float(a.get("charge_kwh") or 0)
-                charge_min += float(a.get("dt_s") or 0) / 60.0
-            if typ in {"WAIT", "BREAK", "REST"}:
-                wait_min += float(a.get("dt_s") or 0) / 60.0
+    for a in actions:
+        et += float(a.get("E_traction_kwh") or 0)
+        ea += float(a.get("E_aux_kwh") or 0)
+        er += float(a.get("E_refrig_kwh") or 0)
+        eg += float(a.get("E_regen_credit_kwh") or 0)
+        typ = a.get("action_type") or a.get("type")
+        if typ == "DRIVE" and a.get("arc_id"):
+            arcs.append(str(a["arc_id"]))
+        if typ == "CHARGE":
+            ech += float(a.get("charge_kwh") or 0)
+            charge_min += float(a.get("dt_s") or 0) / 60.0
+        if typ in {"WAIT", "BREAK", "REST"}:
+            wait_min += float(a.get("dt_s") or 0) / 60.0
     route_id = hashlib.sha1("|".join(arcs).encode()).hexdigest()[:12] if arcs else ""
     return {
+        "solution_status": status,
+        "energy_accounting_status": "trace_ok",
         "E_traction_kwh": et,
         "E_aux_kwh": ea,
         "E_refrig_kwh": er,
@@ -186,45 +209,83 @@ def _pairwise(df: pd.DataFrame, route_mode: str) -> pd.DataFrame:
         if not len(dem) or not len(flat):
             continue
         d, f = dem.iloc[0], flat.iloc[0]
-        same_route = str(d.route_id) == str(f.route_id) and abs(
-            float(d.road_km or 0) - float(f.road_km or 0)
-        ) < 0.05
+        dem_ok = str(d.get("energy_accounting_status") or "") == "trace_ok" and bool(
+            str(d.get("route_id") or "")
+        )
+        flat_ok = str(f.get("energy_accounting_status") or "") == "trace_ok" and bool(
+            str(f.get("route_id") or "")
+        )
+        both_energy = dem_ok and flat_ok
+        same_route = False
+        if both_energy:
+            same_route = str(d.route_id) == str(f.route_id) and abs(
+                float(d.road_km or 0) - float(f.road_km or 0)
+            ) < 0.05
+        feas_dem = bool(d.operationally_served)
+        feas_flat = bool(f.operationally_served)
+        if feas_dem != feas_flat:
+            feas_note = "feasibility_differs"
+        elif feas_dem:
+            feas_note = "both_feasible"
+        else:
+            feas_note = "both_infeasible"
+
+        if both_energy and same_route:
+            interpretation = "terrain_only_energy_comparable"
+        elif both_energy:
+            interpretation = "confounded_route_and_terrain"
+        elif feas_dem != feas_flat:
+            interpretation = "feasibility_only_no_energy_delta"
+        else:
+            interpretation = "no_comparable_energy_trace"
+
+        def _num(v):
+            return float(v) if pd.notna(v) else None
+
         deltas.append(
             {
                 "comparison_family": route_mode,
                 "od_id": od,
                 "soc_frac": d.soc_frac,
                 "installed": d.installed,
-                "ops_dem": bool(d.operationally_served),
-                "ops_flat": bool(f.operationally_served),
-                "road_km_dem": d.road_km,
-                "road_km_flat": f.road_km,
-                "route_id_dem": d.route_id,
-                "route_id_flat": f.route_id,
-                "same_route_geometry": same_route,
-                "min_soc_dem": d.min_soc,
-                "min_soc_flat": f.min_soc,
-                "traction_dem": d.E_traction_kwh,
-                "traction_flat": f.E_traction_kwh,
-                "regen_dem": d.E_regen_credit_kwh,
-                "regen_flat": f.E_regen_credit_kwh,
-                "net_battery_dem": d.E_net_battery_kwh,
-                "net_battery_flat": f.E_net_battery_kwh,
-                "charge_kwh_dem": d.E_charge_kwh,
-                "charge_kwh_flat": f.E_charge_kwh,
-                "charge_min_dem": d.charge_min_phys if "charge_min_phys" in d else d.charge_min_from_trace,
-                "charge_min_flat": f.charge_min_phys if "charge_min_phys" in f else f.charge_min_from_trace,
-                "delta_traction_kwh": float(d.E_traction_kwh) - float(f.E_traction_kwh)
-                if pd.notna(d.E_traction_kwh) and pd.notna(f.E_traction_kwh)
-                else None,
-                "delta_min_soc": float(d.min_soc) - float(f.min_soc)
-                if pd.notna(d.min_soc) and pd.notna(f.min_soc)
-                else None,
-                "interpretation": (
-                    "terrain_only"
-                    if same_route
-                    else "confounded_route_and_terrain"
+                "status_dem": d.status,
+                "status_flat": f.status,
+                "ops_dem": feas_dem,
+                "ops_flat": feas_flat,
+                "feasibility_comparison": feas_note,
+                "energy_comparable": both_energy,
+                "road_km_dem": d.road_km if dem_ok else None,
+                "road_km_flat": f.road_km if flat_ok else None,
+                "route_id_dem": d.route_id if dem_ok else "",
+                "route_id_flat": f.route_id if flat_ok else "",
+                "same_route_geometry": same_route if both_energy else None,
+                "min_soc_dem": d.min_soc if dem_ok else None,
+                "min_soc_flat": f.min_soc if flat_ok else None,
+                "traction_dem": _num(d.E_traction_kwh) if dem_ok else None,
+                "traction_flat": _num(f.E_traction_kwh) if flat_ok else None,
+                "regen_dem": _num(d.E_regen_credit_kwh) if dem_ok else None,
+                "regen_flat": _num(f.E_regen_credit_kwh) if flat_ok else None,
+                "aux_dem": _num(d.E_aux_kwh) if dem_ok else None,
+                "aux_flat": _num(f.E_aux_kwh) if flat_ok else None,
+                "refrig_dem": _num(d.E_refrig_kwh) if dem_ok else None,
+                "refrig_flat": _num(f.E_refrig_kwh) if flat_ok else None,
+                "net_battery_dem": _num(d.E_net_battery_kwh) if dem_ok else None,
+                "net_battery_flat": _num(f.E_net_battery_kwh) if flat_ok else None,
+                "charge_kwh_dem": _num(d.E_charge_kwh) if dem_ok else None,
+                "charge_kwh_flat": _num(f.E_charge_kwh) if flat_ok else None,
+                "charge_min_dem": _num(d.charge_min_phys) if dem_ok else None,
+                "charge_min_flat": _num(f.charge_min_phys) if flat_ok else None,
+                "delta_traction_kwh": (
+                    _num(d.E_traction_kwh) - _num(f.E_traction_kwh)
+                    if both_energy and pd.notna(d.E_traction_kwh) and pd.notna(f.E_traction_kwh)
+                    else None
                 ),
+                "delta_min_soc": (
+                    float(d.min_soc) - float(f.min_soc)
+                    if both_energy and pd.notna(d.min_soc) and pd.notna(f.min_soc)
+                    else None
+                ),
+                "interpretation": interpretation,
             }
         )
     return pd.DataFrame(deltas)

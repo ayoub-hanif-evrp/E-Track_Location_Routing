@@ -599,13 +599,30 @@ def plot_r_figure9():
     ax.grid(axis="y", ls=":", lw=0.4)
 
     ax = axes[1]
-    x = np.arange(len(dem))
-    ax.bar(x - 0.2, dem.traction_dem, 0.4, label="DEM traction", color=C["blue"])
-    ax.bar(x + 0.2, dem.traction_flat, 0.4, label="Flat traction", color=C["orange"])
-    ax.set_xticks(x)
-    ax.set_xticklabels(dem.od_id, rotation=20, fontsize=7)
+    # Energy-comparable rows only; infeasible/no-trace must not plot as zero traction.
+    dem_e = dem.copy()
+    if "energy_comparable" in dem_e.columns:
+        dem_e = dem_e[dem_e.energy_comparable == True]  # noqa: E712
+    dem_e = dem_e[dem_e.traction_dem.notna() & dem_e.traction_flat.notna()]
+    if "comparison_family" in dem_e.columns:
+        # Prefer fixed-route terrain-only for panel (b)
+        fixed = dem_e[dem_e.comparison_family == "fixed_short"]
+        if len(fixed):
+            dem_e = fixed
+    if len(dem_e):
+        labels = [
+            f"{r.od_id}\n@{r.soc_frac}" if "soc_frac" in dem_e.columns else str(r.od_id)
+            for _, r in dem_e.iterrows()
+        ]
+        x = np.arange(len(dem_e))
+        ax.bar(x - 0.2, dem_e.traction_dem, 0.4, label="DEM traction", color=C["blue"])
+        ax.bar(x + 0.2, dem_e.traction_flat, 0.4, label="Flat traction", color=C["orange"])
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels, rotation=20, fontsize=7)
+    else:
+        ax.text(0.5, 0.5, "No energy-comparable DEM/flat pairs", ha="center", va="center")
     ax.set_ylabel("Traction (kWh)")
-    ax.set_title("(b) DEM vs flat traction")
+    ax.set_title("(b) DEM vs flat traction (comparable traces only)")
     ax.legend(fontsize=7)
     ax.grid(axis="y", ls=":", lw=0.4)
     fig.suptitle("R-Figure 9 — Refrigeration and terrain effects", fontsize=12)

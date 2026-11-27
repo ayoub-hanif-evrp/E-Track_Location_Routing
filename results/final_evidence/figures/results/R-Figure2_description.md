@@ -1,1 +1,1 @@
-R-Figure 2: Feasible missions plot executed DRIVE arcs from solution traces; infeasible missions use an explicitly labeled shortest-path reference. Arrows show direction; orange markers show visited chargers.
+R-Figure 2: Feasible missions plot every executed DRIVE arc from solution traces (missing geometry counted). Infeasible missions use an explicitly labeled shortest reference. Hollow purple markers = installed directional sites (y_benguerir_ca vs y_benguerir_ac distinguished); filled orange = visited chargers.

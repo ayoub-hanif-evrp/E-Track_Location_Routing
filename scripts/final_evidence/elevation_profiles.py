@@ -170,6 +170,12 @@ def reconstruct_od_elevation(
     prev_end_z: float | None = None
     continuity_ok = True
     covered_len = 0.0
+    # Gain/loss/grade accumulated *within* arcs only — never across junction jumps
+    # or fabricated bridges over missing DEM segments.
+    gain_total = 0.0
+    loss_total = 0.0
+    max_grade = float("nan")
+    junction_jumps: list[float] = []
 
     meta_arcs = dem_meta.get("arcs", {})
     for arc in ordered:
@@ -182,9 +188,10 @@ def reconstruct_od_elevation(
             notes.append(f"invalid_dem:{arc.arc_id}:{q}")
         if not path_p.exists():
             missing.append(arc.arc_id)
-            # advance offset by arc length to keep distance alignment honest
+            # advance offset by arc length; do NOT invent elevations
             offset += float(arc.length_m)
             boundaries.append(offset)
+            prev_end_z = None  # break continuity across missing segment
             notes.append(f"missing_profile:{arc.arc_id}")
             continue
         try:
@@ -195,21 +202,33 @@ def reconstruct_od_elevation(
             missing.append(arc.arc_id)
             offset += float(arc.length_m)
             boundaries.append(offset)
+            prev_end_z = None
             notes.append(f"load_fail:{arc.arc_id}:{exc}")
             continue
         if len(dist) == 0 or len(elev) == 0:
             missing.append(arc.arc_id)
             offset += float(arc.length_m)
             boundaries.append(offset)
+            prev_end_z = None
             continue
         # localize distance to start at 0
         d_loc = dist - float(dist[0])
-        # continuity check at junctions
+        # continuity check at junctions (diagnostic only; excluded from grade stats)
         if prev_end_z is not None and np.isfinite(elev[0]) and np.isfinite(prev_end_z):
             jump = abs(float(elev[0]) - float(prev_end_z))
             if jump > 5.0:  # meters — soft continuity threshold
                 continuity_ok = False
+                junction_jumps.append(jump)
                 notes.append(f"elevation_jump_{jump:.1f}m_at_{arc.arc_id}")
+        # Per-arc physical stats (full local samples, before junction dedupe)
+        g_arc, l_arc = _gain_loss(elev)
+        gain_total += g_arc
+        loss_total += l_arc
+        mg = _max_abs_grade(d_loc, elev)
+        if np.isfinite(mg):
+            max_grade = mg if not np.isfinite(max_grade) else max(max_grade, mg)
+            if mg > 0.20:
+                notes.append(f"steep_grade_{mg:.3f}_on_{arc.arc_id}")
         start_i = 1 if (drop_junction_duplicate and xs and len(d_loc) > 1) else 0
         d_use = d_loc[start_i:] + offset
         z_use = elev[start_i:]
@@ -218,7 +237,7 @@ def reconstruct_od_elevation(
         covered_len += float(arc.length_m)
         offset = float(d_use[-1]) if len(d_use) else offset + float(arc.length_m)
         boundaries.append(offset)
-        prev_end_z = float(elev[-1]) if np.isfinite(elev[-1]) else prev_end_z
+        prev_end_z = float(elev[-1]) if np.isfinite(elev[-1]) else None
 
     if xs:
         distances = np.concatenate(xs)
@@ -227,7 +246,11 @@ def reconstruct_od_elevation(
         distances = np.array([])
         elevations = np.array([])
 
-    gain, loss = _gain_loss(elevations)
+    if junction_jumps:
+        notes.append(
+            f"junction_jumps_excluded_from_gain_loss_grade:n={len(junction_jumps)};"
+            f"max_jump_m={max(junction_jumps):.1f}"
+        )
     stitched = float(distances[-1]) if len(distances) else 0.0
     return OrderedElevationProfile(
         od_id=od_id,
@@ -242,9 +265,122 @@ def reconstruct_od_elevation(
         dem_coverage_frac=(covered_len / path_len) if path_len > 0 else 0.0,
         stitched_length_m=stitched,
         length_error_m=stitched - path_len,
-        cum_gain_m=gain,
-        cum_loss_m=loss,
-        max_abs_grade=_max_abs_grade(distances, elevations),
+        cum_gain_m=gain_total,
+        cum_loss_m=loss_total,
+        max_abs_grade=max_grade,
+        continuity_ok=continuity_ok,
+        notes=notes,
+    )
+
+
+def reconstruct_elevation_from_arc_ids(
+    arc_ids: Sequence[str],
+    *,
+    od_id: str = "executed",
+    method: str = "executed_trace",
+    drop_junction_duplicate: bool = True,
+) -> OrderedElevationProfile:
+    """Ordered elevation for an explicit executed DRIVE arc sequence."""
+    notes: list[str] = []
+    xs: list[np.ndarray] = []
+    zs: list[np.ndarray] = []
+    offset = 0.0
+    boundaries = [0.0]
+    missing: list[str] = []
+    invalid: list[str] = []
+    prev_end_z: float | None = None
+    continuity_ok = True
+    covered_len = 0.0
+    path_len = 0.0
+    gain_total = 0.0
+    loss_total = 0.0
+    max_grade = float("nan")
+    junction_jumps: list[float] = []
+    _, _, _, dem_meta = _graph_and_paths()
+    meta_arcs = dem_meta.get("arcs", {})
+
+    for aid in arc_ids:
+        aid = str(aid)
+        path_p = DEM_DIR / f"arc_{aid}.json"
+        m = meta_arcs.get(aid, {})
+        arc_len = float(m.get("length_m") or 0.0)
+        q = str(m.get("quality") or "")
+        if q and q != "valid":
+            invalid.append(aid)
+            notes.append(f"invalid_dem:{aid}:{q}")
+        if not path_p.exists():
+            missing.append(aid)
+            notes.append(f"missing_profile:{aid}")
+            # Do not invent geometry; still advance if meta length known
+            if arc_len > 0:
+                offset += arc_len
+                path_len += arc_len
+                boundaries.append(offset)
+            prev_end_z = None
+            continue
+        try:
+            sample = load_profile(path_p)
+            dist = np.asarray(sample.distances_m, dtype=float)
+            elev = np.asarray(sample.elevations_m, dtype=float)
+        except Exception as exc:  # noqa: BLE001
+            missing.append(aid)
+            notes.append(f"load_fail:{aid}:{exc}")
+            prev_end_z = None
+            continue
+        if len(dist) == 0 or len(elev) == 0:
+            missing.append(aid)
+            prev_end_z = None
+            continue
+        d_loc = dist - float(dist[0])
+        if arc_len <= 0:
+            arc_len = float(d_loc[-1]) if len(d_loc) else 0.0
+        path_len += arc_len
+        if prev_end_z is not None and np.isfinite(elev[0]) and np.isfinite(prev_end_z):
+            jump = abs(float(elev[0]) - float(prev_end_z))
+            if jump > 5.0:
+                continuity_ok = False
+                junction_jumps.append(jump)
+                notes.append(f"elevation_jump_{jump:.1f}m_at_{aid}")
+        g_arc, l_arc = _gain_loss(elev)
+        gain_total += g_arc
+        loss_total += l_arc
+        mg = _max_abs_grade(d_loc, elev)
+        if np.isfinite(mg):
+            max_grade = mg if not np.isfinite(max_grade) else max(max_grade, mg)
+        start_i = 1 if (drop_junction_duplicate and xs and len(d_loc) > 1) else 0
+        d_use = d_loc[start_i:] + offset
+        z_use = elev[start_i:]
+        xs.append(d_use)
+        zs.append(z_use)
+        covered_len += arc_len
+        offset = float(d_use[-1]) if len(d_use) else offset + arc_len
+        boundaries.append(offset)
+        prev_end_z = float(elev[-1]) if np.isfinite(elev[-1]) else None
+
+    if junction_jumps:
+        notes.append(
+            f"junction_jumps_excluded_from_gain_loss_grade:n={len(junction_jumps)};"
+            f"max_jump_m={max(junction_jumps):.1f}"
+        )
+    distances = np.concatenate(xs) if xs else np.array([])
+    elevations = np.concatenate(zs) if zs else np.array([])
+    stitched = float(distances[-1]) if len(distances) else 0.0
+    return OrderedElevationProfile(
+        od_id=od_id,
+        method=method,
+        path_length_m=path_len,
+        arc_ids=[str(a) for a in arc_ids],
+        distances_m=distances,
+        elevations_m=elevations,
+        arc_boundaries_m=boundaries,
+        missing_arc_ids=missing,
+        invalid_arc_ids=invalid,
+        dem_coverage_frac=(covered_len / path_len) if path_len > 0 else 0.0,
+        stitched_length_m=stitched,
+        length_error_m=stitched - path_len,
+        cum_gain_m=gain_total,
+        cum_loss_m=loss_total,
+        max_abs_grade=max_grade,
         continuity_ok=continuity_ok,
         notes=notes,
     )

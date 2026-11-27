@@ -1,0 +1,5 @@
+soc_scenario,infra_config_id,ops_served,energy_served,n_missions,mean_road_km,mean_drive_min,mean_objective
+common_soc_80,V_benguerir_larache,10,11,14,227.84498135761464,180.2725806384887,23326.1
+common_soc_80,V_settat_larache,9,10,14,203.64818613546208,162.53881272257252,20379.88888888889
+stressed_mixed,V_benguerir_larache,8,8,14,199.4982416146545,154.23258833498954,19966.75
+stressed_mixed,V_settat_larache,9,9,14,205.97231558643728,159.28024184188436,20941.222222222223

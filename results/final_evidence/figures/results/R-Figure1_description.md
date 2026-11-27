@@ -1,0 +1,1 @@
+R-Figure 1: operational coverage for eActros/Volvo under stressed and common-SOC scenarios across I0–I3. Bars count operationally served missions out of 14. I3 adds a third directional installation (Benguerir AC). No global optimality or minimum-infrastructure claim.

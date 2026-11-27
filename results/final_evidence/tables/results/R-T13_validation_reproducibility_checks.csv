@@ -1,15 +1,27 @@
 check_id,passed,detail
-primary_unique_scenario_keys,True,"{'n': 168, 'nuniq': 168}"
-eactros_stressed_ladder_9_11_12,True,"{'I0_none': 9, 'I1_benguerir_ca': 11, 'I2_benguerir_larache': 12}"
-primary_summary_matches_missions,True,{'n_groups': 12}
+primary_224_unique_scenario_keys,True,"{'n': 224, 'nuniq': 224}"
+panel_summary_matches_missions,True,{'n_groups': 16}
+coverage_ladder_i0_i3,True,"{'eactros_600|stressed_mixed|I0_none': {'got': 9, 'expected': 9}, 'eactros_600|stressed_mixed|I1_benguerir_ca': {'got': 11, 'expected': 11}, 'eactros_600|stressed_mixed|I2_benguerir_larache': {'got': 12, 'expected': 12}, 'eactros_600|stressed_mixed|I3_benguerir_ca_larache_benguerir_ac': {'got': 13, 'expected': 13}, 'eactros_600|common_soc_80|I0_none': {'got': 11, 'expected': 11}, 'eactros_600|common_soc_80|I1_benguerir_ca': {'got': 12, 'expected': 12}, 'eactros_600|common_soc_80|I2_benguerir_larache': {'got': 13, 'expected': 13}, 'eactros_600|common_soc_80|I3_benguerir_ca_larache_benguerir_ac': {'got': 14, 'expected': 14}, 'volvo_475|stressed_mixed|I0_none': {'got': 7, 'expected': 7}, 'volvo_475|stressed_mixed|I1_benguerir_ca': {'got': 7, 'expected': 7}, 'volvo_475|stressed_mixed|I2_benguerir_larache': {'got': 8, 'expected': 8}, 'volvo_475|stressed_mixed|I3_benguerir_ca_larache_benguerir_ac': {'got': 8, 'expected': 8}, 'volvo_475|common_soc_80|I0_none': {'got': 8, 'expected': 8}, 'volvo_475|common_soc_80|I1_benguerir_ca': {'got': 9, 'expected': 9}, 'volvo_475|common_soc_80|I2_benguerir_larache': {'got': 10, 'expected': 10}, 'volvo_475|common_soc_80|I3_benguerir_ca_larache_benguerir_ac': {'got': 10, 'expected': 10}}"
+directional_installation_counts,True,"I0=0,I1=1,I2=2,I3=3"
+legacy_primary_168_present,True,{'n': 168}
+hos_fields_not_false_without_trace,True,{'n_false_without_trace': 0}
+i3_missions_present,True,C:\Users\AYOUB\OneDrive - EMSI\Bureau\PHD_WORK\E-Track_Location_Routing\results\final_evidence\experiments\i3_three_site\i3_missions.csv
 robustness_45_complete,True,{'n': 45}
 fine_soc_15_complete,True,{'n': 15}
 fixed_vs_flex_24_complete,True,{'n': 24}
-historical_15t_qgrid_reproduced,True,"[{'q_kwh': 5, 'route_mode': 'multi', 'status': 'INFEASIBLE', 'operationally_served': False}, {'q_kwh': 5, 'route_mode': 'fixed', 'status': 'INFEASIBLE', 'operationally_served': False}, {'q_kwh': 2, 'route_mode': 'multi', 'status': 'OPTIMAL', 'operationally_served': True}, {'q_kwh': 2, 'route_mode': 'fixed', 'status': 'OPTIMAL', 'operationally_served': True}, {'q_kwh': 1, 'route_mode': 'multi', 'status': 'OPTIMAL', 'operationally_served': True}, {'q_kwh': 1, 'route_mode': 'fixed', 'status': 'OPTIMAL', 'operationally_served': True}]"
+historical_15t_qgrid_reproduced,True,"[{'q_kwh': 5, 'route_mode': 'multi', 'status': 'INFEASIBLE'}, {'q_kwh': 5, 'route_mode': 'fixed', 'status': 'INFEASIBLE'}, {'q_kwh': 2, 'route_mode': 'multi', 'status': 'OPTIMAL'}, {'q_kwh': 2, 'route_mode': 'fixed', 'status': 'OPTIMAL'}, {'q_kwh': 1, 'route_mode': 'multi', 'status': 'OPTIMAL'}, {'q_kwh': 1, 'route_mode': 'fixed', 'status': 'OPTIMAL'}]"
 elevation_ordered_length_error_lt_1km,True,"{'max_abs_err_km': 0.8313856143179582, 'min_coverage': 0.9999999999999964}"
 casa_agadir_elevation_not_double_counted,True,{'path_length_km': 445.616138356988}
-dem_vs_flat_has_fixed_route_family,True,"{'fixed_short': 5, 'reoptimized_multi': 4}"
+elevation_continuity_investigation_present,True,dataset/elevation_continuity_grade_notes.md
+dem_flat_infeasible_uses_missing_energy,True,"{'ops_dem': False, 'ops_flat': True, 'traction_dem': np.float64(nan), 'delta_traction_kwh': np.float64(nan), 'interpretation': 'feasibility_only_no_energy_delta'}"
+dem_vs_flat_has_fixed_route_family,True,{'fixed_short': 5}
+volvo_hos_mechanism_not_default_false,True,ok
+volvo_mechanism_notes_corrected,True,mechanism_notes.md
+volvo_settat_vs_benguerir_56,True,{'n': 56}
 preserved_soc_transitions_present,True,{'n': 3}
 volvo_primary_usable_475,True,"[{'vehicle_key': 'volvo_475', 'config_path': 'configs/vehicles/volvo_fh_electric_4x2_540kwh.yaml', 'usable_kwh': 475.0, 'nominal_kwh': nan, 'role': 'primary_comparison'}]"
-status_vocab_has_distinct_limit,True,"{'statuses': ['INFEASIBLE', 'OPTIMAL'], 'n_limit': 0}"
+rfig5_executed_elevation_alignment_artifacts,True,"{'elevation': True, 'arcs': True}"
 required_artifacts_present,True,[]
+audit_status_no_conflicting_complete_markers,True,C:\Users\AYOUB\OneDrive - EMSI\Bureau\PHD_WORK\E-Track_Location_Routing\results\final_evidence\validation\AUDIT_CORRECTIONS_STATUS.md
+campaign_progress_no_conflicting_complete_markers,True,C:\Users\AYOUB\OneDrive - EMSI\Bureau\PHD_WORK\E-Track_Location_Routing\results\final_evidence\manifests\CAMPAIGN_PROGRESS.md
+release_manifest_hash_self_consistent,True,[]

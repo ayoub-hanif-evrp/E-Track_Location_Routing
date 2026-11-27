@@ -1,0 +1,17 @@
+vehicle_key,soc_scenario,infra_config_id,ops_served,energy_served,n_missions,n_directional_installations,directional_site_ids,experiment_source,ops_coverage,energy_coverage
+eactros_600,common_soc_80,I0_none,11,11,14,0,,primary_comparison,0.7857142857142857,0.7857142857142857
+eactros_600,common_soc_80,I1_benguerir_ca,12,12,14,1,y_benguerir_ca,primary_comparison,0.8571428571428571,0.8571428571428571
+eactros_600,common_soc_80,I2_benguerir_larache,13,13,14,2,"y_benguerir_ca,y_larache_rt",primary_comparison,0.9285714285714286,0.9285714285714286
+eactros_600,common_soc_80,I3_benguerir_ca_larache_benguerir_ac,14,14,14,3,"y_benguerir_ca,y_larache_rt,y_benguerir_ac",i3_three_site,1.0,1.0
+eactros_600,stressed_mixed,I0_none,9,9,14,0,,primary_comparison,0.6428571428571429,0.6428571428571429
+eactros_600,stressed_mixed,I1_benguerir_ca,11,11,14,1,y_benguerir_ca,primary_comparison,0.7857142857142857,0.7857142857142857
+eactros_600,stressed_mixed,I2_benguerir_larache,12,12,14,2,"y_benguerir_ca,y_larache_rt",primary_comparison,0.8571428571428571,0.8571428571428571
+eactros_600,stressed_mixed,I3_benguerir_ca_larache_benguerir_ac,13,13,14,3,"y_benguerir_ca,y_larache_rt,y_benguerir_ac",i3_three_site,0.9285714285714286,0.9285714285714286
+volvo_475,common_soc_80,I0_none,8,9,14,0,,primary_comparison,0.5714285714285714,0.6428571428571429
+volvo_475,common_soc_80,I1_benguerir_ca,9,10,14,1,y_benguerir_ca,primary_comparison,0.6428571428571429,0.7142857142857143
+volvo_475,common_soc_80,I2_benguerir_larache,10,11,14,2,"y_benguerir_ca,y_larache_rt",primary_comparison,0.7142857142857143,0.7857142857142857
+volvo_475,common_soc_80,I3_benguerir_ca_larache_benguerir_ac,10,11,14,3,"y_benguerir_ca,y_larache_rt,y_benguerir_ac",i3_three_site,0.7142857142857143,0.7857142857142857
+volvo_475,stressed_mixed,I0_none,7,7,14,0,,primary_comparison,0.5,0.5
+volvo_475,stressed_mixed,I1_benguerir_ca,7,7,14,1,y_benguerir_ca,primary_comparison,0.5,0.5
+volvo_475,stressed_mixed,I2_benguerir_larache,8,8,14,2,"y_benguerir_ca,y_larache_rt",primary_comparison,0.5714285714285714,0.5714285714285714
+volvo_475,stressed_mixed,I3_benguerir_ca_larache_benguerir_ac,8,8,14,3,"y_benguerir_ca,y_larache_rt,y_benguerir_ac",i3_three_site,0.5714285714285714,0.5714285714285714

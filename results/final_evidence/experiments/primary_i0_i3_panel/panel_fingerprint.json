@@ -1,0 +1,13 @@
+{
+  "n_rows": 224,
+  "n_unique_keys": 224,
+  "infra_levels": [
+    "I0_none",
+    "I1_benguerir_ca",
+    "I2_benguerir_larache",
+    "I3_benguerir_ca_larache_benguerir_ac"
+  ],
+  "n_directional_note": "Counts distinct directional installation IDs (y_benguerir_ca, y_larache_rt, y_benguerir_ac), not undirected geographical service-area locations.",
+  "optimality_claim": "No global optimality or minimum-infrastructure claim; panel reports evaluated configurations only.",
+  "ladder_mismatches": []
+}

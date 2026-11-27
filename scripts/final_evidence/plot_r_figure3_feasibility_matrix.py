@@ -11,7 +11,8 @@ from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
 
 ROOT = Path(__file__).resolve().parents[2]
-EXP = ROOT / "results/final_evidence/experiments/primary_comparison"
+PANEL = ROOT / "results/final_evidence/experiments/primary_i0_i3_panel/primary_i0_i3_missions.csv"
+FALLBACK = ROOT / "results/final_evidence/experiments/primary_comparison/primary_missions.csv"
 FIG = ROOT / "results/final_evidence/figures/results"
 SRC = FIG / "source_data"
 
@@ -42,7 +43,7 @@ def _state(row) -> int:
 
 
 def main() -> int:
-    path = EXP / "primary_missions.csv"
+    path = PANEL if PANEL.exists() else FALLBACK
     if not path.exists():
         print("Missing", path)
         return 1
@@ -61,7 +62,12 @@ def main() -> int:
     cells = []
     for veh in ["eactros_600", "volvo_475"]:
         for soc in ["stressed_mixed", "common_soc_80"]:
-            for infra in ["I0_none", "I1_benguerir_ca", "I2_benguerir_larache"]:
+            for infra in [
+                "I0_none",
+                "I1_benguerir_ca",
+                "I2_benguerir_larache",
+                "I3_benguerir_ca_larache_benguerir_ac",
+            ]:
                 cells.append(f"{veh}|{soc}|{infra}")
     # Keep only cells present
     present = [c for c in cells if c in set(df["cell"])]
