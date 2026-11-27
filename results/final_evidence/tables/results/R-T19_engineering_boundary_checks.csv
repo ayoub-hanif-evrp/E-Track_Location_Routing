@@ -1,0 +1,27 @@
+vehicle_key,case,mass_kg,payload_kg,E_batt_trac_kwh,P_wheel_kw,P_batt_kw,power_feasible_peak,power_feasible_continuous,regen_capped,check_passed,notes
+eactros_600,flat_steady_1km_loaded,25000.0,5300.0,1.136485534788904,81.8269585048011,90.91884278311232,True,True,False,True,positive draw expected
+eactros_600,uphill_4pct_1km,25000.0,5300.0,4.162805448180206,299.7219922689749,333.02443585441654,True,True,False,True,demand > flat
+eactros_600,downhill_4pct_1km,25000.0,5300.0,-1.1911297898686914,-136.12911884213617,-95.29038318949532,True,True,False,True,regen credit vs flat
+eactros_600,steep_15pct_100m_power_check,25000.0,5300.0,1.2480782083433293,898.6163100071971,998.4625666746634,False,False,False,True,PASS if model flags peak infeasible at 80 km/h on 15% (no silent capping)
+eactros_600,flat_steady_1km_empty,19700.0,0.0,1.0241933388012499,73.74192039368998,81.93546710409998,True,True,False,True,empty < loaded
+eactros_600,energy_sign_flat_positive,25000.0,5300.0,1.136485534788904,81.8269585048011,90.91884278311232,True,True,False,True,Flat loaded cruise must draw battery energy
+eactros_600,regen_downhill_negative_or_zero,25000.0,5300.0,-1.1911297898686914,-136.12911884213617,-95.29038318949532,True,True,False,True,Downhill net battery demand ≤ flat (regen credit)
+eactros_600,ccs_taper_high_soc,25000.0,5300.0,,,122.50000000000007,True,True,False,True,P@60%=350.0 kW; P@95%=122.5 kW; factor95=0.350
+eactros_600,refrig_stationary_cool_approx,25000.0,5300.0,0.1875,,0.1875,True,True,False,True,T_amb=15.0C setpoint=9.0C Q=480.0W P_elec=187.5W COP=2.56
+eactros_600,refrig_stationary_hot_approx,25000.0,5300.0,1.1818181818181819,,1.1818181818181819,True,True,False,True,T_amb=35.0C setpoint=9.0C Q=2080.0W P_elec=1181.8W COP=1.76
+eactros_600,soc_init_reserve_soc0.5,25000.0,5300.0,300.0,60.0,600.0,True,True,False,True,E_init=300 kWh; E_min≈60; usable=600.0
+eactros_600,soc_init_reserve_soc0.8,25000.0,5300.0,480.0,60.0,600.0,True,True,False,True,E_init=480 kWh; E_min≈60; usable=600.0
+eactros_600,soc_init_reserve_soc1.0,25000.0,5300.0,600.0,60.0,600.0,True,True,False,True,E_init=600 kWh; E_min≈60; usable=600.0
+volvo_475,flat_steady_1km_loaded,25300.0,5300.0,1.1428416968259412,82.28460217146777,91.42733574607529,True,True,False,True,positive draw expected
+volvo_475,uphill_4pct_1km,25300.0,5300.0,4.205477449177939,302.79437634081165,336.4381959342352,True,True,False,True,demand > flat
+volvo_475,downhill_4pct_1km,25300.0,5300.0,-1.2100107959067865,-138.28694810363274,-96.80086367254293,True,True,False,True,regen credit vs flat
+volvo_475,steep_15pct_100m_power_check,25300.0,5300.0,1.2623269804054063,908.8754258918925,1009.861584324325,False,False,False,True,PASS if model flags peak infeasible at 80 km/h on 15% (no silent capping)
+volvo_475,flat_steady_1km_empty,20000.0,0.0,1.0305495008382868,74.19956406035666,82.44396006706295,True,True,False,True,empty < loaded
+volvo_475,energy_sign_flat_positive,25300.0,5300.0,1.1428416968259412,82.28460217146777,91.42733574607529,True,True,False,True,Flat loaded cruise must draw battery energy
+volvo_475,regen_downhill_negative_or_zero,25300.0,5300.0,-1.2100107959067865,-138.28694810363274,-96.80086367254293,True,True,False,True,Downhill net battery demand ≤ flat (regen credit)
+volvo_475,ccs_taper_high_soc,25300.0,5300.0,,,122.50000000000007,True,True,False,True,P@60%=350.0 kW; P@95%=122.5 kW; factor95=0.350
+volvo_475,refrig_stationary_cool_approx,25300.0,5300.0,0.1875,,0.1875,True,True,False,True,T_amb=15.0C setpoint=9.0C Q=480.0W P_elec=187.5W COP=2.56
+volvo_475,refrig_stationary_hot_approx,25300.0,5300.0,1.1818181818181819,,1.1818181818181819,True,True,False,True,T_amb=35.0C setpoint=9.0C Q=2080.0W P_elec=1181.8W COP=1.76
+volvo_475,soc_init_reserve_soc0.5,25300.0,5300.0,238.0,48.0,475.0,True,True,False,True,E_init=238 kWh; E_min≈48; usable=475.0
+volvo_475,soc_init_reserve_soc0.8,25300.0,5300.0,380.0,48.0,475.0,True,True,False,True,E_init=380 kWh; E_min≈48; usable=475.0
+volvo_475,soc_init_reserve_soc1.0,25300.0,5300.0,475.0,48.0,475.0,True,True,False,True,E_init=475 kWh; E_min≈48; usable=475.0

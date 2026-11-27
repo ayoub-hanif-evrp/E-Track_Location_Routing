@@ -1,0 +1,10 @@
+vehicle_key,usable_kwh,energy_quantum_kwh,nominal_soc_frac,E_truck_init_kwh_integer,effective_soc_frac,delta_soc_frac,increases_initial_energy,rule,code_ref
+eactros_600,600.0,2,0.5,300,0.5,0.0,False,E_truck_init = int(round(nominal_soc * usable_kwh)),multiroute_placement_evaluation.py prepare path
+eactros_600,600.0,2,0.8,480,0.8,0.0,False,E_truck_init = int(round(nominal_soc * usable_kwh)),multiroute_placement_evaluation.py prepare path
+eactros_600,600.0,2,1.0,600,1.0,0.0,False,E_truck_init = int(round(nominal_soc * usable_kwh)),multiroute_placement_evaluation.py prepare path
+volvo_475,475.0,2,0.5,238,0.5010526315789474,0.001052631578947416,True,E_truck_init = int(round(nominal_soc * usable_kwh)),multiroute_placement_evaluation.py prepare path
+volvo_475,475.0,2,0.8,380,0.8,0.0,False,E_truck_init = int(round(nominal_soc * usable_kwh)),multiroute_placement_evaluation.py prepare path
+volvo_475,475.0,2,1.0,475,1.0,0.0,False,E_truck_init = int(round(nominal_soc * usable_kwh)),multiroute_placement_evaluation.py prepare path
+volvo_460_sensitivity,460.0,2,0.5,230,0.5,0.0,False,E_truck_init = int(round(nominal_soc * usable_kwh)),multiroute_placement_evaluation.py prepare path
+volvo_460_sensitivity,460.0,2,0.8,368,0.8,0.0,False,E_truck_init = int(round(nominal_soc * usable_kwh)),multiroute_placement_evaluation.py prepare path
+volvo_460_sensitivity,460.0,2,1.0,460,1.0,0.0,False,E_truck_init = int(round(nominal_soc * usable_kwh)),multiroute_placement_evaluation.py prepare path

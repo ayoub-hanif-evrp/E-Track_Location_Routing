@@ -35,6 +35,31 @@ INFRA = [
 ]
 
 
+def _load_p1_polyline_cache():
+    """Prefer P1 executed-arc audit (includes parent-slice child arcs)."""
+    audit_p = FE / "experiments/executed_route_geometry/executed_arc_geometry_audit.csv"
+    cache: dict[str, tuple[list[float], list[float], float]] = {}
+    if not audit_p.exists():
+        return cache
+    audit = pd.read_csv(audit_p)
+    for _, r in audit.iterrows():
+        aid = str(r.arc_id)
+        try:
+            coords = json.loads(r.lon_lat_json) if isinstance(r.lon_lat_json, str) else r.lon_lat_json
+        except Exception:
+            coords = []
+        if not coords or len(coords) < 2:
+            continue
+        xs = [float(c[0]) for c in coords]
+        ys = [float(c[1]) for c in coords]
+        length = float(r.length_m_macro or r.length_m_trace or 0.0)
+        # Keep densest geometry if duplicate arc_ids appear across missions
+        prev = cache.get(aid)
+        if prev is None or len(xs) > len(prev[0]):
+            cache[aid] = (xs, ys, length)
+    return cache
+
+
 def _load_arc_geoms():
     nodes = pd.read_csv(ROOT / "data/processed/multiroute/nodes.csv").set_index("osm_node_id")
     dg = json.loads(
@@ -51,10 +76,12 @@ def _load_arc_geoms():
                 ys.append(float(nodes.loc[nid, "lat"]))
         if len(xs) >= 2:
             arcs[aid] = (xs, ys, float(a.get("length_m") or 0.0))
-    denser = {}
+    denser = _load_p1_polyline_cache()
     elev = ROOT / "data/processed/multiroute/elevation"
     for p in elev.glob("arc_*.json"):
         aid = p.stem.replace("arc_", "")
+        if aid in denser:
+            continue
         try:
             raw = json.loads(p.read_text(encoding="utf-8"))
             coords = raw.get("coords_lonlat") or []

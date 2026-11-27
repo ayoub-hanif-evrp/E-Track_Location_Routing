@@ -1,0 +1,32 @@
+{
+  "git_sha": "518bc11a119c6f59ac2b11fa484d307d363336f6",
+  "od_id": "marrakech_agadir",
+  "soc": 0.8,
+  "ts5": {
+    "sum_phys_min": 265.61577918136186,
+    "sum_disc_min": 285.0,
+    "inflation_min": 19.38422081863814,
+    "n_drive_arcs": 5,
+    "phys_under_270_disc_over": true,
+    "family_b": {
+      "ceil": {
+        "sum_steps": 57,
+        "sum_disc_min": 285,
+        "exceeds_270": true,
+        "exceeds_hos_max_steps": true
+      },
+      "floor": {
+        "sum_steps": 53,
+        "sum_disc_min": 265,
+        "exceeds_270": false,
+        "exceeds_hos_max_steps": false
+      },
+      "round": {
+        "sum_steps": 54,
+        "sum_disc_min": 270,
+        "exceeds_270": false,
+        "exceeds_hos_max_steps": false
+      }
+    }
+  }
+}

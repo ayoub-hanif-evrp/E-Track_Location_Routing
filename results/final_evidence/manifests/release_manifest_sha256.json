@@ -1,7 +1,7 @@
 {
   "baseline_commit_expected": "8b0cbf716cc342550299895d4da58889b8239d37",
   "campaign_status": "COMPLETE",
-  "n_artifacts": 246,
+  "n_artifacts": 301,
   "validation_all_passed": true,
   "manifest_excludes_self": true,
   "artifacts": [
@@ -111,6 +111,26 @@
       "sha256": "e89607e0407bc3548426473329ea286b7bdf9c470db091e2f21350452a0b63b9"
     },
     {
+      "path": "results/final_evidence/experiments/executed_route_geometry/executed_arc_geometry_audit.csv",
+      "bytes": 2286452,
+      "sha256": "11c7a6ede2513d93b7ab925a93501f21bfdee17fc04a519b2b9d4e1658335700"
+    },
+    {
+      "path": "results/final_evidence/experiments/executed_route_geometry/executed_route_summary.csv",
+      "bytes": 2893,
+      "sha256": "628993b465882ab5a303b805eb1a791483bc393e006a5afda54cb1d30253d4cc"
+    },
+    {
+      "path": "results/final_evidence/experiments/executed_route_geometry/P1_executed_route_geometry_notes.md",
+      "bytes": 8761,
+      "sha256": "2a1cbfd3e010fe7a354c037404bea5dac5e9741475fef750570038dba815f297"
+    },
+    {
+      "path": "results/final_evidence/experiments/executed_route_geometry/P1_steep_gradient_343a5225681579e5.md",
+      "bytes": 578,
+      "sha256": "0a477d289f25475a45974eac4d4220770e43b69792aaf5566317303b6ad01718"
+    },
+    {
       "path": "results/final_evidence/experiments/fixed_vs_flex/fixed_vs_flex_missions.csv",
       "bytes": 4866,
       "sha256": "a5c381d656bab18143db8b34c4b27298f7238058a1da5e2752aa0520d1fb34d1"
@@ -146,9 +166,89 @@
       "sha256": "e7e1df297a1f304023d8a20f3a03766fac321459139a21594d4bf70cbdcb3375"
     },
     {
+      "path": "results/final_evidence/experiments/journal_p2_p4/effective_initial_soc.csv",
+      "bytes": 1500,
+      "sha256": "4c078c279ad6b9e6fd560f7586774c7a7f7d536b027dc97b0794916c8763aa5a"
+    },
+    {
+      "path": "results/final_evidence/experiments/journal_p2_p4/heavier_payload_infra_missions.csv",
+      "bytes": 37450,
+      "sha256": "0e3327a42fb1c32b057392193cfac125921534e9f6515c2d358169af804d4c90"
+    },
+    {
+      "path": "results/final_evidence/experiments/journal_p2_p4/P2_P4_findings.md",
+      "bytes": 2203,
+      "sha256": "935ffb8941b9733d30d21ac5e00a0fbc598853c019ace5a18b60b833c3f86502"
+    },
+    {
+      "path": "results/final_evidence/experiments/journal_p2_p4/P4_payload_justification.md",
+      "bytes": 495,
+      "sha256": "0330055ec1aca01ac8c4815fdc912c092bfdb988b2c868fd8cafd7152c5e522d"
+    },
+    {
+      "path": "results/final_evidence/experiments/journal_p2_p4/P4_weather_notes.md",
+      "bytes": 264,
+      "sha256": "5338a9cb1f4b51a1dd1cc0df7ee7ac12494c7e8560058bfda101e480103c0d66"
+    },
+    {
+      "path": "results/final_evidence/experiments/journal_p2_p4/P5_3_effective_initial_soc.md",
+      "bytes": 520,
+      "sha256": "80519ca1da148489610df6938ccb855d93cf7d180e43c7e18d0d4472d2709bcb"
+    },
+    {
+      "path": "results/final_evidence/experiments/journal_p2_p4/P5_4_battery_capacity_counterfactual.md",
+      "bytes": 864,
+      "sha256": "b729c7d43098a5433128bc2e363583d63e03e39d8a034cf2e1287e8cf4e7e805"
+    },
+    {
+      "path": "results/final_evidence/experiments/journal_p2_p4/P5_reconciliation_notes.md",
+      "bytes": 1723,
+      "sha256": "55e2f1a206e641f38ef06a2823e60f82bbaa0c94f75a2f00f6414a01afbe3637"
+    },
+    {
+      "path": "results/final_evidence/experiments/journal_p2_p4/refrigeration_controlled_missions.csv",
+      "bytes": 48150,
+      "sha256": "188b8b4146cead12fbc780309c890783a889cfbbe5f76ad85aab2250cb1c13f5"
+    },
+    {
+      "path": "results/final_evidence/experiments/journal_p2_p4/volvo_battery_only_counterfactual.csv",
+      "bytes": 26092,
+      "sha256": "0953ed4334cac9afaf344733b2801c66e03b3161b85310b199de7ba1a09d4128"
+    },
+    {
+      "path": "results/final_evidence/experiments/journal_p2_p4/weather_fixture_inventory.csv",
+      "bytes": 743,
+      "sha256": "1ed1b94f97c89ab3718e4c6ebff275f75c8a883eea159db8336276f186bf18cc"
+    },
+    {
       "path": "results/final_evidence/experiments/payload_soc/fine_soc_missions.csv",
       "bytes": 45891,
       "sha256": "171cfdd0432661ef6e22b184070fa9756f80cd8b4433e8c4759104c3a13def83"
+    },
+    {
+      "path": "results/final_evidence/experiments/physical_model/engineering_boundary_checks.csv",
+      "bytes": 4126,
+      "sha256": "34d25c4835b62830f7805f17b39670d2fc1d4b44c4898cfe3308110172f6c8ec"
+    },
+    {
+      "path": "results/final_evidence/experiments/physical_model/external_consumption_benchmarks.csv",
+      "bytes": 466,
+      "sha256": "5798b8ee0a2a8ed4516cf64887708b054eccef10e0ee0936950590609d706a3e"
+    },
+    {
+      "path": "results/final_evidence/experiments/physical_model/P2_3_engineering_boundary_checks.md",
+      "bytes": 764,
+      "sha256": "c34a1760be8a82fe47bee382b69a3d16b08e19695d10acbe8feceedde2182a68"
+    },
+    {
+      "path": "results/final_evidence/experiments/physical_model/P2_physical_model_credibility.md",
+      "bytes": 729,
+      "sha256": "28d37fb740a00a65ee1ab985285f52098c34bd71303c58f87172eaac78d22375"
+    },
+    {
+      "path": "results/final_evidence/experiments/physical_model/parameter_provenance_matrix.csv",
+      "bytes": 11879,
+      "sha256": "1dc9ecc7a2bae5a54383af78cdc94241c4b24a66a1c655e61591d40395e35536"
     },
     {
       "path": "results/final_evidence/experiments/primary_comparison/primary_missions.csv",
@@ -274,6 +374,46 @@
       "path": "results/final_evidence/experiments/settat_vs_benguerir/singleton_missions.csv",
       "bytes": 197373,
       "sha256": "f2c731a1bbee75924c5cba1aede24597c494a7087313836796a3915c2db45a4a"
+    },
+    {
+      "path": "results/final_evidence/experiments/time_discretization/affected_case_inventory.csv",
+      "bytes": 1032,
+      "sha256": "145ec4bdf1f910bb78318a3a6fbe64fb8c1a1fec3d13321cfef9c6ccf275f1f5"
+    },
+    {
+      "path": "results/final_evidence/experiments/time_discretization/casa_tangier_wait_schedule_excerpt.csv",
+      "bytes": 29158,
+      "sha256": "541bf06e295bc0ad37c74deba9edb7a68d5f298a1b82f17311d874aa2c732421"
+    },
+    {
+      "path": "results/final_evidence/experiments/time_discretization/ceil_inflation_summary.json",
+      "bytes": 788,
+      "sha256": "227429204c834c618e7284162c220a00dd24e4fc126af386b34d84f454dc90cf"
+    },
+    {
+      "path": "results/final_evidence/experiments/time_discretization/hos_policy_notes.md",
+      "bytes": 2379,
+      "sha256": "6efa1b049f304e58b75dcec94d5038d2ed7675fca3e2ecf7f9f5639b435e96ad"
+    },
+    {
+      "path": "results/final_evidence/experiments/time_discretization/hos_timestep_sweep.csv",
+      "bytes": 1210,
+      "sha256": "557d86cc4c2379f6f0509cee34c9589732dfb1b5a48e8dc5c64882a2f0bf28f5"
+    },
+    {
+      "path": "results/final_evidence/experiments/time_discretization/P0_time_discretization_notes.md",
+      "bytes": 2828,
+      "sha256": "f58e3f4a5c2d5c461af80e444c8924d2bd0a17e773b4a476c5ca6e13141aa513"
+    },
+    {
+      "path": "results/final_evidence/experiments/time_discretization/per_arc_physical_vs_discrete.csv",
+      "bytes": 3707,
+      "sha256": "a000b3abf9efb3623f53e837522f2d412f9ad3f0738230d4464108d7d9778b70"
+    },
+    {
+      "path": "results/final_evidence/experiments/time_discretization/primary_ceil_inflation_screen.csv",
+      "bytes": 21401,
+      "sha256": "2f27b9225559e50ae972c1b43334d2290c2ff8253c17c63e80b8542fd078face"
     },
     {
       "path": "results/final_evidence/experiments/volvo_ops_diagnosis/energy_only_trace_audit.csv",
@@ -586,6 +726,21 @@
       "sha256": "f134b52457cdb134e882f627291a852d66031ca6a035a9442fb5ddfccebcd59b"
     },
     {
+      "path": "results/final_evidence/figures/FIGURE_CATALOG.md",
+      "bytes": 3187,
+      "sha256": "d012a1d0decef946ace50b7409c60874c0c240323aa6fd9bbd980c3b73249b2f"
+    },
+    {
+      "path": "results/final_evidence/figures/figure_catalog_complete.csv",
+      "bytes": 4902,
+      "sha256": "0373c524521640699b660ee68edefd4ae1f436ff81676c079eab2ec3a631752c"
+    },
+    {
+      "path": "results/final_evidence/figures/FIGURE_CATALOG_JOURNAL_ADDENDUM.md",
+      "bytes": 841,
+      "sha256": "49de5a6095ab65f04391c9e042e1c0c373f85d28350ec9fb5c7c4f5e4ab429bf"
+    },
+    {
       "path": "results/final_evidence/figures/results/R-Figure10_description.md",
       "bytes": 193,
       "sha256": "85c8d8cf16ee762f632c9791f7ebe52b3a90e13c49cdfa706ff30028ed6e042a"
@@ -606,9 +761,19 @@
       "sha256": "5f90d78c4b55ce94d86177029f46fad27822b56d5db0f3fbfdabe6ba148445c7"
     },
     {
+      "path": "results/final_evidence/figures/results/R-Figure10b_time_discretization_hos_accumulation.pdf",
+      "bytes": 20117,
+      "sha256": "7941722bd7a8084d1b0d44af24435e3d85649cdb659fea35ca6aa159365d5142"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure10b_time_discretization_hos_accumulation.png",
+      "bytes": 227831,
+      "sha256": "1e2d7d58c9c9ee9ad1be9c409a0f0a301043bd5c1cc65fddda45816658c18ca5"
+    },
+    {
       "path": "results/final_evidence/figures/results/R-Figure11_description.md",
-      "bytes": 88,
-      "sha256": "b3cb51147c01b0c7428eded3fb3af9b0d6f63ff7c68289e5239ce173b8f5cc96"
+      "bytes": 325,
+      "sha256": "0ae56e18d11d5b1aeeb8e8165ce2e2b3dc3f3ffc43ab6dc0aeae760f6f85d93b"
     },
     {
       "path": "results/final_evidence/figures/results/R-Figure11_infeasible_remedies.pdf",
@@ -624,6 +789,16 @@
       "path": "results/final_evidence/figures/results/R-Figure11_infeasible_remedies.svg",
       "bytes": 63985,
       "sha256": "c4a41d85b2c0a29252f4a9dcb64a9fe33c962a8020e889171e2d866f72148df5"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure11_refrigeration_contribution.pdf",
+      "bytes": 22690,
+      "sha256": "93d21fb49cd048c0869bb826884e5a64a2085883a9392fc088a3ac6bcff40d86"
+    },
+    {
+      "path": "results/final_evidence/figures/results/R-Figure11_refrigeration_contribution.png",
+      "bytes": 302152,
+      "sha256": "2b35ba6a814ec6dd768f429cd2803661fbdaa9d98ee9dddf8fed22c823d82056"
     },
     {
       "path": "results/final_evidence/figures/results/R-Figure1_description.md",
@@ -652,13 +827,13 @@
     },
     {
       "path": "results/final_evidence/figures/results/R-Figure2_geographic_feasibility.pdf",
-      "bytes": 79629,
-      "sha256": "5efb62d92acf39d424c05646288f0ff7c4dfcaebfc7f4ce0edaf52c1bbff0a91"
+      "bytes": 94300,
+      "sha256": "4fbf90e4aa20171e1af1dbe984bc8d7ddff6504b1e5cc8c52f942b4c8e95a6c4"
     },
     {
       "path": "results/final_evidence/figures/results/R-Figure2_geographic_feasibility.png",
-      "bytes": 629442,
-      "sha256": "5c39dab7df28f14c1c43ae34de8394c9faf37b0e91fedc805a86571b47c3585e"
+      "bytes": 572970,
+      "sha256": "653af3956fac6884e92e02f28036fa8aeb6b60d0ed53faf05f862a482b6ffa31"
     },
     {
       "path": "results/final_evidence/figures/results/R-Figure2_geographic_feasibility.svg",
@@ -703,7 +878,7 @@
     {
       "path": "results/final_evidence/figures/results/R-Figure5_casa_agadir_operational_profile.pdf",
       "bytes": 28415,
-      "sha256": "fb8d93b963b44a22348d15623b1a2795ed4e0b3f64680f9debf125ca77555d61"
+      "sha256": "44833115cd438a9cea09d2fa51a1f375369364925536fbe60ebd3586888e29c8"
     },
     {
       "path": "results/final_evidence/figures/results/R-Figure5_casa_agadir_operational_profile.png",
@@ -713,12 +888,12 @@
     {
       "path": "results/final_evidence/figures/results/R-Figure5_casa_agadir_operational_profile.svg",
       "bytes": 117427,
-      "sha256": "cd31febb7bca3af29f2f204f8fc64d972d9f3180b84223305958cd37eecae538"
+      "sha256": "2594946310b8f811e154a8b6c6f97713a8f393e4ce01c649060d12ce336a3fa8"
     },
     {
       "path": "results/final_evidence/figures/results/R-Figure5_casa_marrakech_operational_profile.pdf",
       "bytes": 27679,
-      "sha256": "9cec9c5e97f8c655cf5274cd6c8ac4b8cb70029d9bde0230a48ca36dea975141"
+      "sha256": "efc53a6b05d5035de13f26cec627e5a8a0e655086df3438b2bcea4015cc28e52"
     },
     {
       "path": "results/final_evidence/figures/results/R-Figure5_casa_marrakech_operational_profile.png",
@@ -728,12 +903,12 @@
     {
       "path": "results/final_evidence/figures/results/R-Figure5_casa_marrakech_operational_profile.svg",
       "bytes": 123293,
-      "sha256": "60ffdb0d06cb674544b4b465398aa2c6258c1520be54dbf42394b2580334b296"
+      "sha256": "b9c55cc57b88e1c337eba1f687815e3b3cb406a225f2de3e10d6cb214f715cb2"
     },
     {
       "path": "results/final_evidence/figures/results/R-Figure5_description.md",
-      "bytes": 375,
-      "sha256": "9fdf31f6f0705bd7da39f7ddc5d56e0aa8d1dae79367f8465ce097eca8bd0651"
+      "bytes": 484,
+      "sha256": "058d31b4ba24edecc10d9569e493a717b3537dac57b9954101458093870e32dd"
     },
     {
       "path": "results/final_evidence/figures/results/R-Figure5_operational_route_profiles.pdf",
@@ -856,6 +1031,16 @@
       "sha256": "c82721e96318d8e138a2d61d9a6a42441c9bdcc55b30f1f00fdcf23d8f0978c1"
     },
     {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig10b_hos_accumulation.csv",
+      "bytes": 1395,
+      "sha256": "306924559cf8a2146fb71efea4e667a76cfc9ae4bb61eac48cb04516e6377525"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig11_refrigeration_controlled.csv",
+      "bytes": 46869,
+      "sha256": "726ec0ed0490f971ee0365e63fc389e2c6fc7a9be9383203cfcc1e796a0b5e60"
+    },
+    {
       "path": "results/final_evidence/figures/results/source_data/R-Fig11_remedies.csv",
       "bytes": 2208,
       "sha256": "d3b00b894c731f51654cdc5db7b54265bc7111116d9fe6a425e7d60124ab876b"
@@ -867,8 +1052,8 @@
     },
     {
       "path": "results/final_evidence/figures/results/source_data/R-Fig2_feasibility_by_infra.csv",
-      "bytes": 6759,
-      "sha256": "cc1a81077074f8731e79132358db3c8838b9de1d32469f6723a71c36470e5212"
+      "bytes": 5775,
+      "sha256": "94a17bf5507587b24e09499d2975f131bd5218ad5e13f0841c49bb52f43b78b8"
     },
     {
       "path": "results/final_evidence/figures/results/source_data/R-Fig3_feasibility_matrix.csv",
@@ -886,6 +1071,11 @@
       "sha256": "60504e8623b955a3acdc9a5afc95a365f45d69cf8ca3b210a0c63f396aa329d9"
     },
     {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig5_casa_agadir_elevation_executed.csv",
+      "bytes": 348724,
+      "sha256": "d184fdf9ed8bc46d9f575abe463cb865e4f71105dac4fce2333f2c5a05eac33a"
+    },
+    {
       "path": "results/final_evidence/figures/results/source_data/R-Fig5_casa_agadir_executed_arcs.csv",
       "bytes": 599,
       "sha256": "a8550401d2251fb0356a13702e74652ab279cd9ebada762280d60431d5aa1f52"
@@ -899,6 +1089,11 @@
       "path": "results/final_evidence/figures/results/source_data/R-Fig5_casa_marrakech_elevation.csv",
       "bytes": 8791,
       "sha256": "08c2d7f8507c5e7a7d9fab0cd918c945ebaa2d9ececde625619a2dd565a21af5"
+    },
+    {
+      "path": "results/final_evidence/figures/results/source_data/R-Fig5_casa_marrakech_elevation_executed.csv",
+      "bytes": 208790,
+      "sha256": "35c30ba5d0b588c6ff645caae574e900c460150e6ad2096eff6216d0a262f3aa"
     },
     {
       "path": "results/final_evidence/figures/results/source_data/R-Fig5_casa_marrakech_executed_arcs.csv",
@@ -951,6 +1146,16 @@
       "sha256": "957ec167f87f5a1d81837fdd1a01690802b76779191103a848d2932c4baa86d1"
     },
     {
+      "path": "results/final_evidence/literature/P9_literature_comparison_matrix.csv",
+      "bytes": 1937,
+      "sha256": "9ff0678c5375d43d5fec2877feedbb8a3a414e85343a7aae23b7edaf7b5e667e"
+    },
+    {
+      "path": "results/final_evidence/literature/P9_literature_comparison_matrix.md",
+      "bytes": 3230,
+      "sha256": "531ade11347ab902321ef4a1ac8afd9885544bac8256c62b04e0c0d6d258a68f"
+    },
+    {
       "path": "results/final_evidence/manifests/CAMPAIGN_PROGRESS.md",
       "bytes": 754,
       "sha256": "7bcb06ae15f339186a23c5a58f3e2d935f91f0f708f0cb5a2da1d1bc23a68383"
@@ -964,6 +1169,11 @@
       "path": "results/final_evidence/manifests/figure_table_catalog.csv",
       "bytes": 4730,
       "sha256": "ccb1cdb079f4e1469755034bc49a8fe70f8f966062062301303a94e2d6a0c5ed"
+    },
+    {
+      "path": "results/final_evidence/manifests/JOURNAL_VALIDATION_EXPERIMENT_INVENTORY.md",
+      "bytes": 2713,
+      "sha256": "8597077da78aab7ecfeb579f380ef4f7dada8412b583206680fb48344a66fab1"
     },
     {
       "path": "results/final_evidence/manifests/primary_comparison_fingerprint.json",
@@ -1206,6 +1416,56 @@
       "sha256": "d96a17283d1a8f13eb3cf94bad92c64e0130d104f0bcde0cd940ce008baa84f8"
     },
     {
+      "path": "results/final_evidence/tables/results/R-T14_time_discretization_per_arc.csv",
+      "bytes": 3707,
+      "sha256": "a000b3abf9efb3623f53e837522f2d412f9ad3f0738230d4464108d7d9778b70"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T14_time_discretization_sweep.csv",
+      "bytes": 1210,
+      "sha256": "557d86cc4c2379f6f0509cee34c9589732dfb1b5a48e8dc5c64882a2f0bf28f5"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T15_executed_route_geometry_audit.csv",
+      "bytes": 2807,
+      "sha256": "b1465425fa1eb95a983d710c988e1a9f56c5b54662cab258ca31ae160133a0bd"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T15_parameter_provenance.csv",
+      "bytes": 11879,
+      "sha256": "1dc9ecc7a2bae5a54383af78cdc94241c4b24a66a1c655e61591d40395e35536"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T16_external_benchmarks.csv",
+      "bytes": 466,
+      "sha256": "5798b8ee0a2a8ed4516cf64887708b054eccef10e0ee0936950590609d706a3e"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T17_refrigeration_controlled.csv",
+      "bytes": 48150,
+      "sha256": "188b8b4146cead12fbc780309c890783a889cfbbe5f76ad85aab2250cb1c13f5"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T18_heavier_payload_infra.csv",
+      "bytes": 37450,
+      "sha256": "0e3327a42fb1c32b057392193cfac125921534e9f6515c2d358169af804d4c90"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T19_engineering_boundary_checks.csv",
+      "bytes": 4126,
+      "sha256": "34d25c4835b62830f7805f17b39670d2fc1d4b44c4898cfe3308110172f6c8ec"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T20_effective_initial_soc.csv",
+      "bytes": 1500,
+      "sha256": "4c078c279ad6b9e6fd560f7586774c7a7f7d536b027dc97b0794916c8763aa5a"
+    },
+    {
+      "path": "results/final_evidence/tables/results/R-T21_volvo_battery_capacity_counterfactual.csv",
+      "bytes": 4090,
+      "sha256": "2906300abdd3bf0bc432e66a29b507da2f59301c2d3b3567113f77a6ee8554f8"
+    },
+    {
       "path": "results/final_evidence/validation/AUDIT_CORRECTIONS_STATUS.md",
       "bytes": 1465,
       "sha256": "b08462a155e733c1ac9ecae19efd63e1015e2ac5515615a11e3371ea4d67fd54"
@@ -1226,6 +1486,11 @@
       "sha256": "ffe1e2c7336f67989a3349ec9279f4b3945e9ba5d79cdbdc0d91e69f4b953b20"
     },
     {
+      "path": "results/final_evidence/validation/FINAL_NUMERICAL_VALIDATION_REPORT.md",
+      "bytes": 3030,
+      "sha256": "f669d7c82570ef9bbc4ad2bdfedeccce8524f4686f78333c038f003dd4d5b8ab"
+    },
+    {
       "path": "results/final_evidence/validation/FINAL_SCIENTIFIC_RESULTS_REPORT.md",
       "bytes": 2498,
       "sha256": "d11e03cea44466b7512f7515ac0f205d27285b069d7ab88688c070f7fdb9f1b9"
@@ -1234,6 +1499,16 @@
       "path": "results/final_evidence/validation/INTERIM_SCIENTIFIC_FINDINGS.md",
       "bytes": 4128,
       "sha256": "e4895411f4fe4aedd3a205718dcdc773da03ff81f5feb1847948b914a8d6495e"
+    },
+    {
+      "path": "results/final_evidence/validation/JOURNAL_VALIDATION_STATUS.md",
+      "bytes": 1851,
+      "sha256": "77500a199cc8ec0efacf26ed8996f9d487777fc90295182ee150d9abf68050d9"
+    },
+    {
+      "path": "results/final_evidence/validation/P10_findings_classification.md",
+      "bytes": 3397,
+      "sha256": "0e722a9cabadd087650e4abf8dfbe34b1ef56f9d2aa1889934d2b340e260d54e"
     }
   ]
 }

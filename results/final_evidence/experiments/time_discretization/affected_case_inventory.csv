@@ -1,0 +1,6 @@
+vehicle_key,soc_scenario,infra_config_id,od_id,status,energy_status,operationally_served,n_drive_arcs,sum_phys_drive_min,sum_ceil_disc_min,ceil_inflation_min,phys_under_270,disc_over_270,potential_ceil_exclusion,near_threshold_phys_250_270,energy_ok_ops_inf,drive_min_phys_col,wait_min_phys,charge_min_phys
+eactros_600,stressed_mixed,I2_benguerir_larache,casa_tangier,OPTIMAL,OPTIMAL,True,15,266.15170965510487,300.0,33.84829034489513,True,True,True,True,False,266.15170965510487,35.0,10.0
+eactros_600,common_soc_80,I2_benguerir_larache,casa_tangier,OPTIMAL,OPTIMAL,True,15,266.15170965510487,300.0,33.84829034489513,True,True,True,True,False,266.15170965510487,35.0,10.0
+volvo_475,common_soc_80,I0_none,marrakech_agadir,INFEASIBLE,OPTIMAL,False,0,,,,False,False,False,False,True,,,
+volvo_475,common_soc_80,I1_benguerir_ca,marrakech_agadir,INFEASIBLE,OPTIMAL,False,0,,,,False,False,False,False,True,,,
+volvo_475,common_soc_80,I2_benguerir_larache,marrakech_agadir,INFEASIBLE,OPTIMAL,False,0,,,,False,False,False,False,True,,,

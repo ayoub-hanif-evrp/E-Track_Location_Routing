@@ -1,0 +1,7 @@
+fixture,keys,temp_c
+agadir_end_2025-01-15.json,"T_mean_c,date,lat,lon,point_id,pressure_mean_hpa,wind_dir_mean_deg,wind_speed_mean_mps",
+agadir_end_2025-07-15.json,"T_mean_c,date,lat,lon,point_id,pressure_mean_hpa,wind_dir_mean_deg,wind_speed_mean_mps",
+casablanca_end_2025-01-15.json,"T_mean_c,date,lat,lon,point_id,pressure_mean_hpa,wind_dir_mean_deg,wind_speed_mean_mps",
+casablanca_end_2025-07-15.json,"T_mean_c,date,lat,lon,point_id,pressure_mean_hpa,wind_dir_mean_deg,wind_speed_mean_mps",
+marrakech_mid_2025-01-15.json,"T_mean_c,date,lat,lon,point_id,pressure_mean_hpa,wind_dir_mean_deg,wind_speed_mean_mps",
+marrakech_mid_2025-07-15.json,"T_mean_c,date,lat,lon,point_id,pressure_mean_hpa,wind_dir_mean_deg,wind_speed_mean_mps",

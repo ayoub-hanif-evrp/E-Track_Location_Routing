@@ -1,0 +1,2 @@
+benchmark_id,source,url,metric,value_kwh_per_km,gcm_t,distance_km,daily_range_note,comparison_class,notes
+eactros600_europe_testing_tour_2024,Daimler Truck eActros 600 European Testing Tour 2024,https://www.daimlertruck.com/en/newsroom/events/2024/eactros-600-european-testing-tour-2024,average_driving_consumption,1.03,40.0,15269.0,0.85–1.40 kWh/km,order_of_magnitude_plausibility,Near-series prototype; not matched to 5.3 t refrigerated Moroccan DEM missions.

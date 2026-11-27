@@ -1,1 +1,1 @@
-R-Figure 11: Infeasible-mission remedy diagnosis for Marrakech-Agadir and Agadir-Casa.
+R-Figure 11: Controlled refrigeration variants (off / 9°C cool / 9°C hot / UA×1.5 hot) on Casa–Marrakech and Casa–Agadir near departure-SOC thresholds. Bars = refrigerator kWh; orange = share of traction. All shown cells remain operationally served; refrigeration does not change I1 infrastructure requirements here.

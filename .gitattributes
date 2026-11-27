@@ -1,0 +1,29 @@
+# Canonical LF for scientific text artifacts (Windows CRLF checkout mismatches).
+* text=auto eol=lf
+
+*.py text eol=lf
+*.md text eol=lf
+*.csv text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.toml text eol=lf
+*.txt text eol=lf
+*.svg text eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.pkl binary
+*.npy binary
+*.npz binary
+*.gpkg binary
+*.shp binary
+*.dbf binary
+*.shx binary
+*.tif binary
+*.tiff binary

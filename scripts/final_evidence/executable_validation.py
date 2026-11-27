@@ -366,6 +366,9 @@ def main() -> int:
             continue
         if "corrupt_backup" in p.name:
             continue
+        # Side-outputs of verify_release_manifest.py (must not enter hashed inventory)
+        if p.name.startswith("clean_checkout_verification"):
+            continue
         rel = str(p.relative_to(ROOT)).replace("\\", "/")
         if rel == manifest_rel:
             continue
@@ -398,6 +401,8 @@ def main() -> int:
         if p.suffix.lower() not in {".csv", ".json", ".md", ".png", ".pdf", ".svg"}:
             continue
         if "corrupt_backup" in p.name:
+            continue
+        if p.name.startswith("clean_checkout_verification"):
             continue
         rel = str(p.relative_to(ROOT)).replace("\\", "/")
         if rel == manifest_rel:

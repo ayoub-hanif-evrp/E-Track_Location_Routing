@@ -1,0 +1,7 @@
+{
+  "manifest": "results/final_evidence/manifests/release_manifest_sha256.json",
+  "n_artifacts": 301,
+  "n_failures": 0,
+  "passed": true,
+  "failures": []
+}
