@@ -291,11 +291,12 @@ def apply_charge(
         return TransitionResult(False, reason="no_headroom")
     usable = max(1e-9, float(inst.E_truck_cap))
     soc_start = float(lab.E_truck) / usable
+    use_taper = bool(getattr(inst, "apply_charge_taper", True))
     steps = inst.charge_duration_steps(
         st,
         delta_e,
         soc_start=soc_start,
-        apply_taper=True,
+        apply_taper=use_taper,
     )
     t2 = lab.t + steps
     if t2 > inst.deadline_steps:
@@ -313,6 +314,11 @@ def apply_charge(
     grid = inst.grid_kwh_for_batt(st, delta_e)
     cost2 = lab.cost + st.price_cents_per_grid_kwh * grid
     drive_clk, accum = _hos_stationary_update(inst, lab, lab.node, int(steps))
+    charging_model = (
+        "ccs_soc_taper_research_envelope"
+        if use_taper
+        else "constant_nameplate_power"
+    )
     return TransitionResult(
         True,
         Label(
@@ -329,7 +335,7 @@ def apply_charge(
                 "grid_kwh": grid,
                 "steps": steps,
                 "soc_start": round(soc_start, 6),
-                "charging_model": "ccs_soc_taper_research_envelope",
+                "charging_model": charging_model,
                 "drain_truck_kwh": round(drain_tr, 6),
                 "drain_trailer_kwh": round(drain_tl, 6),
             },

@@ -2,7 +2,7 @@
 
 - **Location:** Casablanca origin connector `casablanca` → `J13208408666` (~5.55 km).
 - **Profile:** 39 DEM samples; net elevation change small (~−3.6 m).
-- **Max |grade|:** ~0.230 over a **2.61 m** segment near the arc end (s≈5549–5552 m).
-- **Segments >10% / >15%:** one segment, length 2.61 m.
+- **Max |grade| (raw samples):** ~0.230 over a **2.61 m** segment near the arc end.
+- **Max |grade| (≥5 m segments):** ~0.032.
 - **Interpretation:** short DEM/junction sampling artifact, not a sustained ~23% motorway grade.
-- **Action:** do **not** auto-clip; report raw max with length context. Solver used valid DEM (not flat fallback).
+- **Energy (P3):** gravitational increment on spike ≈0.065 kWh @ 40 t; no auto-clip; solver used **copdem_glo30** per-arc DEM (`dem_per_arc`).

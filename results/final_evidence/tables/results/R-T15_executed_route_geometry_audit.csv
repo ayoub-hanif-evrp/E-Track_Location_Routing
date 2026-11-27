@@ -31,3 +31,16 @@ rabat_fes,eactros_600,I2_benguerir_larache,9,206372.7045918094,1.0,1.0,0,9,0,0,0
 fes_rabat,eactros_600,I2_benguerir_larache,11,204007.08419588234,1.0,1.0,0,11,0,0,0
 tangier_rabat,eactros_600,I2_benguerir_larache,18,246799.58955038196,1.0,1.0,0,16,2,0,0
 rabat_tangier,eactros_600,I2_benguerir_larache,12,247211.12672376478,1.0,1.0,0,10,2,0,0
+casa_marrakech,eactros_600,I3_benguerir_ca_larache_benguerir_ac,7,257764.90736069955,1.0,1.0,0,4,3,0,0
+casa_agadir,eactros_600,I3_benguerir_ca_larache_benguerir_ac,10,445616.13835698756,1.0,1.0,0,5,5,0,0
+agadir_casa,eactros_600,I3_benguerir_ca_larache_benguerir_ac,7,429153.1630234301,1.0,1.0,0,4,3,0,0
+agadir_marrakech,eactros_600,I3_benguerir_ca_larache_benguerir_ac,3,249061.94796643557,1.0,1.0,0,3,0,0,0
+marrakech_casa,eactros_600,I3_benguerir_ca_larache_benguerir_ac,7,223002.21034063658,1.0,1.0,0,4,3,0,0
+tangier_casa,eactros_600,I3_benguerir_ca_larache_benguerir_ac,19,361483.1588790737,1.0,1.0,0,15,4,0,0
+casa_tangier,eactros_600,I3_benguerir_ca_larache_benguerir_ac,15,348124.9479575375,1.0,1.0,0,11,4,0,0
+casa_rabat,eactros_600,I3_benguerir_ca_larache_benguerir_ac,8,103123.64036012652,1.0,1.0,0,6,2,0,0
+rabat_casa,eactros_600,I3_benguerir_ca_larache_benguerir_ac,7,116407.62918819886,1.0,1.0,0,5,2,0,0
+rabat_fes,eactros_600,I3_benguerir_ca_larache_benguerir_ac,9,206372.7045918094,1.0,1.0,0,9,0,0,0
+fes_rabat,eactros_600,I3_benguerir_ca_larache_benguerir_ac,11,204007.08419588234,1.0,1.0,0,11,0,0,0
+tangier_rabat,eactros_600,I3_benguerir_ca_larache_benguerir_ac,18,246799.58955038196,1.0,1.0,0,16,2,0,0
+rabat_tangier,eactros_600,I3_benguerir_ca_larache_benguerir_ac,12,247211.12672376478,1.0,1.0,0,10,2,0,0

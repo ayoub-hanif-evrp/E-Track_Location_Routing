@@ -110,6 +110,9 @@ class RoutingInstance:
     # Task 07C: None = all arcs allowed. When set, DRIVE successors are masked
     # on this same physical graph (no rebuild). Charging still uses active_stations.
     allowed_arc_ids: frozenset[str] | None = None
+    # When False, CHARGE uses constant nameplate∩CCS power (no SOC taper).
+    # Default True: research CCS SOC-dependent envelope (not an OEM curve).
+    apply_charge_taper: bool = True
 
     def outgoing(self, node: str) -> list[ArcData]:
         arcs = [a for a in self.arcs if a.u == node]
@@ -131,13 +134,13 @@ class RoutingInstance:
         delta_e_batt_kwh: int,
         *,
         soc_start: float | None = None,
-        apply_taper: bool = True,
+        apply_taper: bool | None = None,
     ) -> int:
         """
         Time steps to deliver delta_e_batt_kwh into the battery.
 
-        Default: SOC-dependent CCS research taper on nameplate power×η.
-        Pass ``apply_taper=False`` only for constant-power unit tests.
+        Default: instance ``apply_charge_taper`` (SOC research envelope on).
+        Pass ``apply_taper=False`` for matched constant-power comparisons.
         """
         if delta_e_batt_kwh <= 0:
             return 0
@@ -147,13 +150,16 @@ class RoutingInstance:
 
         usable = max(1e-9, float(self.E_truck_cap))
         soc0 = 0.0 if soc_start is None else float(soc_start)
+        use_taper = (
+            bool(self.apply_charge_taper) if apply_taper is None else bool(apply_taper)
+        )
         minutes = tapered_battery_charge_minutes(
             nameplate_power_kw=float(station.power_kw),
             eta=float(station.eta),
             soc_start=soc0,
             delta_e_batt_kwh=float(delta_e_batt_kwh),
             usable_kwh=usable,
-            apply_taper=bool(apply_taper),
+            apply_taper=use_taper,
         )
         if minutes <= 0:
             return 0

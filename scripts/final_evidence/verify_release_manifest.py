@@ -25,6 +25,11 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+def _write_lf(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(text.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8"))
+
+
 def main() -> int:
     if not MAN.exists():
         print("FAIL: manifest missing", MAN)
@@ -58,22 +63,29 @@ def main() -> int:
         "n_failures": len(fails),
         "passed": len(fails) == 0,
         "failures": fails[:50],
+        "read_only": True,
     }
-    out = ROOT / "results/final_evidence/manifests/clean_checkout_verification.json"
-    out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-    md = ROOT / "results/final_evidence/manifests/clean_checkout_verification.md"
-    md.write_text(
-        f"""# P8 — Clean-checkout / remanifest verification
+    # Outside hashed evidence package (avoid circular dependency with manifests/)
+    vdir = ROOT / "results/final_evidence/validation"
+    vdir.mkdir(parents=True, exist_ok=True)
+    out = vdir / "clean_checkout_verification.json"
+    _write_lf(out, json.dumps(report, indent=2) + "\n")
+    md = vdir / "clean_checkout_verification.md"
+    _write_lf(
+        md,
+        f"""# Clean-checkout manifest verification (read-only)
 
-## Commands (separate)
+## Commands (do not invert)
 
 ```bash
 # 1) Generate (writes reports then hashes; excludes manifest from inventory)
 python scripts/final_evidence/executable_validation.py
 
-# 2) Verify read-only (must FAIL on any change/missing file)
+# 2) Verify read-only (must FAIL on any change/missing file; nonzero exit)
 python scripts/final_evidence/verify_release_manifest.py
 ```
+
+Never regenerate the manifest immediately before verification merely to clear mismatches.
 
 ## This run
 
@@ -81,11 +93,11 @@ python scripts/final_evidence/verify_release_manifest.py
 - Failures: **{len(fails)}**
 - Passed: **{len(fails) == 0}**
 
-`.gitattributes` enforces `eol=lf` for scientific text artifacts to reduce Windows CRLF vs Git LF size mismatches.
+Verification reports live under `results/final_evidence/validation/clean_checkout_verification.*`
+(outside the hashed package).
 
-If verifying from a fresh clone: checkout the freeze commit, run only the verify command against the committed manifest (do not regenerate first).
+`.gitattributes` enforces `eol=lf` for scientific text artifacts.
 """,
-        encoding="utf-8",
     )
     if fails:
         print("MANIFEST_VERIFY_FAIL", fails[:5])

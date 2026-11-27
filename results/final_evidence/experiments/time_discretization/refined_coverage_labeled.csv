@@ -1,0 +1,17 @@
+od_id,vehicle_key,soc_frac,time_step_min,infra_label,status,operationally_served,drive_min_phys,wait_min_phys,policy
+marrakech_agadir,volvo_475,0.8,1,I0,OPTIMAL,True,265.6157791813618,0.0,matched_refined
+marrakech_agadir,volvo_475,0.8,1,I1,OPTIMAL,True,265.6157791813618,0.0,matched_refined
+marrakech_agadir,volvo_475,0.8,1,I2,OPTIMAL,True,265.6157791813618,0.0,matched_refined
+marrakech_agadir,volvo_475,0.8,1,I3,OPTIMAL,True,265.6157791813618,0.0,matched_refined
+marrakech_agadir,volvo_475,0.8,2,I0,OPTIMAL,True,265.6157791813618,0.0,matched_refined
+marrakech_agadir,volvo_475,0.8,2,I1,OPTIMAL,True,265.6157791813618,0.0,matched_refined
+marrakech_agadir,volvo_475,0.8,2,I2,OPTIMAL,True,265.6157791813618,0.0,matched_refined
+marrakech_agadir,volvo_475,0.8,2,I3,OPTIMAL,True,265.6157791813618,0.0,matched_refined
+marrakech_agadir,volvo_475,0.8,5,I0,INFEASIBLE,False,,,matched_refined
+marrakech_agadir,volvo_475,0.8,5,I1,INFEASIBLE,False,,,matched_refined
+marrakech_agadir,volvo_475,0.8,5,I2,INFEASIBLE,False,,,matched_refined
+marrakech_agadir,volvo_475,0.8,5,I3,INFEASIBLE,False,,,matched_refined
+casa_tangier,eactros_600,0.8,5,I2,OPTIMAL,True,266.15170965510487,35.0,matched_refined
+casa_tangier,eactros_600,0.8,2,I2,OPTIMAL,True,266.15170965510487,34.0,matched_refined
+casa_tangier,eactros_600,0.8,5,I3,OPTIMAL,True,266.15170965510487,35.0,matched_refined
+casa_tangier,eactros_600,0.8,2,I3,OPTIMAL,True,266.15170965510487,34.0,matched_refined

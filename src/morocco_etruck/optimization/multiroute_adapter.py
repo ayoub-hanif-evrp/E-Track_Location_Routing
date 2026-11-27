@@ -293,6 +293,7 @@ def clone_physics_instance_for_subset(
         terminal_eta=getattr(template, "terminal_eta", None),
         notes=template.notes,
         allowed_arc_ids=mask,
+        apply_charge_taper=bool(getattr(template, "apply_charge_taper", True)),
     )
 
 

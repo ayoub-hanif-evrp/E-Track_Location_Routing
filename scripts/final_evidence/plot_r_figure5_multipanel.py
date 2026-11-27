@@ -13,7 +13,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts/final_evidence"))
-from morocco_etruck.energy.terrain import load_profile as _load_profile  # noqa: E402
+from reconstruct_executed_routes import _elevation_slice  # noqa: E402
 
 FE = ROOT / "results/final_evidence"
 FIG = FE / "figures/results"
@@ -51,8 +51,35 @@ def _node_xy(node: str, nodes: pd.DataFrame, cand: pd.DataFrame):
     return None
 
 
-def _executed_elevation(acts, elev_dir: Path):
-    """Elevation vs distance on the executed route; gaps where DEM profiles missing."""
+def _load_geom_cache(audit_path: Path) -> dict[str, list]:
+    cache: dict[str, list] = {}
+    if not audit_path.exists():
+        return cache
+    audit = pd.read_csv(audit_path)
+    for _, r in audit.iterrows():
+        aid = str(r.arc_id)
+        try:
+            coords = json.loads(r.lon_lat_json) if isinstance(r.lon_lat_json, str) else []
+        except Exception:
+            coords = []
+        if len(coords) >= 2 and (aid not in cache or len(coords) > len(cache[aid])):
+            cache[aid] = coords
+    return cache
+
+
+def _parent_meta(aid: str, audit_path: Path) -> tuple[str, float]:
+    if not audit_path.exists():
+        return "", 0.0
+    audit = pd.read_csv(audit_path)
+    hit = audit[audit.arc_id.astype(str) == aid]
+    if not len(hit):
+        return "", 0.0
+    r = hit.iloc[0]
+    return str(r.get("parent_arc_id") or ""), float(r.get("macro_s0_m") or 0.0)
+
+
+def _executed_elevation(acts, elev_dir: Path, audit_path: Path):
+    """Elevation vs distance on executed route; parent-slice DEM when child JSON absent (P1/P3 policy)."""
     xs, zs, rows = [], [], []
     offset = 0.0
     gain = loss = 0.0
@@ -63,35 +90,53 @@ def _executed_elevation(acts, elev_dir: Path):
             continue
         aid = str(a.get("arc_id") or "")
         length = float(a.get("length_m") or 0.0)
-        p = elev_dir / f"arc_{aid}.json"
-        if p.exists():
-            try:
-                sample = _load_profile(p)
-                dist = np.asarray(sample.distances_m, dtype=float)
-                elev = np.asarray(sample.elevations_m, dtype=float)
-                if len(dist) >= 2:
-                    d_loc = dist - float(dist[0])
-                    # scale local profile span to action length if needed
-                    span = float(d_loc[-1]) if float(d_loc[-1]) > 1e-6 else length
-                    scale = (length / span) if span > 1e-6 else 1.0
-                    d_use = d_loc * scale + offset
-                    xs.extend(d_use.tolist())
-                    zs.extend(elev.tolist())
-                    dz = np.diff(elev.astype(float))
-                    gain += float(dz[dz > 0].sum()) if len(dz) else 0.0
-                    loss += float((-dz[dz < 0]).sum()) if len(dz) else 0.0
-                    for d, z in zip(d_use, elev):
-                        rows.append({"distance_m": float(d), "distance_km": float(d) / 1000.0, "elevation_m": float(z), "arc_id": aid, "profile": "dem"})
-                    offset += length
-                    continue
-            except Exception:
-                pass
+        parent, s0 = _parent_meta(aid, audit_path)
+        elev = _elevation_slice(aid, parent, s0, length)
+        src = elev["terrain_source"]
+        d_loc = np.asarray(elev["distances_m"], dtype=float)
+        z = np.asarray(elev["elevations_m"], dtype=float)
+        if len(d_loc) >= 2 and len(z) >= 2 and elev.get("dem_ok"):
+            span = float(d_loc[-1]) if float(d_loc[-1]) > 1e-6 else length
+            scale = (length / span) if span > 1e-6 else 1.0
+            d_use = d_loc * scale + offset
+            xs.extend(d_use.tolist())
+            zs.extend(z.tolist())
+            dz = np.diff(z.astype(float))
+            gain += float(dz[dz > 0].sum()) if len(dz) else 0.0
+            loss += float((-dz[dz < 0]).sum()) if len(dz) else 0.0
+            for d, zz in zip(d_use, z):
+                rows.append(
+                    {
+                        "distance_m": float(d),
+                        "distance_km": float(d) / 1000.0,
+                        "elevation_m": float(zz),
+                        "arc_id": aid,
+                        "profile": src,
+                    }
+                )
+            offset += length
+            continue
         missing.append(aid)
-        # Honest gap: advance distance with NaN elevation (do not invent DEM)
         xs.extend([offset, offset + length])
         zs.extend([np.nan, np.nan])
-        rows.append({"distance_m": offset, "distance_km": offset / 1000.0, "elevation_m": np.nan, "arc_id": aid, "profile": "missing"})
-        rows.append({"distance_m": offset + length, "distance_km": (offset + length) / 1000.0, "elevation_m": np.nan, "arc_id": aid, "profile": "missing"})
+        rows.append(
+            {
+                "distance_m": offset,
+                "distance_km": offset / 1000.0,
+                "elevation_m": np.nan,
+                "arc_id": aid,
+                "profile": src or "missing",
+            }
+        )
+        rows.append(
+            {
+                "distance_m": offset + length,
+                "distance_km": (offset + length) / 1000.0,
+                "elevation_m": np.nan,
+                "arc_id": aid,
+                "profile": src or "missing",
+            }
+        )
         offset += length
     return {
         "distances_m": np.asarray(xs, dtype=float),
@@ -111,6 +156,8 @@ def main() -> None:
     mpath = panel if panel.exists() else FE / "experiments/primary_comparison/primary_missions.csv"
     m = pd.read_csv(mpath)
     elev_dir = ROOT / "data/processed/multiroute/elevation"
+    audit_path = FE / "experiments/executed_route_geometry/executed_arc_geometry_audit.csv"
+    geom_cache = _load_geom_cache(audit_path)
     nodes = pd.read_csv(ROOT / "data/processed/multiroute/nodes.csv").set_index("osm_node_id")
     cand = pd.read_csv(FE / "tables/dataset/D-T04_candidate_inventory.csv")
     cand = cand[pd.to_numeric(cand.lon, errors="coerce").notna()]
@@ -149,15 +196,21 @@ def main() -> None:
             typ = a.get("action_type") or a.get("type")
             if typ == "DRIVE" and a.get("arc_id"):
                 aid = str(a["arc_id"])
-                p = elev_dir / f"arc_{aid}.json"
                 placed = False
-                if p.exists():
-                    raw = json.loads(p.read_text(encoding="utf-8"))
-                    coords = raw.get("coords_lonlat") or []
-                    if coords:
-                        xs.extend([c[0] for c in coords])
-                        ys.extend([c[1] for c in coords])
-                        placed = True
+                coords = geom_cache.get(aid) or []
+                if not coords:
+                    p = elev_dir / f"arc_{aid}.json"
+                    if p.exists():
+                        raw = json.loads(p.read_text(encoding="utf-8"))
+                        coords = raw.get("coords_lonlat") or []
+                if not coords:
+                    parent, s0 = _parent_meta(aid, audit_path)
+                    elev = _elevation_slice(aid, parent, s0, float(a.get("length_m") or 0))
+                    coords = elev.get("coords_lonlat") or []
+                if coords:
+                    xs.extend([float(c[0]) for c in coords])
+                    ys.extend([float(c[1]) for c in coords])
+                    placed = True
                 if not placed:
                     missing_geom.append(aid)
                     for node in (a.get("u"), a.get("v")):
@@ -192,7 +245,7 @@ def main() -> None:
 
         # (b) elevation on SAME executed distance axis (NaN gaps if DEM missing)
         ax = axes[0, 1]
-        elev = _executed_elevation(acts, elev_dir)
+        elev = _executed_elevation(acts, elev_dir, audit_path)
         if len(elev["distances_m"]):
             dkm = elev["distances_m"] / 1000.0
             ax.plot(dkm, elev["elevations_m"], color=C["green"], lw=1.2)
@@ -287,8 +340,9 @@ def main() -> None:
         "executed-route distance axis, SOC at action endpoints (soc_min_along shown when "
         "present; not claimed as precise geographical samples), charging/waiting markers, "
         "and cumulative journey time. Elevation uses DEM profiles only where arc profiles "
-        "exist; missing arcs leave NaN gaps (distance still advances by trace length_m). "
-        "Map falls back to u/v node waypoints when densified geometry is unavailable.\n",
+        "exist; parent-slice DEM fills missing child profiles (same as solver). "
+        "Missing arcs leave NaN gaps (distance still advances by trace length_m). "
+        "Map uses P3 audit polylines, else child/parent DEM coords, else u/v waypoints.\n",
         encoding="utf-8",
     )
 

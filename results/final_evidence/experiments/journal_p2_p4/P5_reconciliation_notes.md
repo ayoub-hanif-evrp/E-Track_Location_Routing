@@ -22,6 +22,12 @@ Matched panel under 5-minute policy stands (no physics change from P1 visualizat
 | Stressed | 8/14 | 9/14 |
 | Common 80% | 10/14 | 9/14 |
 
+P4 closure (`experiments/volvo_settat_vs_benguerir/P4_paired_efficiency_notes.md`, `tables/results/R-T24_volvo_settat_benguerir_paired.csv`):
+
+- **Coverage preference reverses by SOC** (Settat +1 stressed on `casa_marrakech`; Benguerir +1 common on `casa_agadir`) — distinct from operational efficiency.
+- **Paired efficiency (@ `ts5`):** 8 stressed + 9 common missions both ops-served; **all objective/route metrics tie** (zero pairwise deltas).
+- **Time-discretization:** `affected_case_inventory_224plus.csv` / `refined_time_matched_reevals.csv` may flip *other* cells at `ts2`/`ts1` (e.g. primary-panel Marrakech→Agadir); they do **not** rewrite the 56-cell Volvo Settat vs Benguerir **coverage winner** @ `ts5`. Label refined timestep separately; do not conflate with this panel.
+
 Paired efficiency comparisons must use the intersection of missions feasible under **both** configs (existing matched panel artifacts).
 
 ## Heavier payload (new)

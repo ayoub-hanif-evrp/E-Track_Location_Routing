@@ -43,3 +43,16 @@ jobs:
           PY
       - name: Run offline unit tests
         run: pytest -q -m "not integration"
+
+  release-manifest-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify release manifest (read-only)
+        run: |
+          set -e
+          python scripts/final_evidence/verify_release_manifest.py
+          # Must fail on mismatch; script already exits nonzero.

@@ -316,7 +316,7 @@ def continuous_replay_multiroute(
                     delta_e_batt_kwh=float(de),
                     usable_kwh=float(usable),
                     soc_max=float(ctx.vehicle.soc_max),
-                    apply_taper=True,
+                    apply_taper=bool(getattr(inst, "apply_charge_taper", True)),
                 )
                 dt = minutes * 60.0
             aux_w = float(inst.aux_w) if inst.aux_w > 0 else float(ctx.vehicle.P_aux_w)
