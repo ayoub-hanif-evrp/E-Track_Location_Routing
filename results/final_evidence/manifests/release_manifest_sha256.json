@@ -1260,8 +1260,8 @@
     },
     {
       "path": "results/final_evidence/manifests/CAMPAIGN_PROGRESS.md",
-      "bytes": 1072,
-      "sha256": "6dc3181b3fc5a5192fad12112f083fa3eb84ce902adc14d585e4012fe5f0a475"
+      "bytes": 1106,
+      "sha256": "1de6e06a015ec4029b1d2dd9b2d7bced5af76f1625859826bc3dba2693f4619f"
     },
     {
       "path": "results/final_evidence/manifests/experimental_design_freeze.md",
@@ -1650,8 +1650,8 @@
     },
     {
       "path": "results/final_evidence/validation/SCIENTIFIC_CLOSURE_STATUS.md",
-      "bytes": 1272,
-      "sha256": "56fb16c869bc3bd6b5a8f6650f51d80ec5ad706b05c9eb98bb76046932aa784c"
+      "bytes": 1342,
+      "sha256": "257618cbd60cd2cab6b1b70f4329170d2a81b8988a736ff989616e4e874afd2a"
     }
   ]
 }

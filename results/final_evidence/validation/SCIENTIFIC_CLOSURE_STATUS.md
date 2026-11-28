@@ -1,6 +1,7 @@
 # Scientific closure status (final gates)
 
-Baseline experimental depth: commit `4af9259e66b8db5537ca676ae7ab7012c81efd87`.
+Baseline experimental depth: `4af9259e66b8db5537ca676ae7ab7012c81efd87`.  
+Closure freeze: `84911fa83aa2bd7800e1402c98ab313544ef5116`.  
 No manuscript writing; no geo/algorithm expansion.
 
 | Gate | Status | Authoritative evidence |
@@ -10,10 +11,10 @@ No manuscript writing; no geo/algorithm expansion.
 | P2 constant vs taper charging | **CLOSED** | 3 missions; Volvo discrete 45 vs 55 min; continuous offline table; R-Fig12 |
 | P3 geometry / DEM | **CLOSED** | 45/45 itineraries; 0 missing geom; steep 23%/2.61 m documented |
 | P4 Settat–Benguerir paired | **CLOSED** | Coverage ≠ efficiency; paired ties; SOC preference reverse @ ts5 |
-| P5 release integrity | **LOCAL PASS** | LF normalize; remanifest 328 artifacts; read-only verify 0 failures; CI `release-manifest-verify` |
+| P5 release integrity | **PASSED** | LF writers; remanifest 328; read-only verify 0 failures; CI `release-manifest-verify` success on Ubuntu |
 | P6 figures/tables package | **CLOSED** | Regenerated from authoritative CSVs (R-Fig1/3/5/12, R-T05/14/23/24) |
 
 Executable validation: **ALL_PASSED** (36 checks).  
-Manifest verify (local): **PASSED**.
+Manifest verify (local + CI Linux): **PASSED**.
 
 Epistemic rule: do not force favorable results; label ts5 vs refined ts separately.

@@ -1,8 +1,9 @@
 # Final evidence campaign — progress log
 
 Baseline experimental depth: `4af9259e66b8db5537ca676ae7ab7012c81efd87`  
-Scientific closure gates: see `validation/SCIENTIFIC_CLOSURE_STATUS.md`  
-Campaign status: **CLOSURE_IN_PROGRESS** until clean-checkout manifest verify passes
+Scientific closure freeze: `84911fa83aa2bd7800e1402c98ab313544ef5116`  
+See `validation/SCIENTIFIC_CLOSURE_STATUS.md`  
+Campaign status: **COMPLETE**
 
 ## Closed (prior journal freeze)
 
@@ -16,7 +17,7 @@ Campaign status: **CLOSURE_IN_PROGRESS** until clean-checkout manifest verify pa
 - **P2** constant vs research taper charging (3 missions) + R-Figure 12
 - **P3** 45 itinerary geometry/DEM audit + R-Figure 5 PNG/PDF/SVG
 - **P4** Volvo Settat–Benguerir paired efficiency (coverage ≠ efficiency)
-- **P5** LF normalize + remanifest + read-only verify + CI
+- **P5** LF normalize + remanifest (328) + read-only verify + CI `release-manifest-verify` **PASSED**
 - **P6** figures/tables regenerated from authoritative records
 
 Do not begin manuscript writing. Do not expand research scope.
